@@ -527,6 +527,18 @@
             .window-body { grid-template-columns: 1fr; }
             .mock-table { grid-column: span 1; }
         }
+        .window-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.window-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
     </style>
 </head>
 <body>
@@ -583,8 +595,8 @@
                             <div class="mock-nav-item"></div>
                             <div class="mock-nav-item"></div>
                         </div>
-                        <div class="window-body">
-                            <img src="Capture d’écran 2026..._imresizer.jpg" alt="StockApp Interface" style="width: 100%; height: auto; border-radius: 8px;">
+                        <div class="window-content">
+                            <img src="Capture d'écran 2026..._imresizer.jpg" alt="StockApp Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                         </div>
                     </div>
                 </div>
