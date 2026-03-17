@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockApp - Ultimate Business Management for Windows</title>
+    <title>Stock Sales App  - Ultimate Business Management for Windows</title>
      <link rel="icon" type="image/x-icon" href="icon.ico">
     <meta name="description" content="Manage stock, sales, and credits effortlessly with the most beautiful glassmorphism business app for Windows.">
     
@@ -13,533 +13,7 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #ec4899;
-            --accent: #10b981;
-            --dark-bg: #0f172a;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-highlight: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-muted: #94a3b8;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-main);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        /* Animated Background */
-        .bg-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-                        radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15), transparent 25%);
-        }
-
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            animation: float 15s infinite ease-in-out;
-        }
-        .orb-1 { width: 500px; height: 500px; background: #4f46e5; top: -100px; left: -100px; opacity: 0.4; }
-        .orb-2 { width: 400px; height: 400px; background: #ec4899; bottom: -100px; right: -100px; opacity: 0.3; animation-delay: -5s; }
-        .orb-3 { width: 300px; height: 300px; background: #10b981; top: 40%; left: 60%; opacity: 0.2; animation-delay: -10s; }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, 50px); }
-        }
-
-        /* Glass Utilities */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-        }
-
-        .glass-card {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-color: var(--glass-highlight);
-        }
-
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Navbar */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 20px 0;
-            transition: all 0.3s ease;
-        }
-
-        nav.scrolled {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 15px 0;
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: white;
-        }
-
-        .btn-download {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 10px 24px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-download:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 180px 0 100px;
-            text-align: center;
-            position: relative;
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            font-weight: 800;
-        }
-
-        .hero h1 span {
-            background: linear-gradient(to right, #818cf8, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto 40px;
-        }
-
-        .store-badge {
-            display: inline-flex;
-            align-items: center;
-            background: white;
-            color: black;
-            padding: 8px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 60px;
-            transition: transform 0.3s ease;
-        }
-
-        .store-badge:hover {
-            transform: scale(1.05);
-        }
-
-        .store-badge i {
-            font-size: 1.5rem;
-            margin-right: 10px;
-        }
-
-        .store-badge div {
-            text-align: left;
-            line-height: 1.2;
-        }
-
-        .store-badge small {
-            font-size: 0.7rem;
-            display: block;
-        }
-
-        .store-badge span {
-            font-size: 1.1rem;
-        }
-
-        /* App Mockup */
-        .mockup-container {
-            position: relative;
-            max-width: 1000px;
-            margin: 0 auto;
-            perspective: 1000px;
-        }
-
-        .app-window {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            transform: rotateX(2deg);
-            transition: transform 0.5s ease;
-            position: relative;
-            z-index: 10;
-        }
-
-        .app-window:hover {
-            transform: rotateX(0deg);
-        }
-
-        .window-header {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 12px 20px;
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .dot { width: 12px; height: 12px; border-radius: 50%; }
-        .red { background: #ef4444; }
-        .yellow { background: #f59e0b; }
-        .green { background: #10b981; }
-
-        .window-body {
-            padding: 20px;
-            min-height: 500px;
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 20px;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
-        }
-
-        /* CSS Representation of App UI for Mockup */
-        .mock-sidebar {
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .mock-nav-item {
-            height: 40px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-            width: 100%;
-        }
-        .mock-nav-item.active { background: var(--primary); }
-        .mock-content {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        .mock-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            height: 120px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .mock-table {
-            grid-column: span 2;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            height: 200px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 100px 0;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-
-        .section-header p {
-            color: var(--text-muted);
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .feature-card {
-            padding: 30px;
-            text-align: left;
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #818cf8;
-            margin-bottom: 20px;
-        }
-
-        .feature-card h3 {
-            margin-bottom: 10px;
-            font-size: 1.25rem;
-        }
-
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        /* Showcase Section */
-        .showcase {
-            padding: 100px 0;
-            overflow: hidden;
-        }
-
-        .showcase-item {
-            display: flex;
-            align-items: center;
-            gap: 60px;
-            margin-bottom: 100px;
-        }
-
-        .showcase-item:nth-child(even) {
-            flex-direction: row-reverse;
-        }
-
-        .showcase-text {
-            flex: 1;
-        }
-
-        .showcase-text h3 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .showcase-text ul {
-            list-style: none;
-            margin-top: 20px;
-        }
-
-        .showcase-text li {
-            margin-bottom: 10px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .showcase-text li i {
-            color: var(--accent);
-        }
-
-        .showcase-image {
-            flex: 1;
-            height: 400px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--glass-border);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .showcase-image i {
-            font-size: 5rem;
-            color: rgba(255,255,255,0.1);
-        }
-
-        /* CTA Section */
-        .cta-section {
-            padding: 100px 0;
-            text-align: center;
-        }
-
-        .cta-box {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            padding: 60px 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
-            animation: rotate 20s linear infinite;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .cta-content {
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Footer */
-        footer {
-            border-top: 1px solid var(--glass-border);
-            padding: 60px 0 30px;
-            background: rgba(15, 23, 42, 0.5);
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-
-        .footer-brand p {
-            color: var(--text-muted);
-            margin-top: 15px;
-            max-width: 300px;
-        }
-
-        .footer-col h4 {
-            margin-bottom: 20px;
-            color: white;
-        }
-
-        .footer-col ul {
-            list-style: none;
-        }
-
-        .footer-col ul li {
-            margin-bottom: 10px;
-        }
-
-        .footer-col ul li a {
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-col ul li a:hover {
-            color: var(--primary);
-        }
-
-        .copyright {
-            text-align: center;
-            color: var(--text-muted);
-            padding-top: 30px;
-            border-top: 1px solid var(--glass-border);
-            font-size: 0.9rem;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .nav-links { display: none; }
-            .showcase-item { flex-direction: column !important; gap: 30px; }
-            .footer-grid { grid-template-columns: 1fr; }
-            .window-body { grid-template-columns: 1fr; }
-            .mock-table { grid-column: span 1; }
-        }
-        .window-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.window-content img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-    </style>
+<link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
 
@@ -553,14 +27,14 @@
     <nav id="navbar">
         <div class="container nav-content">
             <div class="logo">
-                <i class="fas fa-cube"></i> StockApp
+                <i class="fas fa-cube"></i> Stock Sales App 
             </div>
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
                 <li><a href="#showcase">How it Works</a></li>
                 <li><a href="#reviews">Reviews</a></li>
             </ul>
-            <a href="https://www.microsoft.com/store" target="_blank" class="btn-download">
+            <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare"class="btn-download">
                 <i class="fab fa-windows"></i> Download
             </a>
         </div>
@@ -569,10 +43,10 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1>Manage Your Business <br> With <span>StockApp</span></h1>
+            <h1>Manage Your Business <br> With <span>Stock Sales App </span></h1>
             <p>The ultimate stock management, sales tracking, and credit book application for Windows. Beautiful, fast, and productive.</p>
             
-            <a href="https://www.microsoft.com/store" target="_blank" class="store-badge">
+            <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare" class="store-badge">
                 <i class="fab fa-windows"></i>
                 <div>
                     <small>Download on</small>
@@ -590,13 +64,28 @@
                     </div>
                     <div class="window-body">
                         <div class="mock-sidebar">
-                            <div class="mock-nav-item active"></div>
-                            <div class="mock-nav-item"></div>
-                            <div class="mock-nav-item"></div>
-                            <div class="mock-nav-item"></div>
+                            <div id="mockhome" class="mock-nav-item active">home</div>
+                            <div id="mockproducts" class="mock-nav-item">stock keeping management</div>
+                            <div id="mocksales" class="mock-nav-item">STOCK ITEM VIEW</div>
+                            <div id="mockcustomers" class="mock-nav-item">email notifications settings</div>
+                            <div id="mockanalytics" class="mock-nav-item"> weekly analytics</div>
+                            <div id="mockrecipt" class="mock-nav-item"> receipts</div>
+                            <div id="mocksettings" class="mock-nav-item"> full action and export</div>
                         </div>
                         <div class="window-content">
-                            <img src="Capture d’écran 2026..._imresizer.jpg" alt="StockApp Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                            <div class="slider-container">
+                                <div class="slider-track">
+                                    <img src="images/home.jpg" alt="Home Interface">
+                                    <img src="images/stock section.png" alt="Products Interface">
+                                    <img src="images/ITEMVIEW.png" alt="Sales Interface">
+                                    <img src="images/emailsetings.png" alt="Customers Interface">
+                                    <img src="images/SALES ANLISTCY.png" alt="Analytics Interface">
+                                    <img src="images/recipt.png" alt="Receipts Interface">
+                                    <img src="images/full action area.png" alt="Settings Interface">
+                                </div>
+                            </div>
+                            <button class="slider-btn prev"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn next"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -645,7 +134,21 @@
             </div>
         </div>
     </section>
-
+<!-- Video Demo Section -->
+    <section id="demo" class="video-demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>See Stock Sales App  in Action</h2>
+                <p>Watch a quick demo of how Stock Sales App  streamlines your business.</p>
+            </div>
+            <div class="video-container glass-card">
+                <div class="video-wrapper">
+                    <!-- Replace VIDEO_ID with your YouTube video ID -->
+                 <iframe width="560" height="315" src="https://www.youtube.com/embed/IZoW9qYrkjQ" title="StockApp Demo" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- Showcase Section -->
     <section id="showcase" class="showcase">
         <div class="container">
@@ -661,7 +164,7 @@
                     </ul>
                 </div>
                 <div class="showcase-image">
-                    <i class="fas fa-chart-line"></i>
+                    <img src="images/SALES ANLISTCY.png" alt="Stock Sales App  Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                 </div>
             </div>
 
@@ -677,7 +180,7 @@
                     </ul>
                 </div>
                 <div class="showcase-image">
-                    <i class="fas fa-shopping-cart"></i>
+                    <img src="images/OJJKOK.png" alt="Stock Sales App  Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                 </div>
             </div>
         </div>
@@ -690,7 +193,7 @@
                 <div class="cta-content">
                     <h2 style="font-size: 2.5rem; margin-bottom: 20px;">Ready to Upgrade Your Business?</h2>
                     <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem;">Join hundreds of businesses managing their stock with precision.</p>
-                    <a href="https://www.microsoft.com/store" target="_blank" class="btn-download" style="padding: 15px 40px; font-size: 1.1rem;">
+                    <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare" class="btn-download" style="padding: 15px 40px; font-size: 1.1rem;">
                         <i class="fab fa-windows"></i> Get it on Microsoft Store
                     </a>
                     <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">Free to download • Windows 10/11 Compatible</p>
@@ -699,13 +202,84 @@
         </div>
     </section>
 
+    <!-- Reviews Section -->
+    <section id="reviews" class="reviews">
+        <div class="container">
+            <div class="section-header">
+                <h2>Trusted by Business Owners</h2>
+                <p>See what our users have to say about Stock Sales App .</p>
+            </div>
+            <div class="reviews-grid">
+                <!-- Review Card 1 -->
+                <div class="glass-card review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="review-text">"Stock Sales App  transformed how I manage my retail store. The credit book feature alone saved me hours of manual tracking. The interface is a joy to use."</p>
+                    <div class="reviewer">
+                        <div class="avatar">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah Chen">
+                        </div>
+                        <div class="reviewer-info">
+                            <h4>Sarah Chen</h4>
+                            <p>Owner, Chen's Boutique</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Review Card 2 -->
+                <div class="glass-card review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="review-text">"Finally a Windows app that looks modern and works flawlessly. My team picked it up in minutes. The analytics dashboard gives me insights I never had before."</p>
+                    <div class="reviewer">
+                        <div class="avatar">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Okafor">
+                        </div>
+                        <div class="reviewer-info">
+                            <h4>Michael Okafor</h4>
+                            <p>CEO, Okafor Enterprises</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Review Card 3 -->
+                <div class="glass-card review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p class="review-text">"The multi-user support is perfect for our team. Managers have full access while cashiers only see what they need. Great security and ease of use."</p>
+                    <div class="reviewer">
+                        <div class="avatar">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Linda García">
+                        </div>
+                        <div class="reviewer-info">
+                            <h4>Linda García</h4>
+                            <p>Operations Manager, FreshMart</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
                     <div class="logo">
-                        <i class="fas fa-cube"></i> StockApp
+                        <i class="fas fa-cube"></i> Stock Sales App 
                     </div>
                     <p>The modern solution for inventory and sales management. Built for productivity, designed for beauty.</p>
                 </div>
@@ -713,8 +287,8 @@
                     <h4>Product</h4>
                     <ul>
                         <li><a href="#features">Features</a></li>
-                        <li><a href="#">Download</a></li>
-                        <li><a href="#">Changelog</a></li>
+                        <li><a href="#features">Download</a></li>
+                        <li><a href="#showcase">How it Works</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
@@ -725,52 +299,23 @@
                         <li><a href="#">Privacy Policy</a></li>
                     </ul>
                 </div>
-                <div class="footer-col">
-                    <h4>Connect</h4>
-                    <ul>
-                        <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li>
-                        <li><a href="#"><i class="fab fa-instagram"></i> Instagram</a></li>
-                        <li><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></li>
-                    </ul>
-                </div>
+                    <div class="footer-col">
+                        <h4>Connect</h4>
+                        <ul>
+                            <li><a href="https://www.tiktok.com/@stocksalesapp"><i class="fab fa-tiktok"></i> TikTok</a></li>
+                            <li><a href="https://www.instagram.com/stocksalesapp/"><i class="fab fa-instagram"></i> Instagram</a></li>
+                            <li><a href="https://www.facebook.com/profile.php?id=61586340244129"><i class="fab fa-facebook"></i> Facebook</a></li>
+                        </ul>
+                    </div>
             </div>
             <div class="copyright">
-                &copy; 2023 StockApp. All rights reserved.
+                &copy; 2026 Stock Sales App . All rights reserved.
             </div>
         </div>
     </footer>
-
-    <script>
-        // Navbar Scroll Effect
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
-        });
-
-        // Simple Animation on Scroll
-        const observerOptions = {
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.feature-card, .showcase-item').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'all 0.6s ease';
-            observer.observe(el);
-        });
-    </script>
+<div id="image-modal" class="image-modal" onclick="this.style.display='none'">
+    <img src="" alt="Zoomed">
+</div>
+<script src="index.js"></script>
 </body>
 </html>
