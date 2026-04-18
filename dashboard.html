@@ -5,18 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analytics Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/supabase-js@2"></script>
+  <!-- FIX: Added the correct Supabase package name -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: Arial; margin: 20px; background: #f5f5f5; }
-    .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-    h1 { color: #333; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); gap: 20px; margin-bottom: 30px; }
-    .stat-card { background: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; }
-    .stat-number { font-size: 2em; font-weight: bold; color: #0070f3; }
-    .chart-container { margin-bottom: 40px; }
-    canvas { max-height: 400px; }
-    .login { max-width: 300px; margin: 100px auto; text-align: center; }
-    input, button { padding: 10px; margin: 5px; width: 90%; }
+    body { 
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+      margin: 0; 
+      padding: 20px;
+      background: #f3f4f6; 
+      color: #1f2937;
+    }
+    .container { 
+      max-width: 1200px; 
+      margin: auto; 
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #111827;
+    }
+    
+    /* Login Screen Enhancements */
+    .login { 
+      max-width: 350px; 
+      margin: 10vh auto; 
+      background: white; 
+      padding: 40px; 
+      border-radius: 12px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      text-align: center; 
+    }
+    .login h2 { margin-top: 0; color: #374151; }
+    input { 
+      padding: 12px; 
+      margin: 15px 0; 
+      width: 100%; 
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button { 
+      padding: 12px; 
+      width: 100%; 
+      background: #4f46e5; 
+      color: white; 
+      border: none; 
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer; 
+      transition: background 0.2s;
+    }
+    button:hover { background: #4338ca; }
+
+    /* Dashboard Enhancements */
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+      gap: 20px; 
+      margin-bottom: 40px; 
+    }
+    .stat-card { 
+      background: white; 
+      padding: 25px; 
+      border-radius: 12px; 
+      text-align: center; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-number { 
+      font-size: 2.5em; 
+      font-weight: bold; 
+      color: #4f46e5; 
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Chart Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 24px;
+    }
+    .chart-container { 
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .chart-container h3 {
+      text-align: center;
+      margin-top: 0;
+      color: #4b5563;
+      font-size: 1.1em;
+    }
+    canvas { max-height: 300px; width: 100% !important; }
+    
+    /* Responsive tweaks */
+    @media (max-width: 600px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -26,24 +121,47 @@
     <input type="password" id="passwordInput" placeholder="Enter password">
     <button onclick="checkPassword()">Login</button>
   </div>
+  
   <div id="dashboardContent" style="display:none;">
     <div class="container">
-      <h1>Visitor Analytics Dashboard</h1>
+      <h1 class="header">Visitor Analytics Dashboard</h1>
       <div class="stats-grid" id="summaryStats"></div>
-      <div class="chart-container"><canvas id="browserChart"></canvas></div>
-      <div class="chart-container"><canvas id="deviceChart"></canvas></div>
-      <div class="chart-container"><canvas id="osChart"></canvas></div>
-      <div class="chart-container"><canvas id="visitorsOverTime"></canvas></div>
-      <div class="chart-container"><canvas id="topCountries"></canvas></div>
+      
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h3>Visitors (Last 7 Days)</h3>
+          <canvas id="visitorsOverTime"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Top Browsers</h3>
+          <canvas id="browserChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Device Types</h3>
+          <canvas id="deviceChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Operating Systems</h3>
+          <canvas id="osChart"></canvas>
+        </div>
+        <div class="chart-container" style="grid-column: 1 / -1;">
+          <h3>Top Countries</h3>
+          <canvas id="topCountries"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
+  const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const DASHBOARD_PASSWORD = 'Doaswedo*123'; // Change this to something secure
+
+  // Shared beautiful color palette for charts
+  const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
   function checkPassword() {
     const pwd = document.getElementById('passwordInput').value;
@@ -60,7 +178,13 @@ const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
     // Fetch all visits
     const { data, error } = await supabase.from('visits').select('*');
     if (error) {
-      console.error(error);
+      console.error('Supabase Error:', error);
+      alert('Failed to load data. Check console for details.');
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      document.getElementById('summaryStats').innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No data available yet.</p>';
       return;
     }
 
@@ -68,37 +192,60 @@ const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
     const uniqueVisitors = new Set(data.map(v => v.visitor_id)).size;
     const totalPageViews = data.length;
     document.getElementById('summaryStats').innerHTML = `
-      <div class="stat-card"><div class="stat-number">${uniqueVisitors}</div><div>Unique Visitors</div></div>
-      <div class="stat-card"><div class="stat-number">${totalPageViews}</div><div>Total Page Views</div></div>
-      <div class="stat-card"><div class="stat-number">${data.filter(v => v.device_type === 'mobile').length}</div><div>Mobile Visits</div></div>
-      <div class="stat-card"><div class="stat-number">${data.filter(v => v.device_type === 'desktop').length}</div><div>Desktop Visits</div></div>
+      <div class="stat-card"><div class="stat-number">${uniqueVisitors}</div><div class="stat-label">Unique Visitors</div></div>
+      <div class="stat-card"><div class="stat-number">${totalPageViews}</div><div class="stat-label">Total Page Views</div></div>
+      <div class="stat-card"><div class="stat-number">${data.filter(v => v.device_type === 'mobile').length}</div><div class="stat-label">Mobile Visits</div></div>
+      <div class="stat-card"><div class="stat-number">${data.filter(v => v.device_type === 'desktop').length}</div><div class="stat-label">Desktop Visits</div></div>
     `;
 
-    // Browser chart
-    const browserCounts = {};
-    data.forEach(v => { browserCounts[v.browser] = (browserCounts[v.browser] || 0) + 1; });
-    new Chart(document.getElementById('browserChart'), { type: 'bar', data: { labels: Object.keys(browserCounts), datasets: [{ label: 'Visits', data: Object.values(browserCounts), backgroundColor: 'blue' }] } });
-
-    // Device chart
-    const deviceCounts = {};
-    data.forEach(v => { deviceCounts[v.device_type] = (deviceCounts[v.device_type] || 0) + 1; });
-    new Chart(document.getElementById('deviceChart'), { type: 'pie', data: { labels: Object.keys(deviceCounts), datasets: [{ data: Object.values(deviceCounts) }] } });
-
-    // OS chart
-    const osCounts = {};
-    data.forEach(v => { osCounts[v.os] = (osCounts[v.os] || 0) + 1; });
-    new Chart(document.getElementById('osChart'), { type: 'bar', data: { labels: Object.keys(osCounts), datasets: [{ label: 'Visits', data: Object.values(osCounts) }] } });
+    // Common chart options for responsiveness
+    const commonOptions = { responsive: true, maintainAspectRatio: false };
 
     // Time series (last 7 days)
     const last7Days = [...Array(7)].map((_, i) => new Date(Date.now() - i*86400000).toISOString().slice(0,10)).reverse();
-    const dailyCounts = last7Days.map(day => data.filter(v => v.visited_at.slice(0,10) === day).length);
-    new Chart(document.getElementById('visitorsOverTime'), { type: 'line', data: { labels: last7Days, datasets: [{ label: 'Page Views', data: dailyCounts }] } });
+    const dailyCounts = last7Days.map(day => data.filter(v => v.visited_at && v.visited_at.slice(0,10) === day).length);
+    new Chart(document.getElementById('visitorsOverTime'), { 
+      type: 'line', 
+      data: { labels: last7Days, datasets: [{ label: 'Page Views', data: dailyCounts, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }] },
+      options: commonOptions
+    });
+
+    // Browser chart
+    const browserCounts = {};
+    data.forEach(v => { browserCounts[v.browser || 'Unknown'] = (browserCounts[v.browser || 'Unknown'] || 0) + 1; });
+    new Chart(document.getElementById('browserChart'), { 
+      type: 'doughnut', 
+      data: { labels: Object.keys(browserCounts), datasets: [{ data: Object.values(browserCounts), backgroundColor: colors }] },
+      options: commonOptions
+    });
+
+    // Device chart
+    const deviceCounts = {};
+    data.forEach(v => { deviceCounts[v.device_type || 'Unknown'] = (deviceCounts[v.device_type || 'Unknown'] || 0) + 1; });
+    new Chart(document.getElementById('deviceChart'), { 
+      type: 'pie', 
+      data: { labels: Object.keys(deviceCounts), datasets: [{ data: Object.values(deviceCounts), backgroundColor: colors }] },
+      options: commonOptions
+    });
+
+    // OS chart
+    const osCounts = {};
+    data.forEach(v => { osCounts[v.os || 'Unknown'] = (osCounts[v.os || 'Unknown'] || 0) + 1; });
+    new Chart(document.getElementById('osChart'), { 
+      type: 'bar', 
+      data: { labels: Object.keys(osCounts), datasets: [{ label: 'Visits', data: Object.values(osCounts), backgroundColor: colors[1], borderRadius: 4 }] },
+      options: { ...commonOptions, plugins: { legend: { display: false } } }
+    });
 
     // Top countries
     const countryCounts = {};
     data.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1; });
     const sortedCountries = Object.entries(countryCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
-    new Chart(document.getElementById('topCountries'), { type: 'bar', data: { labels: sortedCountries.map(c=>c[0]), datasets: [{ label: 'Visits', data: sortedCountries.map(c=>c[1]) }] } });
+    new Chart(document.getElementById('topCountries'), { 
+      type: 'bar', 
+      data: { labels: sortedCountries.map(c=>c[0]), datasets: [{ label: 'Visits', data: sortedCountries.map(c=>c[1]), backgroundColor: colors[0], borderRadius: 4 }] },
+      options: { ...commonOptions, plugins: { legend: { display: false } } }
+    });
   }
 </script>
 </body>
