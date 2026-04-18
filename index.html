@@ -1,91 +1,178 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Sales App  - Ultimate Business Management for Windows</title>
-     <link rel="icon" type="image/x-icon" href="icon.ico">
-    <meta name="description" content="Manage stock, sales, and credits effortlessly with the most beautiful glassmorphism business app for Windows.">
+    <title>Stock Sales App - Ultimate Business Management for Windows</title>
     
-    <!-- Icons -->
+    <!-- Icons & Fonts -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-<link rel="stylesheet" href="styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/style.css">
+  
 </head>
 <body>
-
-    <!-- Background Elements -->
-    <div class="bg-gradient"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
 
     <!-- Navigation -->
     <nav id="navbar">
         <div class="container nav-content">
             <div class="logo">
-                <i class="fas fa-cube"></i> Stock Sales App 
+                <img src="images/logo.jpg" alt="Stock Sales App Logo" class="logo-img"> Stock Sales App
             </div>
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
-                <li><a href="#showcase">How it Works</a></li>
-                <li><a href="#reviews">Reviews</a></li>
+                <li><a href="#interface">Interface</a></li>
+                <li><a href="#demo">Video Demo</a></li>
+                <li><a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL">Microsoft Store</a></li>
             </ul>
-            <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare"class="btn-download">
+            <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL" class="btn-primary">
                 <i class="fab fa-windows"></i> Download
+            </a>
+            <a href="Stock%20Sales%20App%20-%20Inventory%20%26%20Sales%20Management%20Installer.exe" download class="btn-small">
+                <i class="fas fa-download"></i> Download EXE
             </a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Slider -->
     <section class="hero">
-        <div class="container">
-            <h1>Manage Your Business <br> With <span>Stock Sales App </span></h1>
-            <p>The ultimate stock management, sales tracking, and credit book application for Windows. Beautiful, fast, and productive.</p>
-            
-            <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare" class="store-badge">
-                <i class="fab fa-windows"></i>
-                <div>
-                    <small>Download on</small>
-                    <span>Microsoft Store</span>
-                </div>
-            </a>
-
-            <!-- CSS App Mockup -->
-            <div class="mockup-container">
-                <div class="app-window">
-                    <div class="window-header">
-                        <div class="dot red"></div>
-                        <div class="dot yellow"></div>
-                        <div class="dot green"></div>
-                    </div>
-                    <div class="window-body">
-                        <div class="mock-sidebar">
-                            <div id="mockhome" class="mock-nav-item active">home</div>
-                            <div id="mockproducts" class="mock-nav-item">stock keeping management</div>
-                            <div id="mocksales" class="mock-nav-item">STOCK ITEM VIEW</div>
-                            <div id="mockcustomers" class="mock-nav-item">email notifications settings</div>
-                            <div id="mockanalytics" class="mock-nav-item"> weekly analytics</div>
-                            <div id="mockrecipt" class="mock-nav-item"> receipts</div>
-                            <div id="mocksettings" class="mock-nav-item"> full action and export</div>
+        <div class="hero-slideshow">
+            <div class="slides" id="hero-track">
+                <!-- Slide 1 -->
+                <div class="slide active" style="background-image: url('images/home.jpg');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Dashboard</span>
+                            <h3>Streamlined Operations</h3>
+                            <p>Get a bird's eye view of your business performance, recent transactions, and key alerts the moment you log in.</p>
                         </div>
-                        <div class="window-content">
-                            <div class="slider-container">
-                                <div class="slider-track">
-                                    <img src="images/home.jpg" alt="Home Interface">
-                                    <img src="images/stock section.png" alt="Products Interface">
-                                    <img src="images/ITEMVIEW.png" alt="Sales Interface">
-                                    <img src="images/emailsetings.png" alt="Customers Interface">
-                                    <img src="images/SALES ANLISTCY.png" alt="Analytics Interface">
-                                    <img src="images/recipt.png" alt="Receipts Interface">
-                                    <img src="images/full action area.png" alt="Settings Interface">
-                                </div>
+                    </div>
+                </div>
+                <!-- Slide 2 -->
+                <div class="slide" style="background-image: url('images/stock section.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Inventory</span>
+                            <h3>Precise Stock Control</h3>
+                            <p>Manage thousands of items with ease. Categorize by sub-groups and set automated low-stock warnings.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 3 -->
+                <div class="slide" style="background-image: url('images/ITEMVIEW.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Item Lookup</span>
+                            <h3>Fast Search Technology</h3>
+                            <p>Find any product instantly. Review pricing, stock levels, and historical movement in a single click.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 4 -->
+                <div class="slide" style="background-image: url('images/emailsetings.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Cloud Alerts</span>
+                            <h3>Automated Notifications</h3>
+                            <p>Configure automated email summaries for sales reps, managers, and owners to stay informed 24/7.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 5 -->
+                <div class="slide" style="background-image: url('images/SALES ANLISTCY.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Analytics</span>
+                            <h3>Data-Driven Growth</h3>
+                            <p>Visualize your revenue and profit trends with advanced charting. Identify your top-performing products.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 6 -->
+                <div class="slide" style="background-image: url('images/recipt.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Documentation</span>
+                            <h3>Professional Receipts</h3>
+                            <p>Generate high-quality digital and physical receipts. Standardized formatting for all thermal printers.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 7 -->
+                <div class="slide" style="background-image: url('images/full action area.png');">
+                    <div class="slide-overlay"></div>
+                    <div class="container slide-content">
+                        <div class="slide-copy">
+                            <span class="slide-label">Management</span>
+                            <h3>Enterprise Control</h3>
+                            <p>Full administrative tools for user management, historical data export, and global system settings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Static Hero UI -->
+        <div class="hero-static-content text-right">
+            <div class="container">
+                <h1>Professional Sales & <br><span>Stock Management</span></h1>
+                <div class="hero-actions">
+                    <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL" class="store-badge">
+                        <i class="fab fa-windows"></i>
+                        <div>
+                            <small>Download for</small>
+                            <span>Windows</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interface Mockup -->
+    <section id="interface" class="interface-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Experience the Excellence</h2>
+                <p>A desktop-first design optimized for high-speed business environments.</p>
+            </div>
+            
+            <div class="app-window">
+                <div class="window-header">
+                    <div class="window-title">Stock Sales App - [Administrator Mode]</div>
+                    <div class="window-controls">
+                        <i class="far fa-window-minimize"></i>
+                        <i class="far fa-window-maximize"></i>
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+                <div class="window-body">
+                    <div class="mock-sidebar">
+                        <div class="mock-nav-item active" data-index="0"><i class="fas fa-home"></i> Dashboard</div>
+                        <div class="mock-nav-item" data-index="1"><i class="fas fa-boxes"></i> Inventory</div>
+                        <div class="mock-nav-item" data-index="2"><i class="fas fa-search"></i> Item View</div>
+                        <div class="mock-nav-item" data-index="3"><i class="fas fa-bell"></i> Alerts</div>
+                        <div class="mock-nav-item" data-index="4"><i class="fas fa-chart-bar"></i> Analytics</div>
+                        <div class="mock-nav-item" data-index="5"><i class="fas fa-receipt"></i> Receipts</div>
+                        <div class="mock-nav-item" data-index="6"><i class="fas fa-cog"></i> Settings</div>
+                    </div>
+                    <div class="window-content">
+                        <div class="slider-container">
+                            <div class="slider-track" id="interface-track">
+                                <img src="images/home.jpg" alt="Home">
+                                <img src="images/stock section.png" alt="Inventory">
+                                <img src="images/ITEMVIEW.png" alt="Lookup">
+                                <img src="images/emailsetings.png" alt="Alerts">
+                                <img src="images/SALES ANLISTCY.png" alt="Analytics">
+                                <img src="images/recipt.png" alt="Receipts">
+                                <img src="images/full action area.png" alt="Settings">
                             </div>
-                            <button class="slider-btn prev"><i class="fas fa-chevron-left"></i></button>
-                            <button class="slider-btn next"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -93,48 +180,49 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+
+
     <section id="features" class="features">
         <div class="container">
             <div class="section-header">
-                <h2>Everything You Need</h2>
-                <p>Powerful features wrapped in a stunning interface.</p>
+                <h2>Everything Your Business Needs</h2>
+                <p>Enterprise-grade features designed for speed and reliability.</p>
             </div>
             <div class="features-grid">
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-boxes"></i></div>
                     <h3>Stock Management</h3>
                     <p>Track inventory in real-time. Add categories, subcategories, and get low stock alerts instantly.</p>
                 </div>
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-cash-register"></i></div>
                     <h3>Quick Sales</h3>
                     <p>Record sales in seconds. Support for Cash, Mobile Money, and Credit payments with digital receipts.</p>
                 </div>
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-book"></i></div>
                     <h3>Credit Book</h3>
                     <p>Never lose track of debts. Manage customer credit sales and track repayments effortlessly.</p>
                 </div>
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
-                    <h3>Analytics</h3>
+                    <h3>Advanced Analytics</h3>
                     <p>Visualize your growth with beautiful charts. Track revenue, profit, and top-selling items.</p>
                 </div>
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-users"></i></div>
-                    <h3>Multi-User</h3>
-                    <p>Secure login for Administrators, Managers, and Sales Associates with role-based access.</p>
+                    <h3>Role-Based Access</h3>
+                    <p>Secure login for Administrators, Managers, and Sales Associates with restricted access protocols.</p>
                 </div>
-                <div class="glass-card feature-card">
+                <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-print"></i></div>
-                    <h3>Smart Receipts</h3>
-                    <p>Generate professional digital receipts with QR codes. Print-ready formats included.</p>
+                    <h3>Professional Receipts</h3>
+                    <p>Generate professional digital receipts with QR codes. Print-ready formats included for all standard printers.</p>
                 </div>
             </div>
         </div>
     </section>
-<!-- Video Demo Section -->
+
     <section id="demo" class="video-demo">
         <div class="container">
             <div class="section-header">
@@ -149,121 +237,162 @@
             </div>
         </div>
     </section>
-    <!-- Showcase Section -->
+
     <section id="showcase" class="showcase">
         <div class="container">
-            <!-- Item 1 -->
+            <!-- Item 1: Executive Dashboard -->
             <div class="showcase-item">
                 <div class="showcase-text">
-                    <h3>Dashboard Overview</h3>
-                    <p>Get a pulse on your business the moment you log in. Key metrics are displayed on beautiful glass cards.</p>
+                    <h3>Executive Analytics Dashboard</h3>
+                    <p>A high-level nerve center for your business, providing real-time insights into your financial health and inventory status.</p>
                     <ul>
-                        <li><i class="fas fa-check"></i> Real-time Revenue Tracking</li>
-                        <li><i class="fas fa-check"></i> Low Stock Alerts</li>
-                        <li><i class="fas fa-check"></i> Daily Sales Summary</li>
+                        <li><i class="fas fa-check"></i> Real-time Revenue & Profit KPIs</li>
+                        <li><i class="fas fa-check"></i> Daily Sales Goal Tracking</li>
+                        <li><i class="fas fa-check"></i> Instant Stock Health Alerts</li>
                     </ul>
                 </div>
                 <div class="showcase-image">
-                    <img src="images/SALES ANLISTCY.png" alt="Stock Sales App  Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    <img src="images/1 (10).jpg" alt="Admin Main Dashboard" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                 </div>
             </div>
 
-            <!-- Item 2 -->
+            <!-- Item 2: Stock Management -->
             <div class="showcase-item">
                 <div class="showcase-text">
-                    <h3>Seamless Sales Point</h3>
-                    <p>Designed for speed. Search products, adjust quantities, and complete transactions without clutter.</p>
+                    <h3>Comprehensive Stock Keeping</h3>
+                    <p>Maintain total control over your inventory with a detailed management system designed for accuracy and scale.</p>
                     <ul>
-                        <li><i class="fas fa-check"></i> Fast Product Search</li>
-                        <li><i class="fas fa-check"></i> Multiple Payment Types</li>
-                        <li><i class="fas fa-check"></i> Automatic Stock Deduction</li>
+                        <li><i class="fas fa-check"></i> Detailed Item Categorization</li>
+                        <li><i class="fas fa-check"></i> Profit Margin Monitoring</li>
+                        <li><i class="fas fa-check"></i> Quick-Action Restock Buttons</li>
                     </ul>
                 </div>
                 <div class="showcase-image">
-                    <img src="images/OJJKOK.png" alt="Stock Sales App  Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    <img src="images/1 (3).jpg" alt="Stock Keeping Management" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Item 3: User Management -->
+            <div class="showcase-item">
+                <div class="showcase-text">
+                    <h3>Admin & Staff Portal</h3>
+                    <p>Securely manage your team with hierarchical access controls and individual staff profiles.</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Secure Role-Based Access</li>
+                        <li><i class="fas fa-check"></i> Staff Activity Oversight</li>
+                        <li><i class="fas fa-check"></i> Quick Add/Remove Profiles</li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="images/1 (1).jpg" alt="Admin Management Portal" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Item 4: Manual Adjustments -->
+            <div class="showcase-item">
+                <div class="showcase-text">
+                    <h3>Precision Stock Actions</h3>
+                    <p>Quickly adjust stock levels for returns, damages, or giveaways while maintaining a perfect audit trail with notes.</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Damage & Return Tracking</li>
+                        <li><i class="fas fa-check"></i> Manual Quantity Overrides</li>
+                        <li><i class="fas fa-check"></i> Mandatory Action Logging</li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="images/1 (5).jpg" alt="Manual Inventory Adjustment" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Item 5: Data Entry -->
+            <div class="showcase-item">
+                <div class="showcase-text">
+                    <h3>Streamlined Item Registration</h3>
+                    <p>Register new products or services in seconds with specialized fields for financial and logistical data.</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Product & Service Support</li>
+                        <li><i class="fas fa-check"></i> Tax & Cost Management</li>
+                        <li><i class="fas fa-check"></i> Image Drag-and-Drop Upload</li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="images/1 (6).jpg" alt="New Item Entry Form" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </div>
+            </div>
+
+            <!-- Item 6: Professional Billing -->
+            <div class="showcase-item">
+                <div class="showcase-text">
+                    <h3>Professional Invoicing</h3>
+                    <p>Generate clean, professional receipts and invoices instantly to provide your customers with transparent transactions.</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Automatic QR Code Generation</li>
+                        <li><i class="fas fa-check"></i> Mixed Payment Support</li>
+                        <li><i class="fas fa-check"></i> Branded Digital/Print Layouts</li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="images/1 (8).jpg" alt="Sales Receipt Generation" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
     <section class="cta-section">
         <div class="container">
-            <div class="cta-box glass">
+            <div class="cta-box">
                 <div class="cta-content">
-                    <h2 style="font-size: 2.5rem; margin-bottom: 20px;">Ready to Upgrade Your Business?</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem;">Join hundreds of businesses managing their stock with precision.</p>
-                    <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare" class="btn-download" style="padding: 15px 40px; font-size: 1.1rem;">
+                    <h2>Ready to Upgrade Your Business?</h2>
+                    <p>Join hundreds of professional businesses managing their stock with precision.</p>
+                    <a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL?hl=fr&gl=CI&ocid=pdpshare" class="btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">
                         <i class="fab fa-windows"></i> Get it on Microsoft Store
                     </a>
-                    <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">Free to download • Windows 10/11 Compatible</p>
+                    <p class="cta-meta">Free to download • Windows Compatible</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Reviews Section -->
     <section id="reviews" class="reviews">
         <div class="container">
             <div class="section-header">
-                <h2>Trusted by Business Owners</h2>
-                <p>See what our users have to say about Stock Sales App .</p>
+                <h2>Trusted by Professionals</h2>
+                <p>Read what verified business owners have to say.</p>
             </div>
             <div class="reviews-grid">
-                <!-- Review Card 1 -->
-                <div class="glass-card review-card">
+                <div class="review-card">
                     <div class="review-stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                     </div>
-                    <p class="review-text">"Stock Sales App  transformed how I manage my retail store. The credit book feature alone saved me hours of manual tracking. The interface is a joy to use."</p>
+                    <p class="review-text">"Stock Sales App transformed how I manage my retail store. The credit book feature alone saved me hours of manual tracking. Highly reliable software."</p>
                     <div class="reviewer">
-                        <div class="avatar">
-                            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah Chen">
-                        </div>
+                        <div class="avatar"><img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah Chen"></div>
                         <div class="reviewer-info">
                             <h4>Sarah Chen</h4>
                             <p>Owner, Chen's Boutique</p>
                         </div>
                     </div>
                 </div>
-                <!-- Review Card 2 -->
-                <div class="glass-card review-card">
+                <div class="review-card">
                     <div class="review-stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                     </div>
                     <p class="review-text">"Finally a Windows app that looks modern and works flawlessly. My team picked it up in minutes. The analytics dashboard gives me insights I never had before."</p>
                     <div class="reviewer">
-                        <div class="avatar">
-                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Okafor">
-                        </div>
+                        <div class="avatar"><img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Okafor"></div>
                         <div class="reviewer-info">
                             <h4>Michael Okafor</h4>
                             <p>CEO, Okafor Enterprises</p>
                         </div>
                     </div>
                 </div>
-                <!-- Review Card 3 -->
-                <div class="glass-card review-card">
+                <div class="review-card">
                     <div class="review-stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
                     </div>
                     <p class="review-text">"The multi-user support is perfect for our team. Managers have full access while cashiers only see what they need. Great security and ease of use."</p>
                     <div class="reviewer">
-                        <div class="avatar">
-                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Linda García">
-                        </div>
+                        <div class="avatar"><img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Linda García"></div>
                         <div class="reviewer-info">
                             <h4>Linda García</h4>
                             <p>Operations Manager, FreshMart</p>
@@ -273,49 +402,79 @@
             </div>
         </div>
     </section>
+
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Contact Support</h2>
+                <p>Our enterprise support team is here to help.</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-card">
+                        <h3>Get in Touch</h3>
+                        <p>For technical support, billing, or general inquiries.</p>
+                        <ul class="contact-details">
+                            <li><i class="fas fa-envelope"></i> support@stocksalesapp.com</li>
+                            <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
+                            <li><i class="fas fa-building"></i> 100 Enterprise Way, Suite 100</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <form class="contact-card">
+                        <input type="text" placeholder="Full Name" required>
+                        <input type="email" placeholder="Business Email" required>
+                        <textarea placeholder="How can we help?" rows="5" required></textarea>
+                        <button type="submit" class="btn-primary">Submit Inquiry</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
     <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <div class="logo">
-                        <i class="fas fa-cube"></i> Stock Sales App 
+                    <h3>Stock Sales App</h3>
+                    <p>The gold standard for Windows business management software. Trusted by professionals globally.</p>
+                    <div class="social-row">
+                        <a href="https://www.tiktok.com/@stocksalesapp"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.instagram.com/stocksalesapp/"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/profile.php?id=61586340244129"><i class="fab fa-facebook"></i></a>
                     </div>
-                    <p>The modern solution for inventory and sales management. Built for productivity, designed for beauty.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Product</h4>
-                    <ul>
+                    <ul class="footer-links">
                         <li><a href="#features">Features</a></li>
-                        <li><a href="#features">Download</a></li>
-                        <li><a href="#showcase">How it Works</a></li>
+                        <li><a href="#interface">Showcase</a></li>
+                        <li><a href="https://apps.microsoft.com/detail/9P2CHLWQG9VL">Microsoft Store</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
                     <h4>Support</h4>
-                    <ul>
-                        <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Contact Us</a></li>
+                    <ul class="footer-links">
+                        <li><a href="#">Contact Support</a></li>
                         <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Use</a></li>
                     </ul>
                 </div>
-                    <div class="footer-col">
-                        <h4>Connect</h4>
-                        <ul>
-                            <li><a href="https://www.tiktok.com/@stocksalesapp"><i class="fab fa-tiktok"></i> TikTok</a></li>
-                            <li><a href="https://www.instagram.com/stocksalesapp/"><i class="fab fa-instagram"></i> Instagram</a></li>
-                            <li><a href="https://www.facebook.com/profile.php?id=61586340244129"><i class="fab fa-facebook"></i> Facebook</a></li>
-                        </ul>
-                    </div>
             </div>
-            <div class="copyright">
-                &copy; 2026 Stock Sales App . All rights reserved.
-            </div>
+            <div class="copyright">&copy; 2026 Stock Sales App. All rights reserved.</div>
         </div>
     </footer>
-<div id="image-modal" class="image-modal" onclick="this.style.display='none'">
-    <img src="" alt="Zoomed">
-</div>
-<script src="index.js"></script>
+
+    <!-- Zoom Modal -->
+    <div class="modal" id="image-modal">
+        <img src="" alt="Zoomed View">
+    </div>
+
+    <script src="index.js"></script>
 </body>
 </html>
