@@ -62,3 +62,44 @@
         modal.addEventListener('click', () => {
             modal.style.display = 'none';
         });
+// Contact form submission
+const contactForm = document.getElementById('contactForm');
+
+contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Get form values
+    const name = contactForm.querySelector('input[name="name"]').value;
+    const email = contactForm.querySelector('input[name="email"]').value;
+    const message = contactForm.querySelector('textarea[name="message"]').value;
+    
+    // Disable button to prevent double submission
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    
+    try {
+        const response = await fetch('https://stocksalesapp-store.vercel.app/api/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, email, message })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Thank you for your inquiry! We will get back to you soon.');
+            contactForm.reset();
+        } else {
+            alert('Error: ' + (data.error || 'Something went wrong. Please try again.'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('There was an error sending your message. Please try again.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Inquiry';
+    }
+});
