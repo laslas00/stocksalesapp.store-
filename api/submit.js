@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Contact Form <stocksalesapp.store>', // change after domain verified
+      from: 'stocksalesapp.store', // change after domain verified
       to: ['support@stocksalesapp.store'],
       subject: `New contact from ${name}`,
       reply_to: email,
