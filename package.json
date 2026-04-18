@@ -2,6 +2,7 @@
   "name": "stocksalesapp-store",
   "version": "1.0.0",
   "dependencies": {
-    "resend": "^4.0.0"
+    "resend": "^4.0.0",
+    "@supabase/supabase-js": "^2.39.0"
   }
 }
