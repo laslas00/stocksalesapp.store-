@@ -104,4 +104,28 @@ contactForm.addEventListener('submit', async (e) => {
     }
 });
 
+  (function() {
+    const visitorId = localStorage.getItem('visitor_id') || (() => {
+      const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+      localStorage.setItem('visitor_id', id);
+      return id;
+    })();
 
+    const ua = navigator.userAgent;
+    const browser = /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Edge/.test(ua) ? 'Edge' : 'Other';
+    const os = /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : 'Other';
+    const deviceType = /tablet|ipad|playbook|silk|android(?!.*mobile)/i.test(ua) ? 'tablet' : /Mobile|iPhone|Android|BlackBerry|IEMobile|Opera Mini/i.test(ua) ? 'mobile' : 'desktop';
+
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        visitorId,
+        pageUrl: window.location.href,
+        referrer: document.referrer || 'direct',
+        browser,
+        os,
+        deviceType
+      })
+    }).catch(err => console.error('Tracking error:', err));
+  })();
