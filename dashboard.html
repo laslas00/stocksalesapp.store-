@@ -1,257 +1,269 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytics Dashboard | StockSalesApp</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <link rel="icon" type="image/x-icon" href="icon.ico">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      min-height: 100vh;
-      padding: 2rem;
-    }
-
-    /* Glassmorphic container */
-    .glass-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      border-radius: 2rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    /* Login panel */
-    .login-container {
-      min-height: 80vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .login-box {
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(16px);
-      border-radius: 2rem;
-      padding: 2.5rem;
-      width: 100%;
-      max-width: 420px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.4);
-    }
-
-    .login-box h2 {
-      color: white;
-      font-size: 1.8rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      letter-spacing: -0.02em;
-    }
-
-    .login-box p {
-      color: #94a3b8;
-      margin-bottom: 2rem;
-      font-size: 0.9rem;
-    }
-
-    .login-box input {
-      width: 100%;
-      padding: 0.9rem 1rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 1rem;
-      color: white;
-      font-size: 1rem;
-      transition: all 0.2s;
-      margin-bottom: 1.5rem;
-    }
-
-    .login-box input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      background: rgba(59, 130, 246, 0.1);
-    }
-
-    .login-box button {
-      width: 100%;
-      padding: 0.9rem;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      border: none;
-      border-radius: 1rem;
-      color: white;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform 0.1s, opacity 0.2s;
-    }
-
-    .login-box button:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-
-    /* Dashboard content */
-    .dashboard-header {
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .dashboard-header h1 {
-      color: white;
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #fff, #94a3b8);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2.5rem;
-    }
-
-    .stat-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(8px);
-      border-radius: 1.5rem;
-      padding: 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.2s;
-    }
-
-    .stat-card:hover {
-      background: rgba(255, 255, 255, 0.08);
-      transform: translateY(-3px);
-    }
-
-    .stat-label {
-      color: #94a3b8;
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: white;
-      line-height: 1.2;
-    }
-
-    .chart-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 1.8rem;
-    }
-
-    .chart-card {
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(8px);
-      border-radius: 1.5rem;
-      padding: 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .chart-title {
-      color: #e2e8f0;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .chart-title i {
-      font-size: 1.2rem;
-    }
-
-    canvas {
-      max-height: 320px;
-      width: 100%;
-    }
-
-    .footer-note {
-      text-align: center;
-      margin-top: 2.5rem;
-      color: #64748b;
-      font-size: 0.8rem;
-    }
-
-    @media (max-width: 768px) {
-      body { padding: 1rem; }
-      .chart-grid { grid-template-columns: 1fr; }
-      .stat-number { font-size: 1.8rem; }
-    }
-  </style>
-</head>
-<body>
-
-<div id="app">
-  <!-- LOGIN PANEL -->
-  <div id="loginPanel" class="login-container">
-    <div class="login-box">
-      <h2>Analytics Dashboard</h2>
-      <p>Enter your secure access key</p>
-      <input type="password" id="passwordInput" placeholder="••••••••" autofocus>
-      <button onclick="checkPassword()">Unlock Dashboard →</button>
-    </div>
-  </div>
-
-  <!-- DASHBOARD CONTENT (hidden initially) -->
-  <div id="dashboardContent" style="display: none;">
-    <div class="container">
-      <div class="dashboard-header">
-        <h1>📊 Visitor Analytics</h1>
-        <div style="color:#94a3b8; font-size:0.85rem;">Real‑time | stocksalesapp.store</div>
-      </div>
-
-      <div class="stats-grid" id="summaryStats"></div>
-
-      <div class="chart-grid">
-        <div class="chart-card"><div class="chart-title">🌐 Browsers</div><canvas id="browserChart"></canvas></div>
-        <div class="chart-card"><div class="chart-title">📱 Devices</div><canvas id="deviceChart"></canvas></div>
-        <div class="chart-card"><div class="chart-title">💻 Operating Systems</div><canvas id="osChart"></canvas></div>
-        <div class="chart-card"><div class="chart-title">📈 Page Views (Last 7 days)</div><canvas id="visitorsOverTime"></canvas></div>
-        <div class="chart-card"><div class="chart-title">🌍 Top Countries</div><canvas id="topCountries"></canvas></div>
-      </div>
-      <div class="footer-note">Data tracked via Supabase | Live since deployment</div>
-    </div>
-  </div>
-</div>
-
 <script>
 // ========== CONFIGURATION ==========
 const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
 const DASHBOARD_PASSWORD = 'Doaswedo*123';  // Change to a strong password
+const REFRESH_INTERVAL_MS = 30000; // 30 seconds
 
 let supabaseClient;
 let charts = {};
+let refreshInterval = null;
+
+// ========== LOADING OVERLAY ==========
+// Create loading overlay dynamically
+const loadingOverlay = document.createElement('div');
+loadingOverlay.id = 'loadingOverlay';
+loadingOverlay.style.cssText = `
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+`;
+loadingOverlay.innerHTML = `
+  <div class="gemini-loader">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+`;
+document.body.appendChild(loadingOverlay);
+loadingOverlay.style.display = 'none';
+
+// Add CSS for Gemini‑like loader
+const style = document.createElement('style');
+style.textContent = `
+  .gemini-loader {
+    display: flex;
+    gap: 12px;
+  }
+  .gemini-loader .dot {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: gemini-pulse 1.4s ease-in-out infinite both;
+  }
+  .gemini-loader .dot:nth-child(1) { animation-delay: -0.32s; }
+  .gemini-loader .dot:nth-child(2) { animation-delay: -0.16s; }
+  .gemini-loader .dot:nth-child(3) { animation-delay: 0s; }
+  .gemini-loader .dot:nth-child(4) { animation-delay: 0.16s; }
+  @keyframes gemini-pulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+`;
+document.head.appendChild(style);
+
+function showLoading() {
+  loadingOverlay.style.display = 'flex';
+}
+
+function hideLoading() {
+  loadingOverlay.style.display = 'none';
+}
+
+// ========== DESTROY ALL CHARTS ==========
+function destroyAllCharts() {
+  Object.keys(charts).forEach(key => {
+    if (charts[key]) {
+      charts[key].destroy();
+      delete charts[key];
+    }
+  });
+}
+
+// ========== UPDATE TIMESTAMP ==========
+function updateTimestamp() {
+  let tsDiv = document.getElementById('timestamp');
+  if (!tsDiv) {
+    const headerDiv = document.querySelector('.dashboard-header');
+    tsDiv = document.createElement('div');
+    tsDiv.id = 'timestamp';
+    tsDiv.style.cssText = 'color:#94a3b8; font-size:0.75rem; margin-top:0.5rem;';
+    headerDiv.appendChild(tsDiv);
+  }
+  tsDiv.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+}
+
+// ========== LOAD DATA (with loading animation) ==========
+async function loadData() {
+  if (!supabaseClient) {
+    alert('Supabase not ready. Please wait.');
+    return;
+  }
+  showLoading();
+  try {
+    const { data, error } = await supabaseClient.from('visits').select('*');
+    if (error) throw error;
+
+    // Clear existing content but preserve DOM elements
+    const summaryDiv = document.getElementById('summaryStats');
+    if (!data || data.length === 0) {
+      summaryDiv.innerHTML = `
+        <div class="stat-card" style="grid-column:1/-1; text-align:center;">
+          <div class="stat-label">No data yet</div>
+          <div class="stat-number">✨</div>
+          <div style="color:#94a3b8; margin-top:0.5rem;">Visit your website to start tracking</div>
+        </div>`;
+      destroyAllCharts();
+      updateTimestamp();
+      hideLoading();
+      return;
+    }
+
+    // --- Summary Stats ---
+    const uniqueVisitors = new Set(data.map(v => v.visitor_id)).size;
+    const totalViews = data.length;
+    const mobileVisits = data.filter(v => v.device_type === 'mobile').length;
+    const desktopVisits = data.filter(v => v.device_type === 'desktop').length;
+    summaryDiv.innerHTML = `
+      <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-number">${uniqueVisitors}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Page Views</div><div class="stat-number">${totalViews}</div></div>
+      <div class="stat-card"><div class="stat-label">Mobile Views</div><div class="stat-number">${mobileVisits}</div></div>
+      <div class="stat-card"><div class="stat-label">Desktop Views</div><div class="stat-number">${desktopVisits}</div></div>
+    `;
+
+    // Destroy old charts before creating new ones
+    destroyAllCharts();
+
+    // Browser chart
+    const browserCounts = {};
+    data.forEach(v => { browserCounts[v.browser] = (browserCounts[v.browser] || 0) + 1; });
+    charts.browser = new Chart(document.getElementById('browserChart'), {
+      type: 'bar',
+      data: { labels: Object.keys(browserCounts), datasets: [{ label: 'Visits', data: Object.values(browserCounts), backgroundColor: '#3b82f6', borderRadius: 8 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    });
+
+    // Device chart
+    const deviceCounts = {};
+    data.forEach(v => { deviceCounts[v.device_type] = (deviceCounts[v.device_type] || 0) + 1; });
+    charts.device = new Chart(document.getElementById('deviceChart'), {
+      type: 'pie',
+      data: { labels: Object.keys(deviceCounts), datasets: [{ data: Object.values(deviceCounts), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'] }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    });
+
+    // OS chart
+    const osCounts = {};
+    data.forEach(v => { osCounts[v.os] = (osCounts[v.os] || 0) + 1; });
+    charts.os = new Chart(document.getElementById('osChart'), {
+      type: 'bar',
+      data: { labels: Object.keys(osCounts), datasets: [{ label: 'Visits', data: Object.values(osCounts), backgroundColor: '#8b5cf6', borderRadius: 8 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    });
+
+    // Time series (last 7 days)
+    const last7Days = [...Array(7)].map((_, i) => new Date(Date.now() - i*86400000).toISOString().slice(0,10)).reverse();
+    const dailyCounts = last7Days.map(day => data.filter(v => v.visited_at && v.visited_at.slice(0,10) === day).length);
+    charts.time = new Chart(document.getElementById('visitorsOverTime'), {
+      type: 'line',
+      data: { labels: last7Days, datasets: [{ label: 'Views', data: dailyCounts, borderColor: '#10b981', tension: 0.3, fill: true, backgroundColor: 'rgba(16,185,129,0.1)' }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    });
+
+    // Top countries
+    const countryCounts = {};
+    data.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1; });
+    const sortedCountries = Object.entries(countryCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
+    charts.countries = new Chart(document.getElementById('topCountries'), {
+      type: 'bar',
+      data: { labels: sortedCountries.map(c=>c[0]), datasets: [{ label: 'Visits', data: sortedCountries.map(c=>c[1]), backgroundColor: '#ef4444', borderRadius: 8 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    });
+
+    updateTimestamp();
+  } catch (err) {
+    console.error('Load error:', err);
+    alert('Failed to refresh data. Check console.');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ========== MANUAL REFRESH ==========
+function manualRefresh() {
+  loadData();
+}
+
+// ========== START AUTO REFRESH ==========
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    // Only refresh if dashboard is visible
+    if (document.getElementById('dashboardContent').style.display !== 'none') {
+      loadData();
+    }
+  }, REFRESH_INTERVAL_MS);
+}
+
+// ========== STOP AUTO REFRESH ==========
+function stopAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+}
+
+// ========== LOGIN HANDLER ==========
+function checkPassword() {
+  const pwd = document.getElementById('passwordInput').value;
+  if (pwd === DASHBOARD_PASSWORD) {
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('dashboardContent').style.display = 'block';
+    // Add manual refresh button to header
+    const headerDiv = document.querySelector('.dashboard-header');
+    if (!document.getElementById('refreshBtn')) {
+      const refreshBtn = document.createElement('button');
+      refreshBtn.id = 'refreshBtn';
+      refreshBtn.innerHTML = '🔄 Refresh';
+      refreshBtn.style.cssText = `
+        background: rgba(59,130,246,0.3);
+        border: 1px solid rgba(59,130,246,0.5);
+        border-radius: 2rem;
+        padding: 0.5rem 1.2rem;
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      `;
+      refreshBtn.onclick = () => manualRefresh();
+      refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(59,130,246,0.5)';
+      refreshBtn.onmouseout = () => refreshBtn.style.background = 'rgba(59,130,246,0.3)';
+      headerDiv.appendChild(refreshBtn);
+    }
+    startAutoRefresh();
+    loadData(); // initial load
+  } else {
+    alert('Access denied: wrong password');
+  }
+}
+
+// Optional: stop auto-refresh when page is hidden (performance)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopAutoRefresh();
+  } else {
+    if (document.getElementById('dashboardContent').style.display !== 'none') {
+      startAutoRefresh();
+      loadData(); // refresh immediately on visibility return
+    }
+  }
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+  stopAutoRefresh();
+});
 
 // Initialize Supabase after library loads
 window.addEventListener('load', function() {
@@ -263,109 +275,4 @@ window.addEventListener('load', function() {
     alert('Could not load analytics library. Please refresh.');
   }
 });
-
-function checkPassword() {
-  const pwd = document.getElementById('passwordInput').value;
-  if (pwd === DASHBOARD_PASSWORD) {
-    document.getElementById('loginPanel').style.display = 'none';
-    document.getElementById('dashboardContent').style.display = 'block';
-    loadData();
-  } else {
-    alert('Access denied: wrong password');
-  }
-}
-
-async function loadData() {
-  if (!supabaseClient) {
-    alert('Supabase not ready. Please wait a moment and try again.');
-    return;
-  }
-
-  const { data, error } = await supabaseClient.from('visits').select('*');
-  if (error) {
-    console.error(error);
-    alert('Failed to fetch data. Check console.');
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    document.getElementById('summaryStats').innerHTML = `
-      <div class="stat-card" style="grid-column:1/-1; text-align:center;">
-        <div class="stat-label">No data yet</div>
-        <div class="stat-number">✨</div>
-        <div style="color:#94a3b8; margin-top:0.5rem;">Visit your website to start tracking</div>
-      </div>`;
-    return;
-  }
-
-  // --- Summary Stats ---
-  const uniqueVisitors = new Set(data.map(v => v.visitor_id)).size;
-  const totalViews = data.length;
-  const mobileVisits = data.filter(v => v.device_type === 'mobile').length;
-  const desktopVisits = data.filter(v => v.device_type === 'desktop').length;
-  document.getElementById('summaryStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Unique Visitors</div><div class="stat-number">${uniqueVisitors}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Page Views</div><div class="stat-number">${totalViews}</div></div>
-    <div class="stat-card"><div class="stat-label">Mobile Views</div><div class="stat-number">${mobileVisits}</div></div>
-    <div class="stat-card"><div class="stat-label">Desktop Views</div><div class="stat-number">${desktopVisits}</div></div>
-  `;
-
-  // Helper to destroy old charts
-  function destroyChart(id) {
-    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-  }
-
-  // Browser chart
-  destroyChart('browser');
-  const browserCounts = {};
-  data.forEach(v => { browserCounts[v.browser] = (browserCounts[v.browser] || 0) + 1; });
-  charts.browser = new Chart(document.getElementById('browserChart'), {
-    type: 'bar',
-    data: { labels: Object.keys(browserCounts), datasets: [{ label: 'Visits', data: Object.values(browserCounts), backgroundColor: '#3b82f6', borderRadius: 8 }] },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-  });
-
-  // Device chart (pie)
-  destroyChart('device');
-  const deviceCounts = {};
-  data.forEach(v => { deviceCounts[v.device_type] = (deviceCounts[v.device_type] || 0) + 1; });
-  charts.device = new Chart(document.getElementById('deviceChart'), {
-    type: 'pie',
-    data: { labels: Object.keys(deviceCounts), datasets: [{ data: Object.values(deviceCounts), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'] }] },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-  });
-
-  // OS chart
-  destroyChart('os');
-  const osCounts = {};
-  data.forEach(v => { osCounts[v.os] = (osCounts[v.os] || 0) + 1; });
-  charts.os = new Chart(document.getElementById('osChart'), {
-    type: 'bar',
-    data: { labels: Object.keys(osCounts), datasets: [{ label: 'Visits', data: Object.values(osCounts), backgroundColor: '#8b5cf6', borderRadius: 8 }] },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-  });
-
-  // Time series (last 7 days)
-  destroyChart('time');
-  const last7Days = [...Array(7)].map((_, i) => new Date(Date.now() - i*86400000).toISOString().slice(0,10)).reverse();
-  const dailyCounts = last7Days.map(day => data.filter(v => v.visited_at && v.visited_at.slice(0,10) === day).length);
-  charts.time = new Chart(document.getElementById('visitorsOverTime'), {
-    type: 'line',
-    data: { labels: last7Days, datasets: [{ label: 'Views', data: dailyCounts, borderColor: '#10b981', tension: 0.3, fill: true, backgroundColor: 'rgba(16,185,129,0.1)' }] },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-  });
-
-  // Top countries
-  destroyChart('countries');
-  const countryCounts = {};
-  data.forEach(v => { if (v.country) countryCounts[v.country] = (countryCounts[v.country] || 0) + 1; });
-  const sortedCountries = Object.entries(countryCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
-  charts.countries = new Chart(document.getElementById('topCountries'), {
-    type: 'bar',
-    data: { labels: sortedCountries.map(c=>c[0]), datasets: [{ label: 'Visits', data: sortedCountries.map(c=>c[1]), backgroundColor: '#ef4444', borderRadius: 8 }] },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-  });
-}
 </script>
-</body>
-</html>
