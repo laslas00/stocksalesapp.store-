@@ -2,269 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StockApp Usage Analytics</title>
-  <!-- Chart.js, Luxon (for date handling), Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <link rel="icon" type="image/x-icon" href="icon.ico">
+      <link rel="icon" type="image/x-icon" href="icon.ico">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    /* (keep existing styles – same as before) */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0a0c10;
       color: #e1e9f0;
       padding: 24px;
-      transition: background 0.2s, color 0.2s;
     }
-
-    /* Light mode (optional) */
-    body.light-mode {
-      background: #f5f7fb;
-      color: #1e293b;
-    }
-
-    .container {
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-      background: linear-gradient(135deg, #ffffff, #6b8cff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .controls {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .btn {
-      background: #2d3748;
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .btn-primary {
-      background: #3b82f6;
-    }
-    .btn-primary:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
-    }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid #4b5563;
-    }
-    .btn-outline:hover {
-      background: #374151;
-    }
-    .date-range {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      background: #1e293b;
-      padding: 4px 12px;
-      border-radius: 40px;
-    }
-    .date-input {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-    }
-    .preset-btn {
-      background: #2d3748;
-      border: none;
-      color: #cbd5e1;
-      padding: 6px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    .preset-btn.active {
-      background: #3b82f6;
-      color: white;
-    }
-
-    /* Stats grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
-    }
-    .stat-card {
-      background: rgba(255,255,255,0.03);
-      backdrop-filter: blur(8px);
-      border-radius: 20px;
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: transform 0.2s;
-    }
-    .stat-card:hover {
-      transform: translateY(-2px);
-      background: rgba(255,255,255,0.05);
-    }
-    .stat-label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #94a3b8;
-      margin-bottom: 8px;
-    }
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .stat-trend {
-      font-size: 0.75rem;
-      margin-top: 8px;
-      color: #10b981;
-    }
-
-    /* Charts grid */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
-    }
-    .chart-card {
-      background: rgba(255,255,255,0.02);
-      border-radius: 20px;
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-    .chart-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    canvas {
-      max-height: 280px;
-      width: 100%;
-    }
-
-    /* Filter bar */
-    .filter-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 24px;
-      background: rgba(255,255,255,0.02);
-      padding: 12px 20px;
-      border-radius: 40px;
-    }
-    .event-filter {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .event-filter-btn {
-      background: #2d3748;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 30px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      color: #cbd5e1;
-    }
-    .event-filter-btn.active {
-      background: #3b82f6;
-      color: white;
-    }
-    .search-box {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 30px;
-      padding: 6px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .search-box input {
-      background: transparent;
-      border: none;
-      color: white;
-      outline: none;
-      font-size: 0.85rem;
-      width: 200px;
-    }
-
-    /* Recent events table */
-    .table-container {
-      background: rgba(255,255,255,0.02);
-      border-radius: 20px;
-      overflow-x: auto;
-      margin-top: 24px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      text-align: left;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    th {
-      background: rgba(255,255,255,0.05);
-      font-weight: 600;
-    }
-    .footer {
-      margin-top: 24px;
-      text-align: center;
-      font-size: 0.75rem;
-      color: #64748b;
-    }
-
-    @media (max-width: 768px) {
-      body { padding: 16px; }
-      .charts-grid { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+    h1 { font-size: 1.8rem; font-weight: 600; background: linear-gradient(135deg, #ffffff, #6b8cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .btn { background: #2d3748; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #3b82f6; }
+    .btn-outline { background: transparent; border: 1px solid #4b5563; }
+    .date-range { display: flex; gap: 8px; align-items: center; background: #1e293b; padding: 4px 12px; border-radius: 40px; }
+    .date-input { background: #0f172a; border: 1px solid #334155; color: white; padding: 6px 12px; border-radius: 6px; }
+    .preset-btn { background: #2d3748; border: none; color: #cbd5e1; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; }
+    .preset-btn.active { background: #3b82f6; color: white; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px; }
+    .stat-card { background: rgba(255,255,255,0.03); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.08); }
+    .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+    .stat-number { font-size: 2.5rem; font-weight: 700; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .chart-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
+    .chart-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+    canvas { max-height: 280px; width: 100%; }
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; background: rgba(255,255,255,0.02); padding: 12px 20px; border-radius: 40px; }
+    .event-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+    .event-filter-btn { background: #2d3748; border: none; padding: 6px 14px; border-radius: 30px; font-size: 0.8rem; cursor: pointer; color: #cbd5e1; }
+    .event-filter-btn.active { background: #3b82f6; color: white; }
+    .search-box { background: #1e293b; border: 1px solid #334155; border-radius: 30px; padding: 6px 16px; display: flex; align-items: center; gap: 8px; }
+    .search-box input { background: transparent; border: none; color: white; outline: none; width: 200px; }
+    .table-container { background: rgba(255,255,255,0.02); border-radius: 20px; overflow-x: auto; margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { background: rgba(255,255,255,0.05); font-weight: 600; }
+    .footer { margin-top: 24px; text-align: center; font-size: 0.75rem; color: #64748b; }
+    @media (max-width: 768px) { body { padding: 16px; } .charts-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <div class="container">
-  <!-- Login overlay (hidden after success) -->
   <div id="loginOverlay" style="position: fixed; inset: 0; background: #0a0c10; z-index: 1000; display: flex; align-items: center; justify-content: center;">
     <div style="background: #1e293b; padding: 2rem; border-radius: 1.5rem; width: 320px; text-align: center;">
       <h2 style="margin-bottom: 1rem;">Analytics Dashboard</h2>
@@ -273,18 +60,15 @@
     </div>
   </div>
 
-  <!-- Main dashboard (hidden until login) -->
   <div id="dashboard" style="display: none;">
     <div class="header">
       <h1><i class="fas fa-chart-line"></i> StockApp Usage Analytics</h1>
       <div class="controls">
         <button id="refreshBtn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Refresh</button>
         <button id="exportCsvBtn" class="btn btn-outline"><i class="fas fa-download"></i> Export CSV</button>
-        <button id="themeToggle" class="btn btn-outline"><i class="fas fa-moon"></i> Dark</button>
       </div>
     </div>
 
-    <!-- Date Range Selector -->
     <div class="filter-bar">
       <div class="date-range">
         <span><i class="far fa-calendar-alt"></i></span>
@@ -300,11 +84,15 @@
         <button data-preset="month" class="preset-btn">This month</button>
       </div>
       <div class="event-filter">
-        <button data-event="all" class="event-filter-btn active">All events</button>
+        <button data-event="all" class="event-filter-btn active">All</button>
         <button data-event="app_start" class="event-filter-btn">App start</button>
+        <button data-event="dashboard_shown" class="event-filter-btn">Dashboard</button>
         <button data-event="sale_recorded" class="event-filter-btn">Sales</button>
-        <button data-event="stock_updated" class="event-filter-btn">Stock</button>
-        <button data-event="login" class="event-filter-btn">Login</button>
+        <button data-event="receipt_custom_generated" class="event-filter-btn">Custom Receipt</button>
+        <button data-event="credit_sales_section_opened" class="event-filter-btn">Credit Sales</button>
+        <button data-event="item_added_to_stock" class="event-filter-btn">Add Stock</button>
+        <button data-event="free_mode_activated" class="event-filter-btn">Free Mode</button>
+        <button data-event="user_mode_activated" class="event-filter-btn">Mode Switch</button>
       </div>
       <div class="search-box">
         <i class="fas fa-search"></i>
@@ -312,54 +100,31 @@
       </div>
     </div>
 
-    <!-- Key Metrics -->
-    <div class="stats-grid" id="statsGrid">
-      <!-- dynamic -->
-    </div>
-
-    <!-- Charts -->
+    <div class="stats-grid" id="statsGrid"></div>
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title"><span>📈 Daily Active Devices</span> <span id="dailyActiveLegend"></span></div>
-        <canvas id="dailyActiveChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">🥧 Event Type Distribution</div>
-        <canvas id="eventTypeChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">🌍 Top Countries</div>
-        <canvas id="topCountriesChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">⏰ Activity by Hour</div>
-        <canvas id="hourlyChart"></canvas>
-      </div>
+      <div class="chart-card"><div class="chart-title">📈 Daily Active Devices</div><canvas id="dailyActiveChart"></canvas></div>
+      <div class="chart-card"><div class="chart-title">🥧 Event Type Distribution</div><canvas id="eventTypeChart"></canvas></div>
+      <div class="chart-card"><div class="chart-title">🌍 Top Countries</div><canvas id="topCountriesChart"></canvas></div>
+      <div class="chart-card"><div class="chart-title">⏰ Activity by Hour</div><canvas id="hourlyChart"></canvas></div>
     </div>
 
-    <!-- Recent Events Table -->
     <div class="table-container">
       <table id="eventsTable">
-        <thead>
-          <tr><th>Time</th><th>Event</th><th>Username</th><th>Device ID</th><th>Location</th><th>Details</th></tr>
-        </thead>
+        <thead><tr><th>Time</th><th>Event</th><th>Username</th><th>Device ID</th><th>Location</th><th>Details</th></tr></thead>
         <tbody id="eventsTableBody"></tbody>
       </table>
     </div>
-    <div class="footer">
-      Last updated: <span id="lastUpdateTime"></span> — Data from Supabase
-    </div>
+    <div class="footer">Last updated: <span id="lastUpdateTime"></span> — Data from Supabase</div>
   </div>
 </div>
 
 <script>
-  // ========== CONFIGURATION ==========
   const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
-  const DASHBOARD_PASSWORD = 'Doaswedo*123'; // Change to your secure password
+  const DASHBOARD_PASSWORD = 'Doaswedo*123'; // Change to your password
 
   let supabaseClient;
-  let rawData = [];          // all fetched events
+  let rawData = [];
   let filteredData = [];
   let currentEventFilter = 'all';
   let currentSearch = '';
@@ -367,47 +132,26 @@
   let endDate = null;
   let charts = {};
 
-  // Helper: format date for display
+  function initSupabase() { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
   const formatDate = (iso) => luxon.DateTime.fromISO(iso).toFormat('yyyy-MM-dd HH:mm:ss');
   const formatShortDate = (iso) => luxon.DateTime.fromISO(iso).toFormat('yyyy-MM-dd');
 
-  // Initialize Supabase after login
-  function initSupabase() {
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-
-  // Fetch data from Supabase
   async function fetchData() {
     if (!supabaseClient) return;
     let query = supabaseClient.from('app_events').select('*').order('created_at', { ascending: false });
-    if (startDate && endDate) {
-      query = query.gte('created_at', startDate).lte('created_at', endDate + 'T23:59:59');
-    }
+    if (startDate && endDate) query = query.gte('created_at', startDate).lte('created_at', endDate + 'T23:59:59');
     const { data, error } = await query;
-    if (error) {
-      console.error('Fetch error:', error);
-      alert('Failed to load data. Check console.');
-      return [];
-    }
+    if (error) { console.error(error); alert('Failed to load data'); return []; }
     rawData = data || [];
     applyFilters();
-    return rawData;
   }
 
-  // Apply event type filter and search
   function applyFilters() {
     let filtered = [...rawData];
-    if (currentEventFilter !== 'all') {
-      filtered = filtered.filter(e => e.event_type === currentEventFilter);
-    }
-    if (currentSearch.trim() !== '') {
-      const searchLower = currentSearch.toLowerCase();
-      filtered = filtered.filter(e => 
-        e.event_type.toLowerCase().includes(searchLower) ||
-        (e.username && e.username.toLowerCase().includes(searchLower)) ||
-        (e.city && e.city.toLowerCase().includes(searchLower)) ||
-        (e.country && e.country.toLowerCase().includes(searchLower))
-      );
+    if (currentEventFilter !== 'all') filtered = filtered.filter(e => e.event_type === currentEventFilter);
+    if (currentSearch.trim()) {
+      const s = currentSearch.toLowerCase();
+      filtered = filtered.filter(e => e.event_type.toLowerCase().includes(s) || (e.username && e.username.toLowerCase().includes(s)) || (e.city && e.city.toLowerCase().includes(s)) || (e.country && e.country.toLowerCase().includes(s)));
     }
     filteredData = filtered;
     renderStats();
@@ -416,114 +160,82 @@
     document.getElementById('lastUpdateTime').innerText = new Date().toLocaleString();
   }
 
-  // Render key metrics
   function renderStats() {
     const uniqueDevices = new Set(filteredData.map(d => d.device_id)).size;
-    const totalEvents = filteredData.length;
+    const total = filteredData.length;
     const appStarts = filteredData.filter(e => e.event_type === 'app_start').length;
     const sales = filteredData.filter(e => e.event_type === 'sale_recorded').length;
-    const stockUpdates = filteredData.filter(e => e.event_type === 'stock_updated').length;
-    const logins = filteredData.filter(e => e.event_type === 'login').length;
-
-    const statsHtml = `
-      <div class="stat-card"><div class="stat-label">Active Devices</div><div class="stat-number">${uniqueDevices}</div><div class="stat-trend"><i class="fas fa-chart-simple"></i> unique</div></div>
-      <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-number">${totalEvents}</div><div class="stat-trend">in selected period</div></div>
+    const dashboard = filteredData.filter(e => e.event_type === 'dashboard_shown').length;
+    const receipts = filteredData.filter(e => e.event_type === 'receipt_custom_generated').length;
+    const credit = filteredData.filter(e => e.event_type === 'credit_sales_section_opened').length;
+    const stockAdds = filteredData.filter(e => e.event_type === 'item_added_to_stock').length;
+    const freeMode = filteredData.filter(e => e.event_type === 'free_mode_activated').length;
+    const modeSwitch = filteredData.filter(e => e.event_type === 'user_mode_activated').length;
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Active Devices</div><div class="stat-number">${uniqueDevices}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-number">${total}</div></div>
       <div class="stat-card"><div class="stat-label">App Starts</div><div class="stat-number">${appStarts}</div></div>
-      <div class="stat-card"><div class="stat-label">Sales Recorded</div><div class="stat-number">${sales}</div></div>
-      <div class="stat-card"><div class="stat-label">Stock Updates</div><div class="stat-number">${stockUpdates}</div></div>
-      <div class="stat-card"><div class="stat-label">Logins</div><div class="stat-number">${logins}</div></div>
+      <div class="stat-card"><div class="stat-label">Sales</div><div class="stat-number">${sales}</div></div>
+      <div class="stat-card"><div class="stat-label">Dashboard Views</div><div class="stat-number">${dashboard}</div></div>
+      <div class="stat-card"><div class="stat-label">Custom Receipts</div><div class="stat-number">${receipts}</div></div>
+      <div class="stat-card"><div class="stat-label">Credit Sales Opened</div><div class="stat-number">${credit}</div></div>
+      <div class="stat-card"><div class="stat-label">Items Added</div><div class="stat-number">${stockAdds}</div></div>
+      <div class="stat-card"><div class="stat-label">Free Mode Activations</div><div class="stat-number">${freeMode}</div></div>
+      <div class="stat-card"><div class="stat-label">Mode Switches</div><div class="stat-number">${modeSwitch}</div></div>
     `;
-    document.getElementById('statsGrid').innerHTML = statsHtml;
   }
 
-  // Destroy old charts
-  function destroyChart(chartId) {
-    if (charts[chartId]) {
-      charts[chartId].destroy();
-      delete charts[chartId];
-    }
-  }
+  function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-  // Render all charts
   function renderCharts() {
-    // 1. Daily Active Devices (unique devices per day)
+    // Daily active devices
     const daysMap = new Map();
-    filteredData.forEach(e => {
-      const day = formatShortDate(e.created_at);
-      if (!daysMap.has(day)) daysMap.set(day, new Set());
-      daysMap.get(day).add(e.device_id);
-    });
+    filteredData.forEach(e => { const day = formatShortDate(e.created_at); if (!daysMap.has(day)) daysMap.set(day, new Set()); daysMap.get(day).add(e.device_id); });
     const sortedDays = Array.from(daysMap.keys()).sort();
     const dailyActive = sortedDays.map(day => daysMap.get(day).size);
+    destroyChart('daily');
+    charts.daily = new Chart(document.getElementById('dailyActiveChart'), { type: 'line', data: { labels: sortedDays, datasets: [{ label: 'Active Devices', data: dailyActive, borderColor: '#3b82f6', fill: true }] } });
 
-    destroyChart('dailyActive');
-    const ctxDaily = document.getElementById('dailyActiveChart').getContext('2d');
-    charts.dailyActive = new Chart(ctxDaily, {
-      type: 'line',
-      data: { labels: sortedDays, datasets: [{ label: 'Active Devices', data: dailyActive, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
-      options: { responsive: true, maintainAspectRatio: true }
-    });
-
-    // 2. Event type distribution (pie)
+    // Event type pie
     const typeCount = {};
     filteredData.forEach(e => { typeCount[e.event_type] = (typeCount[e.event_type] || 0) + 1; });
     destroyChart('eventType');
-    const ctxPie = document.getElementById('eventTypeChart').getContext('2d');
-    charts.eventType = new Chart(ctxPie, {
-      type: 'pie',
-      data: { labels: Object.keys(typeCount), datasets: [{ data: Object.values(typeCount), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'] }] }
-    });
+    charts.eventType = new Chart(document.getElementById('eventTypeChart'), { type: 'pie', data: { labels: Object.keys(typeCount), datasets: [{ data: Object.values(typeCount), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec489a','#06b6d4','#f97316','#84cc16','#d946ef'] }] } });
 
-    // 3. Top countries (bar)
+    // Top countries
     const countryCount = {};
     filteredData.forEach(e => { if (e.country) countryCount[e.country] = (countryCount[e.country] || 0) + 1; });
     const topCountries = Object.entries(countryCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    destroyChart('topCountries');
-    const ctxCountry = document.getElementById('topCountriesChart').getContext('2d');
-    charts.topCountries = new Chart(ctxCountry, {
-      type: 'bar',
-      data: { labels: topCountries.map(c=>c[0]), datasets: [{ label: 'Events', data: topCountries.map(c=>c[1]), backgroundColor: '#8b5cf6' }] }
-    });
+    destroyChart('countries');
+    charts.countries = new Chart(document.getElementById('topCountriesChart'), { type: 'bar', data: { labels: topCountries.map(c=>c[0]), datasets: [{ label: 'Events', data: topCountries.map(c=>c[1]), backgroundColor: '#8b5cf6' }] } });
 
-    // 4. Hourly activity (0-23)
+    // Hourly activity
     const hourCount = new Array(24).fill(0);
-    filteredData.forEach(e => {
-      const hour = new Date(e.created_at).getHours();
-      hourCount[hour]++;
-    });
+    filteredData.forEach(e => { const hour = new Date(e.created_at).getHours(); hourCount[hour]++; });
     destroyChart('hourly');
-    const ctxHour = document.getElementById('hourlyChart').getContext('2d');
-    charts.hourly = new Chart(ctxHour, {
-      type: 'bar',
-      data: { labels: Array.from({length:24}, (_,i)=>`${i}:00`), datasets: [{ label: 'Events', data: hourCount, backgroundColor: '#10b981' }] }
-    });
+    charts.hourly = new Chart(document.getElementById('hourlyChart'), { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets: [{ label: 'Events', data: hourCount, backgroundColor: '#10b981' }] } });
   }
 
-  // Render recent events table
   function renderTable() {
     const tbody = document.getElementById('eventsTableBody');
-    const limit = 100;
-    const displayData = filteredData.slice(0, limit);
     tbody.innerHTML = '';
-    displayData.forEach(e => {
+    filteredData.slice(0, 100).forEach(e => {
       const row = tbody.insertRow();
       row.insertCell(0).textContent = formatDate(e.created_at);
-      row.insertCell(1).innerHTML = `<span class="badge">${e.event_type}</span>`;
-      row.insertCell(2).textContent = e.username || '-';
-      row.insertCell(3).textContent = e.device_id?.slice(0,8)+'...';
-      row.insertCell(4).textContent = `${e.city || ''} ${e.country || ''}`.trim() || '-';
-      row.insertCell(5).textContent = e.event_data ? JSON.stringify(e.event_data).slice(0,60) : '-';
+      row.insertCell(1).innerHTML = `<span style="background:#3b82f6; padding:2px 8px; border-radius:12px;">${e.event_type}</span>`;
+      row.insertCell(2).textContent = e.username || '—';
+      row.insertCell(3).textContent = e.device_id?.slice(0,8)+'…';
+      row.insertCell(4).textContent = `${e.city || ''} ${e.country || ''}`.trim() || '—';
+      row.insertCell(5).textContent = e.event_data ? JSON.stringify(e.event_data).slice(0,50) : '—';
     });
   }
 
-  // Export filtered data to CSV
+  async function refreshDashboard() { await fetchData(); }
   function exportToCSV() {
-    const headers = ['created_at', 'event_type', 'username', 'device_id', 'country', 'city', 'event_data'];
-    const rows = filteredData.map(e => [
-      e.created_at, e.event_type, e.username || '', e.device_id || '', e.country || '', e.city || '', JSON.stringify(e.event_data || {})
-    ]);
-    const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const headers = ['created_at','event_type','username','device_id','country','city','event_data'];
+    const rows = filteredData.map(e => [e.created_at, e.event_type, e.username||'', e.device_id||'', e.country||'', e.city||'', JSON.stringify(e.event_data||{})]);
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `stockapp_events_${new Date().toISOString().slice(0,19)}.csv`;
@@ -531,71 +243,33 @@
     URL.revokeObjectURL(link.href);
   }
 
-  // Reload data and refresh UI
-  async function refreshDashboard() {
-    await fetchData();
-  }
-
-  // Set date range from preset
   function setDateRange(preset) {
     const today = luxon.DateTime.now();
     let start, end;
-    switch(preset) {
-      case 'today':
-        start = today.toISODate();
-        end = start;
-        break;
-      case '7days':
-        start = today.minus({ days: 7 }).toISODate();
-        end = today.toISODate();
-        break;
-      case '30days':
-        start = today.minus({ days: 30 }).toISODate();
-        end = today.toISODate();
-        break;
-      case 'month':
-        start = today.startOf('month').toISODate();
-        end = today.endOf('month').toISODate();
-        break;
-      default: return;
-    }
+    if (preset === 'today') { start = today.toISODate(); end = start; }
+    else if (preset === '7days') { start = today.minus({ days: 7 }).toISODate(); end = today.toISODate(); }
+    else if (preset === '30days') { start = today.minus({ days: 30 }).toISODate(); end = today.toISODate(); }
+    else if (preset === 'month') { start = today.startOf('month').toISODate(); end = today.endOf('month').toISODate(); }
     document.getElementById('startDate').value = start;
     document.getElementById('endDate').value = end;
-    startDate = start;
-    endDate = end;
+    startDate = start; endDate = end;
     refreshDashboard();
   }
 
-  // Event listeners setup
   function setupEventListeners() {
-    document.getElementById('applyDateBtn').addEventListener('click', () => {
-      startDate = document.getElementById('startDate').value;
-      endDate = document.getElementById('endDate').value;
-      refreshDashboard();
-    });
-    document.querySelectorAll('[data-preset]').forEach(btn => {
-      btn.addEventListener('click', () => setDateRange(btn.dataset.preset));
-    });
+    document.getElementById('applyDateBtn').addEventListener('click', () => { startDate = document.getElementById('startDate').value; endDate = document.getElementById('endDate').value; refreshDashboard(); });
+    document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => setDateRange(btn.dataset.preset)));
     document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
     document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      currentSearch = e.target.value;
+    document.getElementById('searchInput').addEventListener('input', (e) => { currentSearch = e.target.value; applyFilters(); });
+    document.querySelectorAll('.event-filter-btn').forEach(btn => btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.event-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentEventFilter = btn.dataset.event;
       applyFilters();
-    });
-    document.querySelectorAll('.event-filter-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.event-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentEventFilter = btn.dataset.event;
-        applyFilters();
-      });
-    });
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      document.body.classList.toggle('light-mode');
-    });
+    }));
   }
 
-  // Login logic
   async function login(password) {
     if (password === DASHBOARD_PASSWORD) {
       document.getElementById('loginOverlay').style.display = 'none';
@@ -603,25 +277,17 @@
       initSupabase();
       await refreshDashboard();
       setupEventListeners();
-      // Set default date range to last 30 days
       const today = luxon.DateTime.now();
       document.getElementById('startDate').value = today.minus({ days: 30 }).toISODate();
       document.getElementById('endDate').value = today.toISODate();
       startDate = document.getElementById('startDate').value;
       endDate = document.getElementById('endDate').value;
       await refreshDashboard();
-    } else {
-      alert('Incorrect password');
-    }
+    } else alert('Wrong password');
   }
 
-  document.getElementById('loginBtn').addEventListener('click', () => {
-    const pwd = document.getElementById('dashboardPassword').value;
-    login(pwd);
-  });
-  document.getElementById('dashboardPassword').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') login(e.target.value);
-  });
+  document.getElementById('loginBtn').addEventListener('click', () => login(document.getElementById('dashboardPassword').value));
+  document.getElementById('dashboardPassword').addEventListener('keypress', (e) => { if (e.key === 'Enter') login(e.target.value); });
 </script>
 </body>
 </html>
