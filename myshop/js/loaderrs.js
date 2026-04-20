@@ -1,12 +1,4 @@
-const API_BASE = (() => {
-    if (window.location.protocol === 'file:') {
-        return 'https://localhost:54221';
-    }
-    if (window.location.port === '9999') {
-        return window.location.origin;
-    }
-    return `${window.location.protocol}//${window.location.hostname}:54221`;
-})();
+const API_BASE = 'https://www.stocksalesapp.store';
 
 console.log("📡 App connecting to API via:", API_BASE);
 if (typeof reconnectAttempts === 'undefined') {
