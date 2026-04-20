@@ -1,0 +1,570 @@
+/* =====================================
+   GLOBAL ADAPTIVE MODAL SYSTEM
+===================================== */
+
+.reciptmoadl {
+    display: flex;
+    z-index: 9999999999999999999999999999999999999999999;
+    transition: opacity 0.3s ease;
+}
+
+/* Default modal panel safety */
+.reciptmoadl > * {
+    max-height: 90vh;
+    overflow-y: auto;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* ===============================
+   PHONE → BOTTOM SHEET
+================================ */
+@media (max-width: 767px) {
+    .reciptmoadl {
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .reciptmoadl > * {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+    }
+
+    .reciptmoadl.show > * {
+        transform: translateY(0);
+    }
+}
+
+/* ===============================
+   TABLET → CENTERED (FIXED!)
+================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .reciptmoadl {
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reciptmoadl > * {
+        width: 92%;
+        max-width: 960px;
+        border-radius: 20px;
+        transform: scale(0.96);
+        opacity: 0;
+    }
+
+    .reciptmoadl.show > * {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===============================
+   DESKTOP → CENTERED
+================================ */
+@media (min-width: 1024px) {
+    .reciptmoadl {
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reciptmoadl > * {
+        width: 90%;
+        max-width: 1100px;
+        border-radius: 20px;
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    .reciptmoadl.show > * {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+/* =====================================
+   GLOBAL ADAPTIVE MODAL SYSTEM
+===================================== */
+
+.adaptive-modal {
+    display: flex;
+    transition: opacity 0.3s ease;
+             z-index: 20000000000000999999999999999999999999999999;
+}
+
+/* Default modal panel safety */
+.adaptive-modal > * {
+    max-height: 90vh;
+    overflow-y: auto;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+        z-index: 20000000000000999999999999999999999999999999;
+}
+
+/* ===============================
+   PHONE → BOTTOM SHEET
+================================ */
+@media (max-width: 767px) {
+    .adaptive-modal {
+        align-items: flex-end;
+        justify-content: center;
+              z-index: 20000000000000999999999999999999999999999999;
+    }
+
+    .adaptive-modal > * {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+    }
+
+    .adaptive-modal.show > * {
+        transform: translateY(0);
+    }
+}
+
+/* ===============================
+   TABLET → CENTERED (FIXED!)
+================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .adaptive-modal {
+        align-items: center;
+        justify-content: center;
+              z-index: 20000000000000999999999999999999999999999999;
+    }
+
+    .adaptive-modal > * {
+        width: 92%;
+        max-width: 960px;
+        border-radius: 20px;
+        transform: scale(0.96);
+        opacity: 0;
+    }
+
+    .adaptive-modal.show > * {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===============================
+   DESKTOP → CENTERED
+================================ */
+@media (min-width: 1024px) {
+    .adaptive-modal {
+        align-items: center;
+        justify-content: center;
+              z-index: 20000000000000999999999999999999999999999999;
+    }
+
+    .adaptive-modal > * {
+        width: 90%;
+        max-width: 1100px;
+        border-radius: 20px;
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    .adaptive-modal.show > * {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+/* ===========================
+   REFUND MODAL PANEL
+=========================== */
+.refund-modal-panel {
+    position: relative;
+
+    width: 100%;
+    max-width: 520px;
+
+    background: white;
+    padding: 1.25rem;
+    border-radius: 20px;
+
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Close button safe for all modes */
+.refund-modal-panel .modal-close-btn {
+    position: sticky;
+    top: 0;
+    float: right;
+
+    font-size: 28px;
+    line-height: 1;
+    color: #666;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* ===========================
+   TABLET FIX (CENTERED)
+=========================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .refund-modal-panel {
+        max-width: 680px;
+    }
+}
+
+/* ===========================
+   MOBILE → BOTTOM SHEET
+=========================== */
+@media (max-width: 767px) {
+    .refund-modal-panel {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: 1.5rem;
+    }
+}
+
+
+/* ===============================
+   CUSTOMER SEARCH MODAL PANEL
+=============================== */
+.customer-search-panel {
+ background: rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 720px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Header */
+.customer-search-panel .modal-header {
+
+    padding: 1.25rem;
+}
+
+.customer-search-panel .subtitle {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+/* Body */
+.customer-search-panel .modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
+/* Search */
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.7rem;
+    opacity: 0.5;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.6rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+/* Results */
+.results-area {
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+/* Scan section */
+.scan-area {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.scan-btn {
+    background: #2563eb;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+}
+
+.scan-desc {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+/* ===============================
+   MOBILE → BOTTOM SHEET
+=============================== */
+@media (max-width: 767px) {
+    .customer-search-panel {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+    }
+}
+/* ===============================
+   CUSTOMER TRANSACTIONS MODAL
+=============================== */
+.customer-transactions-panel {
+    background: rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 1100px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Header */
+.ct-header {
+    background: rgba(0, 0, 0, 0.4);
+
+    padding: 1.25rem;
+}
+
+/* Summary */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.summary-card {
+    padding: 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+.summary-card strong {
+    display: block;
+    font-size: 1.2rem;
+}
+
+/* Body */
+.ct-body {
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+.filters select,
+.filters input {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* Table */
+.table-wrapper {
+    overflow-x: auto;
+}
+.table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table-wrapper th,
+.table-wrapper td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #eee;
+}
+.table-header th {
+    color: black;
+}
+/* Footer */
+.ct-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Buttons */
+.primary-btn { background:#2563eb;color:#fff;padding:.5rem 1rem;border-radius:8px; }
+.secondary-btn { background:#e5e7eb;padding:.5rem 1rem;border-radius:8px; }
+.accent-btn { background:#7c3aed;color:#fff;padding:.5rem 1rem;border-radius:8px; }
+
+/* ===============================
+   MOBILE BOTTOM SHEET
+=============================== */
+@media (max-width: 768px) {
+    .customer-transactions-panel {
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+/* Add to your CSS file */
+#notificationLoadingOverlay {
+    transition: opacity 0.3s ease;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 1024px) {
+  #makeadminsection > div {
+    width: 95vw;
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+}
+@media (max-width: 1024px) {
+  #makeadminsection .flex.flex-1 {
+    flex-direction: column;
+  }
+
+  #makeadminsection .w-64 {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  #makeadminsection .w-64 button {
+    flex: 1;
+    white-space: nowrap;
+  }
+}
+#makeadminsection {
+  align-items: center !important;
+  justify-content: center !important;
+}
+#makeadminsection > div {
+  overflow: hidden;
+}
+
+#adminModalContent {
+  overflow-y: auto;
+}
+.flash-green-animate {
+    animation: flashGreen 2s ease-in-out;
+}
+
+@keyframes flashGreen {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(34, 197, 94, 0.3); }
+}
+
+
+div#reminderListPanel {
+    height: 100vh;
+    max-height: none;
+    top: 0;
+    bottom: 0;
+}
+/* Add to your existing CSS */
+#reminderList li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#reminderEditModal input:focus, 
+#reminderEditModal textarea:focus, 
+#reminderEditModal select:focus {
+    border-color: #3b82f6;
+    outline: 2px solid #3b82f6;
+}
+
+.edit-btn:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.filter-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 14px;
+
+    border-radius: 10px;
+    color: #374151; /* gray-700 */
+    background: transparent;
+
+    transition: all 0.2s ease;
+}
+
+.dark .filter-tab-btn {
+    color: #e5e7eb; /* gray-200 */
+}
+
+.filter-tab-btn:hover {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+.filter-tab-btn.active {
+    background: #2563eb; /* blue-600 */
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.filter-tab-btn .badge {
+    min-width: 22px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.filter-tab-btn.active .badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+.filter-tab-btn {
+    transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.filter-tab-btn.active {
+    transform: scale(1.02);
+}
+.modal-overlay {
+    overscroll-behavior: contain;
+}
+
+.modal-content {
+    max-height: 90vh;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+    }
+}

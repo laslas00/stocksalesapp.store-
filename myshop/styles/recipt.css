@@ -1,0 +1,400 @@
+/* === PRINT STYLES FOR RECEIPT === */
+
+#receiptModal * {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif !important;
+}
+/* Force watermark to show on screen even if "hidden" class is present */
+#receiptWatermark {
+    display: block !important;
+    opacity: 0.1 !important; 
+        visibility: visible !important;
+    opacity: 0.15 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important; /* Lower z-index to stay behind content */
+    pointer-events: none !important;
+    display: block !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size:  fit-content !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+/* Main Receipt Table Styling */
+#receiptModal table, 
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: larger;
+    color: #000000 !important;
+    background-color: #ffffff;
+}
+
+/* Header Styling */
+.receipt-table th, 
+#receiptModal th {
+    background-color: #b4b6b4; /* Green header */
+    color: #ffffff;
+    padding: 8px 4px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #000000;
+    border-bottom: 3px solid green;
+}
+
+/* Body Cell Styling */
+#receiptItemsTableBody,
+.receipt-table td {
+    padding: 6px 4px;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #ffa500; /* Orange row lines */
+    text-align: left;
+    color: #000000 !important;
+}
+
+/* Row Background */
+.receipt-table tbody tr {
+    background-color: #ffffff;
+}
+  #receiptGuaranteevalidity p  {
+    color: red !important;
+    font-weight: bold !important;
+  }
+
+
+.receipt-modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #000000 !important;
+    cursor: pointer;
+    z-index: 2; /* Ensure it stays above the watermark */
+}
+
+  /* Flash animation for PDF completion */
+@keyframes receiptFlash {
+  0% { background-color: transparent; }
+  30% { background-color: rgba(30, 255, 0, 0.3); }  /* bright yellow */
+  70% { background-color: rgba(0, 47, 255, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.receipt-flash {
+  animation: receiptFlash 0.8s ease-out;
+}
+/* Festive badge styling */
+.festive-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b); /* festive gradient */
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 8px 15px;
+    border-radius: 40px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    border: 2px solid gold;
+    transform: rotate(3deg);
+    pointer-events: none; /* so it doesn't block clicks on underlying elements */
+    transition: all 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+/* Badge icon */
+.badge-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+.badge-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+/* Different themes (optional – change gradient based on occasion) */
+.festive-badge.christmas {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    border-color: #27ae60;
+}
+.festive-badge.newyear {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-color: #f1c40f;
+}
+.festive-badge.birthday {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    border-color: #f39c12;
+}
+
+/* Print settings */
+@media print {
+    .festive-badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        box-shadow: none;
+        border: 2px solid black; /* ensure visibility */
+    }
+}
+@media print {
+  @page {
+    size: auto; /* Allows the printer to decide (A4, Thermal, etc.) */
+    margin: 10mm; /* Standard margin for hardware grip */
+  }
+  #receiptModal * {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif !important;
+
+    
+}
+  #receiptGuaranteeSection p {
+    color: black !important;
+  }
+  #receiptGuaranteeSection span#receiptGuaranteeDate {
+    color: red !important;
+    font-weight: bold !important;
+  }
+  /* Optionally, make the "Valid until:" label black and only the date red */
+  #receiptGuaranteeSection .mt-1.text-red-600 {
+    color: red !important;
+  }
+  #receiptGuaranteeSection .mt-1.text-red-600 span#receiptGuaranteeDate {
+    color: red !important;
+    font-weight: bold !important;
+  }
+
+
+h3#receiptBusinessName {
+  font-size: 52px;
+  font-weight: bold;
+}
+  #receiptModal table thead {
+    display: table-header-group !important;
+    background-color: rgb(189, 183, 183) !important;
+    color: #000000 !important;
+  }
+    #receiptPrintArea {
+        position: relative;
+        z-index: 1;
+    }
+  /* Avoid breaking inside a row */
+  #receiptItemsTableBody tr {
+    page-break-inside: avoid;
+    break-inside: avoid; /* Modern equivalent */
+  }
+
+  /* Break AFTER every 20th row */
+  #receiptItemsTableBody tr:nth-child(20n) {
+    page-break-after: always;
+    break-after: page;
+  }
+  #reptotel{
+font-size: larger !important;
+font-family: 'Times New Roman', Times, serif !important;
+  }
+  /* Hide UI elements during print */
+  body[data-print-section="receipt"] #printHeader,
+  body[data-print-section="receipt"] #printFooter,
+  body[data-print-section="receipt"] #printReceiptBtn,
+  body[data-print-section="receipt"] .modal-close-btn,
+  body[data-print-section="receipt"] .hidden,#downloadPdfBtn, .receipt-modal-close-btn ,
+  body[data-print-section="receipt"] .receiptEditInput ,#customReceiptModal{
+    display: none !important;
+  }
+
+  /* Clean, readable print layout */
+  body[data-print-section="receipt"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #fff !important;
+    color: #000000 !important;
+  }
+
+  body[data-print-section="receipt"] #receiptModal .receipt-content  {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    position: static !important;
+  }
+
+
+     #receiptWatermark {
+       visibility: visible !important;
+        opacity: 0.25 !important; 
+        background-size: 100% auto !important; 
+        -webkit-print-color-adjust: exact !important; /* For Chrome, Safari */
+        print-color-adjust: exact !important;
+        position: fixed !important; 
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 100 !important; /* Ensure it stays behind text */
+        pointer-events: none !important; /* Don't interfere with selection */
+        display: block !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+     background-image: var(--watermark-image, none);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 50% auto;
+    display: block !important;
+    }
+    /* Hide print preview watermark when printing receipts */
+body[data-print-section="receipt"] #printPreviewWatermark {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+body[data-print-section="receipt"] #receiptItemsTableBody {
+     font-size: larger !important;
+  }
+  /* Clean table styling */
+  body[data-print-section="receipt"] #receiptModal table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: large;
+    color: #000000 !important;
+  }
+
+body[data-print-section="receipt"] .receipt-table th,
+body[data-print-section="receipt"] .receipt-table td {
+    padding: 6px 4px;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+    text-align: left;
+}
+
+body[data-print-section="receipt"] .receipt-table th {
+    background-color: #28a745; /* Green header */
+    color: white;
+    border-bottom: 3px solid green;
+}
+
+body[data-print-section="receipt"] .receipt-table tbody tr {
+    background-color: #ffffff; /* Orange rows */
+    color:black !important;
+}
+
+body[data-print-section="receipt"] .receipt-table tbody tr td {
+    border-bottom: 1px solid orange; /* Black row lines */
+}
+  body[data-print-section="receipt"] #receiptModal th {
+    font-weight: bold;
+    background: #fff;
+  }
+
+  /* Ensure content is visible */
+  body[data-print-section="receipt"] #receiptPrintArea {
+    position: relative;
+    z-index: 1;
+  }
+
+.receipt-table {
+  page-break-inside: auto;
+}
+
+ #receiptfooter {
+    page-break-before: auto !important;
+    break-before: auto !important;
+  }
+   div#receiptModal {
+    display: block !important; /* Ensure it behaves as a block for print flow */
+    visibility: visible !important;
+    width: 100% !important; /* Ensure the modal itself spans full width for centering its content */
+    height: auto !important; /* Allow natural height */
+    max-height: none !important;
+    overflow: visible !important;
+    z-index: auto !important;
+    align-items: unset !important;
+    justify-content: unset !important;
+  }
+
+  div#receiptModal .receipt-content  {
+    overflow: visible !important;
+    max-height: 297mm !important;
+    height:  297mm !important;
+    width:210mm !important; /* Give it a percentage width for better print layout */
+    max-width: 210mm !important; /* Optional: Set a max-width for readability */
+    padding: 0 !important;
+    font-size: medium !important;
+    margin: 0 auto !important; 
+      padding: 10mm; /* This is the key for horizontal centering for block elements */
+    }
+        .receipt-content .w-full.md\:w-1\/2.lg\:w-1\/3.p-6 {
+    overflow: visible !important; /* or hidden */
+  
+}
+  /* Ensure the table container fits within the page */
+  .table-container {
+    width: 100% !important; /* Full width of the page */
+    margin: 0 auto !important; /* Center horizontally */
+    height: auto !important; /* Allow dynamic height */
+    max-height: 100%; /* Prevent overflow */
+    border: 1px solid #cccccc; /* Optional: Add a border for clarity */
+    padding: 10px; /* Add padding for better readability */
+    box-sizing: border-box; /* Include padding in width/height calculations */
+  }
+
+  /* Ensure the table fits within the container */
+  .receipt-table {
+    width: 100% !important; /* Full width of the container */
+    table-layout: fixed; /* Ensure consistent column widths */
+    border-collapse: collapse; /* Remove gaps between cells */
+    font-size: 12px; /* Adjust font size to fit content */
+  }
+
+  /* Style table rows and cells */
+  .receipt-table th,
+  .receipt-table td {
+    padding: 6px 4px; /* Add padding for readability */
+  /* Add borders for clarity */
+    text-align: left; /* Align text to the left */
+    word-wrap: break-word; /* Break long words to prevent overflow */
+    font-size: 12px !important; /* Increased font size for readability */
+    font-weight: bold !important; /* Make text bold */
+    color: #000000 !important;
+  }
+
+  .receipt-table tbody tr {
+    height: auto; /* Allow rows to adjust height dynamically */
+    page-break-inside: avoid; /* Prevent rows from breaking across pages */
+  }
+
+  /* Adjust the footer to fit under the table and avoid page breaks */
+  #receiptfooter,
+  #receiptfooter2 {
+    width: 100% !important; /* Full width of the container */
+    text-align: center; /* Center the footer text */
+    margin-top: 10px !important; /* Add spacing above the footer */
+    page-break-inside: avoid !important; /* Prevent footer from breaking */
+    break-inside: avoid !important; /* Modern equivalent */
+    page-break-after: avoid !important; /* Prevent footer from breaking after */
+    break-after: avoid !important; /* Modern equivalent */
+  }
+
+  /* Ensure footer content does not break */
+  #receiptfooter *,
+  #receiptfooter2 * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
