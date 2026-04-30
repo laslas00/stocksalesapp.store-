@@ -986,6 +986,7 @@
               <option value="free_mode_activated">Free Mode</option>
               <option value="user_mode_activated">Mode Switch</option>
               <option value="setup_complete">Setup Complete</option>
+              <option value="receipt_printed">Used Receipts</option>
             </select>
             <div class="search-box">
               <i class="fas fa-search"></i>
@@ -1199,6 +1200,7 @@
       const freeMode = filteredData.filter(e => e.event_type === 'free_mode_activated').length;
       const modeSwitch = filteredData.filter(e => e.event_type === 'user_mode_activated').length;
       const setups = filteredData.filter(e => e.event_type === 'setup_complete').length;
+       const usedReceipts = filteredData.filter(e => e.event_type === 'receipt_printed').length;
 
       const statsCards = [
         { label: 'Active Devices', value: uniqueDevices, icon: 'fa-mobile-alt', color: 'blue' },
@@ -1212,6 +1214,7 @@
         { label: 'Free Mode', value: freeMode, icon: 'fa-unlock-alt', color: 'orange' },
         { label: 'Mode Switches', value: modeSwitch, icon: 'fa-exchange-alt', color: 'blue' },
         { label: 'Setups Complete', value: setups, icon: 'fa-check-circle', color: 'green' },
+        { label: 'Used Receipts', value: usedReceipts, icon: 'fa-print', color: 'orange' }
       ];
 
       document.getElementById('statsGrid').innerHTML = statsCards.map(stat => `
