@@ -1189,33 +1189,58 @@
 
     // ========== STATS ==========
     function renderStats() {
-      const uniqueDevices = new Set(filteredData.map(d => d.device_id)).size;
-      const total = filteredData.length;
-      const appStarts = filteredData.filter(e => e.event_type === 'app_start').length;
-      const sales = filteredData.filter(e => e.event_type === 'sale_recorded').length;
-      const dashboard = filteredData.filter(e => e.event_type === 'dashboard_shown').length;
-      const receipts = filteredData.filter(e => e.event_type === 'receipt_custom_generated').length;
-      const credit = filteredData.filter(e => e.event_type === 'credit_sales_section_opened').length;
-      const stockAdds = filteredData.filter(e => e.event_type === 'item_added_to_stock').length;
-      const freeMode = filteredData.filter(e => e.event_type === 'free_mode_activated').length;
-      const modeSwitch = filteredData.filter(e => e.event_type === 'user_mode_activated').length;
-      const setups = filteredData.filter(e => e.event_type === 'setup_complete').length;
-       const usedReceipts = filteredData.filter(e => e.event_type === 'receipt_printed').length;
+const uniqueDevices = new Set(filteredData.map(d => d.device_id)).size;
+const total = filteredData.length;
+const appStarts = filteredData.filter(e => e.event_type === 'app_start').length;
+const sales = filteredData.filter(e => e.event_type === 'sale_recorded').length;
+const dashboard = filteredData.filter(e => e.event_type === 'dashboard_shown').length;
+const receipts = filteredData.filter(e => e.event_type === 'receipt_custom_generated').length;
+const credit = filteredData.filter(e => e.event_type === 'credit_sales_section_opened').length;
+const stockAdds = filteredData.filter(e => e.event_type === 'item_added_to_stock').length;
+const freeMode = filteredData.filter(e => e.event_type === 'free_mode_activated').length;
+const modeSwitch = filteredData.filter(e => e.event_type === 'user_mode_activated').length;
+const setups = filteredData.filter(e => e.event_type === 'setup_complete').length;
+const usedReceipts = filteredData.filter(e => e.event_type === 'receipt_printed').length;
 
-      const statsCards = [
-        { label: 'Active Devices', value: uniqueDevices, icon: 'fa-mobile-alt', color: 'blue' },
-        { label: 'Total Events', value: total, icon: 'fa-bolt', color: 'purple' },
-        { label: 'App Starts', value: appStarts, icon: 'fa-rocket', color: 'green' },
-        { label: 'Sales', value: sales, icon: 'fa-shopping-cart', color: 'orange' },
-        { label: 'Dashboard Views', value: dashboard, icon: 'fa-tachometer-alt', color: 'blue' },
-        { label: 'Custom Receipts', value: receipts, icon: 'fa-receipt', color: 'purple' },
-        { label: 'Credit Sales', value: credit, icon: 'fa-credit-card', color: 'red' },
-        { label: 'Items Added', value: stockAdds, icon: 'fa-box', color: 'green' },
-        { label: 'Free Mode', value: freeMode, icon: 'fa-unlock-alt', color: 'orange' },
-        { label: 'Mode Switches', value: modeSwitch, icon: 'fa-exchange-alt', color: 'blue' },
-        { label: 'Setups Complete', value: setups, icon: 'fa-check-circle', color: 'green' },
-        { label: 'Used Receipts', value: usedReceipts, icon: 'fa-print', color: 'orange' }
-      ];
+// NEW: Print history tracking
+const printHistory = filteredData.filter(e => e.event_type === 'print_history').length;
+const printSalesHistory = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'sales_history_report').length;
+const printStockHistory = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'stock_history_report').length;
+const printWeeklyReport = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'weekly_sales_report').length;
+const printMonthlyReport = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'monthly_sales_report').length;
+const printProfitLoss = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'profit_loss_report').length;
+const printCreditSales = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'credit_sales_report').length;
+const printExpenses = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'expenses_report').length;
+const printLoanBook = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'loan_book_report').length;
+const printCurrentStock = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'current_stock_report').length;
+const printRefundHistory = filteredData.filter(e => e.event_type === 'print_history' && e.event_data?.reportType === 'refund_history_report').length;
+
+const statsCards = [
+  { label: 'Active Devices', value: uniqueDevices, icon: 'fa-mobile-alt', color: 'blue' },
+  { label: 'Total Events', value: total, icon: 'fa-bolt', color: 'purple' },
+  { label: 'App Starts', value: appStarts, icon: 'fa-rocket', color: 'green' },
+  { label: 'Sales', value: sales, icon: 'fa-shopping-cart', color: 'orange' },
+  { label: 'Dashboard Views', value: dashboard, icon: 'fa-tachometer-alt', color: 'blue' },
+  { label: 'Custom Receipts', value: receipts, icon: 'fa-receipt', color: 'purple' },
+  { label: 'Credit Sales', value: credit, icon: 'fa-credit-card', color: 'red' },
+  { label: 'Items Added', value: stockAdds, icon: 'fa-box', color: 'green' },
+  { label: 'Free Mode', value: freeMode, icon: 'fa-unlock-alt', color: 'orange' },
+  { label: 'Mode Switches', value: modeSwitch, icon: 'fa-exchange-alt', color: 'blue' },
+  { label: 'Setups Complete', value: setups, icon: 'fa-check-circle', color: 'green' },
+  { label: 'Used Receipts', value: usedReceipts, icon: 'fa-print', color: 'orange' },
+  // NEW: Print History cards
+  { label: 'Total Prints', value: printHistory, icon: 'fa-print', color: 'indigo' },
+  { label: 'Sales Reports', value: printSalesHistory, icon: 'fa-file-invoice', color: 'teal' },
+  { label: 'Stock Reports', value: printStockHistory, icon: 'fa-boxes', color: 'cyan' },
+  { label: 'Weekly Reports', value: printWeeklyReport, icon: 'fa-calendar-week', color: 'blue' },
+  { label: 'Monthly Reports', value: printMonthlyReport, icon: 'fa-calendar-alt', color: 'purple' },
+  { label: 'P&L Reports', value: printProfitLoss, icon: 'fa-chart-pie', color: 'green' },
+  { label: 'Credit Reports', value: printCreditSales, icon: 'fa-credit-card', color: 'red' },
+  { label: 'Expense Reports', value: printExpenses, icon: 'fa-money-bill-wave', color: 'orange' },
+  { label: 'Loan Reports', value: printLoanBook, icon: 'fa-hand-holding-usd', color: 'blue' },
+  { label: 'Stock Snapshots', value: printCurrentStock, icon: 'fa-camera', color: 'green' },
+  { label: 'Refund Reports', value: printRefundHistory, icon: 'fa-undo-alt', color: 'purple' }
+];
 
       document.getElementById('statsGrid').innerHTML = statsCards.map(stat => `
         <div class="stat-card">
