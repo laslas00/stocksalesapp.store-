@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock & Sales - Labour Day Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        :root {
+            --brand-blue: #005fa3; /* Blue from the logo */
+            --brand-black: #050a0e; /* Deep black/dark background from logo */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .brand-bg-dark {
+            background-color: var(--brand-black);
+        }
+
+        .brand-text-blue {
+            color: var(--brand-blue);
+        }
+
+        .brand-bg-blue {
+            background-color: var(--brand-blue);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 1);
+            border-top: 4px solid var(--brand-blue);
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            background: var(--brand-black);
+            border: 2px solid #e2e8f0;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .step-number {
+            background-color: var(--brand-blue);
+            color: white;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header Section -->
+    <header class="brand-bg-dark text-white py-12 px-6 shadow-2xl">
+        <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
+            <!-- Logo Placeholder (Uses the Blue from your image) -->
+            <div class="brand-bg-blue p-3 rounded-xl mb-6 shadow-lg">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-extrabold mb-2 uppercase tracking-tight">
+                Stock & Sales
+            </h1>
+            <h2 class="text-xl md:text-2xl font-semibold brand-text-blue mb-4">
+                Wishing You a Happy Labour Day
+            </h2>
+            <p class="text-slate-400 max-w-xl leading-relaxed">
+                Celebrate the holiday by adding our limited edition Labour Day banner to your customer receipts. Follow the guide below to enable the feature.
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl mx-auto px-6 -mt-6 pb-20">
+        
+        <div class="glass-card rounded-xl shadow-2xl p-6 md:p-8">
+            <h3 class="text-xl font-bold mb-6 flex items-center">
+                <span class="brand-bg-blue w-2 h-6 rounded-full mr-3"></span>
+                Tutorial: Enable Labour Day Banner
+            </h3>
+
+            <!-- Video Player -->
+            <div class="video-container mb-8 shadow-lg">
+                <video controls poster="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1200">
+                    <source src="your-tutorial-video.mp4" type="video/mp4">
+                </video>
+            </div>
+
+            <!-- Custom Instructions -->
+            <div class="space-y-6">
+                <div class="bg-slate-50 p-5 rounded-lg border-l-4 border-blue-600">
+                    <h4 class="font-bold text-slate-900 mb-4">Quick Setup Guide:</h4>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <div class="step-number mr-3 mt-0.5 shrink-0">1</div>
+                            <p class="text-slate-700">Open your <strong>Settings</strong> menu from the main dashboard.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="step-number mr-3 mt-0.5 shrink-0">2</div>
+                            <p class="text-slate-700">Select the <strong>Feature Tab</strong> (Fetvtebge) from the sidebar.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="step-number mr-3 mt-0.5 shrink-0">3</div>
+                            <p class="text-slate-700">Find the <strong>Labour Day</strong> option and turn it <strong>ON</strong>.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="step-number mr-3 mt-0.5 shrink-0">4</div>
+                            <p class="text-slate-700">Click <strong>Save</strong> to apply changes.</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <p class="text-blue-900 text-sm font-medium">
+                        🎉 Success! Every receipt will now contain the <strong>Labour Day Banner</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-10 text-slate-500 text-xs">
+        <p class="mb-2 font-bold brand-text-blue">STOCK & SALES OFFICIAL</p>
+        <p>&copy; 2024 All Rights Reserved</p>
+    </footer>
+
+</body>
+</html>
