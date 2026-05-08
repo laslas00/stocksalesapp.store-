@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="../image/200.ico">
+    <title>StockAPP* Ad Studio - Professional  Ad Generator</title>
+    <link href="../styles/output.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Lato:wght@300;400;700&family=Oswald:wght@300;400;500;700&family=Raleway:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;600;700&family=Bangers&family=Pacifico&family=Caveat&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        /* Main Container */
+        .app-container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+        }
+
+        /* Header */
+        .pro-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .logo-text h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 30px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            opacity: 0.8;
+        }
+
+        /* Form Elements */
+        .modern-input, .modern-select, .modern-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .modern-input:focus, .modern-select:focus, .modern-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .modern-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 40px;
+        }
+
+        .modern-select option {
+            background: #1f2937;
+            color: white;
+        }
+
+        .modern-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* Color Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .color-input {
+            width: 100%;
+            height: 45px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 10px;
+        }
+
+        /* Image Grid - 5 Images */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .image-upload-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-upload-card:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .image-upload-card.has-image {
+            border-style: solid;
+            border-color: #10b981;
+        }
+
+        .upload-preview {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            display: none;
+        }
+
+        .upload-preview.active {
+            display: block;
+        }
+
+        .upload-placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.8);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .image-upload-card.has-image .remove-image-btn {
+            display: flex;
+        }
+
+        /* Image Controls */
+        .image-controls {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            font-size: 13px;
+            min-width: 60px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .control-slider {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-value {
+            min-width: 45px;
+            text-align: right;
+            font-size: 13px;
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        /* Position Grid */
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .position-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .position-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .position-btn.active {
+            background: #6366f1;
+            border-color: #6366f1;
+        }
+
+        /* Z-Order Controls */
+        .z-order-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .z-order-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .z-order-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Feature List */
+        .feature-list {
+            margin-top: 15px;
+        }
+
+        .feature-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-text {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .feature-delete {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .feature-delete:hover {
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        .add-feature {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .add-feature input {
+            flex: 1;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .add-feature button {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .add-feature button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Buttons */
+        .modern-btn {
+            padding: 14px 20px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .modern-btn.primary {
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        .modern-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(99, 102, 241, 0.6);
+        }
+
+        .modern-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .modern-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Random Gradient Button */
+        #random-gradient-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #random-gradient-btn::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 14px;
+            background: conic-gradient(red, orange, yellow, green, blue, indigo, violet, red);
+            background-size: 600% 600%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.5s;
+            animation: hue-rotation 2s linear infinite;
+        }
+
+        #random-gradient-btn:hover::before {
+            opacity: 1;
+            transform: rotate(10deg);
+        }
+
+        @keyframes hue-rotation {
+            from { background-position: 0% 50%; }
+            to { background-position: 100% 50%; }
+        }
+
+        /* Ad Container - Professional Design */
+        .preview-container {
+            position: relative;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .preview-title {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        #ad-container {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            aspect-ratio: 1/1.2;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Image Layers */
+        .image-layer {
+            position: absolute;
+            cursor: move;
+            z-index: var(--z-index, 1);
+            transition: box-shadow 0.3s, transform 0.2s;
+            user-select: none;
+            will-change: left, top, width, height, transform;
+        }
+
+        .image-layer.selected {
+            box-shadow: 0 0 0 3px #6366f1, 0 0 0 6px rgba(99, 102, 241, 0.3);
+            z-index: 1000 !important;
+        }
+
+        .image-layer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 2px solid #6366f1;
+            border-radius: 50%;
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-layer.selected .resize-handle {
+            display: block;
+        }
+
+        /* Text Layers (Always on top) */
+        .text-layer {
+            position: relative;
+            z-index: 1001;
+            pointer-events: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-content {
+            pointer-events: auto;
+        }
+
+        /* Ad Header */
+        .ad-header {
+            padding: 30px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .circle-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid white;
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .bolder-header {
+            font-size: 32px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+
+        /* Ad Main */
+        .ad-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            gap: 40px;
+        }
+
+        .product-image-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #ad-image {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.3));
+            transition: all 0.3s;
+        }
+
+        .product-details {
+            flex: 1;
+            text-align: right;
+        }
+
+        #ad-brand {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #ad-model {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .price-circle {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 150px;
+            min-height: 150px;
+            padding: 20px;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .price-circle #ad-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .price-circle #ad-discount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #10b981;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 30px;
+            margin-top: 5px;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Ad Footer */
+        .ad-footer {
+            padding: 30px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+            text-align: center;
+        }
+
+        #ad-contact {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.6;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Overlay */
+        .fade-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2), transparent);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Animations */
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(20px, -20px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 30px) scale(1.2); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(15px, -15px) rotate(90deg); }
+            75% { transform: translate(-15px, 15px) rotate(270deg); }
+        }
+
+        .random-shape {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Notification */
+        #notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Professional Header -->
+        <header class="pro-header">
+            <div class="logo-area">
+                <div class="logo-icon">P</div>
+                <div class="logo-text">
+                    <h1>StockAPP* Ad Studio</h1>
+                    <p>Professional  Ad Generator</p>
+                </div>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 15px;">
+                <button class="modern-btn secondary" style="width: auto; padding: 10px 20px;" onclick="window.location.href='../shop.html'">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    GO TO HOME 
+                </button>
+                <button class="modern-btn secondary" style="width: auto; padding: 10px 20px;" onclick="saveTemplate()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Template
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Template Section -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        </svg>
+                        Quick Templates
+                    </div>
+                    <select id="template-select" class="modern-select">
+                        <option value="default">Custom Design</option>
+                        <option value="cyberpunk">Cyberpunk Neon</option>
+                        <option value="minimal-white">Minimal White</option>
+                        <option value="amoled-dark">AMOLED Dark</option>
+                        <option value="sunset-grad">Sunset Gradient</option>
+                        <option value="nature-green">Nature Green</option>
+                        <option value="tech-blue">Tech Blue</option>
+                        <option value="luxury-gold">Luxury Gold</option>
+                        <option value="instagram-pink">Instagram Pink</option>
+                        <option value="matrix">Matrix Green</option>
+                        <option value="ocean-wave">Ocean Wave</option>
+                    </select>
+                </div>
+
+                <!-- Brand Info -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Brand Information
+                    </div>
+                    
+                    <input type="text" id="shop-name" class="modern-input" placeholder="Shop Name" value="IHUBS">
+                    <input type="text" id="brand-input" class="modern-input" placeholder="Brand" value="SAMSUNG">
+                    <input type="text" id="model-input" class="modern-input" placeholder="Model" value="Galaxy S24 Ultra">
+                </div>
+
+                <!-- Pricing -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="2"/>
+                            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                        </svg>
+                        Pricing
+                    </div>
+                    
+                    <input type="text" id="price-input" class="modern-input" placeholder="Price" value="$999">
+                    <input type="text" id="discount-input" class="modern-input" placeholder="Discount" value="10% OFF">
+                </div>
+
+                <!-- Logo Upload -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                            <path d="M21 15l-5-5L6 21"/>
+                        </svg>
+                        Shop Logo
+                    </div>
+                    
+                    <input type="file" id="logo-upload" accept="image/*" class="modern-input" style="padding: 10px;">
+                    <small style="color: rgba(255,255,255,0.5);">Upload your shop logo (optional)</small>
+                </div>
+
+                <!-- Colors -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                            <path d="M21 12a9 9 0 0 0-9-9"/>
+                        </svg>
+                        Colors & Gradients
+                    </div>
+                    
+                    <div class="color-grid">
+                        <div>
+                            <label style="font-size: 12px;">Start Color</label>
+                            <input type="color" id="bg-color-start" class="color-input" value="#000000">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px;">End Color</label>
+                            <input type="color" id="bg-color-end" class="color-input" value="#4f46e5">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px;">Text Color</label>
+                        <input type="color" id="text-color" class="color-input" value="#ffffff">
+                    </div>
+
+                    <select id="gradient-type" class="modern-select">
+                        <option value="linear">Linear Gradient</option>
+                        <option value="radial">Radial Gradient</option>
+                        <option value="conic">Conic Gradient</option>
+                        <option value="diamond">Diamond Gradient</option>
+                        <option value="stripe">Stripe Pattern</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="midnight">Midnight</option>
+                        <option value="fire">Fire</option>
+                        <option value="ice">Ice</option>
+                    </select>
+
+                    <button id="random-gradient-btn" class="modern-btn secondary" style="margin-top: 10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 12A11 11 0 0 1 12 23 11 11 0 0 1 1 12 11 11 0 0 1 12 1 11 11 0 0 1 23 12z"/>
+                            <path d="M12 8v8M8 12h8"/>
+                        </svg>
+                        Generate Random Colors
+                    </button>
+                </div>
+
+                <!-- Font Style -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 7V4h16v3"/>
+                            <path d="M9 20h6"/>
+                            <path d="M12 4v16"/>
+                        </svg>
+                        Typography
+                    </div>
+                    
+                    <select id="font-style" class="modern-select">
+                        <option value="default">Default</option>
+                        <option value="modern">Modern (Poppins)</option>
+                        <option value="elegant">Elegant (Georgia)</option>
+                        <option value="roboto">Roboto</option>
+                        <option value="montserrat">Montserrat</option>
+                        <option value="lato">Lato</option>
+                        <option value="oswald">Oswald</option>
+                        <option value="raleway">Raleway</option>
+                        <option value="merriweather">Merriweather</option>
+                        <option value="playfair">Playfair Display</option>
+                        <option value="nunito">Nunito</option>
+                        <option value="bangers">Bangers (Comic)</option>
+                        <option value="pacifico">Pacifico (Script)</option>
+                        <option value="caveat">Caveat (Handwriting)</option>
+                    </select>
+                </div>
+
+                <!-- Multi-Image Upload (5 Images) -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                            <path d="M21 15l-5-5L6 21"/>
+                        </svg>
+                        Multi-Image Layout (Max 5)
+                    </div>
+                    
+                    <div class="image-grid" id="image-grid">
+                        <!-- Image slots will be generated by JavaScript -->
+                    </div>
+
+                    <!-- Active Image Controls -->
+                    <div id="image-controls" style="display: none;">
+                        <div class="image-controls">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="font-weight: 600;">Image Controls</span>
+                                <span id="selected-image-index" style="font-size: 12px; background: #6366f1; padding: 4px 8px; border-radius: 20px;"></span>
+                            </div>
+
+                            <div class="control-row">
+                                <span class="control-label">Size</span>
+                                <input type="range" id="image-size-slider" class="control-slider" min="50" max="400" value="150">
+                                <span class="control-value" id="size-value">150px</span>
+                            </div>
+
+                            <div class="control-row">
+                                <span class="control-label">Rotate</span>
+                                <input type="range" id="image-rotate-slider" class="control-slider" min="0" max="360" value="0">
+                                <span class="control-value" id="rotate-value">0°</span>
+                            </div>
+
+                            <div class="control-row">
+                                <span class="control-label">Opacity</span>
+                                <input type="range" id="image-opacity-slider" class="control-slider" min="0.1" max="1" step="0.1" value="1">
+                                <span class="control-value" id="opacity-value">100%</span>
+                            </div>
+
+                            <div class="position-grid">
+                                <button class="position-btn" onclick="alignImage('left')">Left</button>
+                                <button class="position-btn" onclick="alignImage('center')">Center X</button>
+                                <button class="position-btn" onclick="alignImage('right')">Right</button>
+                                <button class="position-btn" onclick="alignImage('top')">Top</button>
+                                <button class="position-btn" onclick="alignImage('middle')">Center Y</button>
+                                <button class="position-btn" onclick="alignImage('bottom')">Bottom</button>
+                            </div>
+
+                            <div class="z-order-controls">
+                                <button class="z-order-btn" onclick="bringForward()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="18 15 12 21 6 15"/>
+                                        <polyline points="18 9 12 3 6 9"/>
+                                    </svg>
+                                    Bring Forward
+                                </button>
+                                <button class="z-order-btn" onclick="sendBackward()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 3 18 9"/>
+                                        <polyline points="6 15 12 21 18 15"/>
+                                    </svg>
+                                    Send Backward
+                                </button>
+                            </div>
+
+                            <button class="modern-btn secondary" onclick="removeBackground()" style="margin-top: 15px;">
+                                <span id="bg-remove-text">Remove Background</span>
+                                <span id="bg-remove-spinner" class="spinner" style="display: none;"></span>
+                            </button>
+
+                            <button class="modern-btn secondary" onclick="duplicateImage()" style="margin-top: 10px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                    <rect x="2" y="2" width="13" height="13" rx="2"/>
+                                </svg>
+                                Duplicate Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                        Key Features
+                    </div>
+                    
+                    <div id="features-list" class="feature-list"></div>
+
+                    <div class="add-feature">
+                        <input type="text" id="new-feature-input" placeholder="Add a feature...">
+                        <button id="add-feature-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8 10a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.574 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        Contact Information
+                    </div>
+                    
+                    <textarea id="contact-info" class="modern-textarea" placeholder="📞 +1 234 567 890&#10;📍 123 Tech Street&#10;🌐 www.ihubs.com">📞 +1 234 567 890
+📍 123 Tech Street</textarea>
+                </div>
+
+                <!-- Download Button -->
+                <button id="download-btn" class="modern-btn primary" style="margin-top: 20px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Professional Ad
+                </button>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-container">
+                <div class="preview-header">
+                    <div class="preview-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        Live Preview
+                        <span class="preview-badge">Professional Quality</span>
+                    </div>
+                    <button class="modern-btn secondary" style="width: auto; padding: 8px 15px;" onclick="resetAllImages()">
+                        Reset All Images
+                    </button>
+                </div>
+
+                <!-- Ad Container -->
+                <div id="ad-container">
+                    <!-- Image Layers Container -->
+                    <div id="image-layers"></div>
+                    
+                    <!-- Text Content (Always on top) -->
+                    <div class="text-layer">
+                        <!-- Header -->
+                        <div class="ad-header">
+                            <img id="brand-logo" src="" alt="Logo" class="circle-logo" style="display: none;">
+                            <h1 id="ad-shop-name" class="bolder-header">IHUBS</h1>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="ad-main">
+                            <!-- Product Image (Single main image for backward compatibility) -->
+                            <div class="product-image-container">
+                                <img id="ad-image" src="" alt="Product" style="display: none;">
+                            </div>
+
+                            <!-- Product Details -->
+                            <div class="product-details">
+                                <div id="ad-brand">SAMSUNG</div>
+                                <div id="ad-model">Galaxy S24 Ultra</div>
+                                
+                                <div class="price-circle">
+                                    <div id="ad-price">$999</div>
+                                    <div id="ad-discount">10% OFF</div>
+                                </div>
+
+                                <ul id="ad-features-list" class="features-list">
+                                    <!-- Features will be inserted here -->
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="ad-footer">
+                            <div id="ad-contact">📞 +1 234 567 890<br>📍 123 Tech Street</div>
+                        </div>
+                    </div>
+
+                    <!-- Fading Overlay -->
+                    <div class="fade-overlay"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="text-align: center; margin-top: 30px; opacity: 0.6; font-size: 14px;">
+            <p>© 2025 StockAPP* Ad Studio by IHUBS. Professional  Ad Generator.</p>
+        </footer>
+    </div>
+
+     <script src="../js/admaker.js"></script>
+</body>
+</html>
