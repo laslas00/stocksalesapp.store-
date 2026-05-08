@@ -127,6 +127,17 @@ function updateHomeLogo() {
 
 async function checkSetupStatus() {
     try {
+        // ========== NEW: If user came from login button, don't force setup ==========
+        const cameFromLogin = localStorage.getItem('cameFromLogin') || 
+                             localStorage.getItem('userChoseLogin');
+        
+        if (cameFromLogin === 'true') {
+            console.log('User came from login button - skipping setup redirect');
+            // Clear the flag after use
+            localStorage.removeItem('cameFromLogin');
+            return true; // Allow them to see login page
+        }
+
         const localSetup = localStorage.getItem('StockApp_setup');
         if (localSetup) {
             const setup = JSON.parse(localSetup);
@@ -230,6 +241,10 @@ document.getElementById('loginBtn').onclick = async function() {
                 // No users at all - first time setup needed
                 errorEl.innerHTML = '👋 Welcome! No account found.<br><br><button onclick="window.location.href=\'setup.html\'" style="background:#3b82f6;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600;">Click here to setup your shop</button>';
                 errorEl.classList.remove('hidden');
+                 localStorage.removeItem('setup_completed');
+            localStorage.removeItem('StockApp_setup');
+            localStorage.removeItem('cameFromLogin');
+            localStorage.removeItem('userChoseLogin');
             } else {
                 // Users exist but this combo doesn't match
                 errorEl.textContent = '❌ No account found with that username and role combination.';
@@ -270,7 +285,7 @@ document.getElementById('loginBtn').onclick = async function() {
 
         // ========== STEP 7: Login successful! ==========
         console.log('✅ Login successful:', user.username, '| Role:', user.role);
-
+         localStorage.setItem('setup_completed', 'true');
         // Set current user WITH business_id
         const finalBusinessId = user.business_id || null;
         window.currentUser = { ...user, business_id: finalBusinessId };
