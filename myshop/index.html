@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockApp* - Inventory Management</title>
+    <link rel="icon" type="image/png" href="image/icon.ico">
+    <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e2e8f0;
+        }
+
+        .landing-container {
+            text-align: center;
+            padding: 40px;
+            max-width: 440px;
+            width: 90%;
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 32px;
+            color: white;
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        h1 span {
+            color: #3b82f6;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 48px;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .btn i {
+            margin-right: 10px;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-setup {
+            background: transparent;
+            color: #94a3b8;
+            border: 2px solid #334155;
+        }
+
+        .btn-setup:hover {
+            border-color: #3b82f6;
+            color: #e2e8f0;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: #475569;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #334155;
+        }
+
+        footer {
+            margin-top: 48px;
+            color: #475569;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="logo-icon">
+            <i class="fas fa-boxes"></i>
+        </div>
+        
+        <h1>Stock<span>App</span>*</h1>
+        <p class="subtitle">Inventory Management Simplified</p>
+
+        <a href="shop.html" class="btn btn-login" onclick="handleLoginClick()">
+            <i class="fas fa-sign-in-alt"></i> Login to Your Account
+        </a>
+
+        <div class="divider">or</div>
+
+        <a href="setup.html" class="btn btn-setup" onclick="handleSetupClick()">
+            <i class="fas fa-store-alt"></i> Setup a New Shop
+        </a>
+
+        <footer>
+            StockApp* v5.3.5
+        </footer>
+    </div>
+
+    <script>
+        // When user clicks "Login", mark that setup should NOT be forced
+        function handleLoginClick() {
+            // Set flag so shop.html knows user came from login button
+            localStorage.setItem('cameFromLogin', 'true');
+            localStorage.setItem('userChoseLogin', 'true');
+            
+            // Don't force setup check - let them go to login
+            // The setup check in shop.html will see this flag and skip redirect
+        }
+
+        // When user clicks "Setup", mark that they want fresh setup
+        function handleSetupClick() {
+            // Clear any session data so setup starts fresh
+            localStorage.removeItem('setup_completed');
+            localStorage.removeItem('StockApp_setup');
+            localStorage.removeItem('cameFromLogin');
+            localStorage.removeItem('userChoseLogin');
+        }
+
+        // If returning user with session, update button text
+        (function() {
+            const hasSession = localStorage.getItem('userSession') || 
+                              localStorage.getItem('rememberedUser') ||
+                              localStorage.getItem('setup_completed');
+            
+            if (hasSession) {
+                const loginBtn = document.querySelector('.btn-login');
+                if (loginBtn) {
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Continue to Shop';
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
