@@ -528,56 +528,57 @@ document.getElementById('customReceiptGenerateBtn').onclick = async function() {
     const { customer, date, items } = currentCustomReceiptData;
     const receiptId = `CR-${Date.now().toString().slice(-6)}`;
 
-    // --- Calculate per‑item tax ---
+    // --- Calculate per-item tax ---
     let subtotal = 0;
-    let totalTax = 0;
-
     items.forEach(item => {
         const lineSubtotal = (item.price || 0);
         subtotal += lineSubtotal;
         const sale = sales.find(s => s.id === item.id);
-        let itemTax = 0;
-        if (sale && (sale.taxRate || sale.tax_rate)) {
-            itemTax = lineSubtotal * ((sale.taxRate || sale.tax_rate) / 100);
-            totalTax += itemTax;
-        }
-        item.taxAmount = itemTax;
+        item.taxAmount = sale && (sale.taxRate || sale.tax_rate) ? lineSubtotal * ((sale.taxRate || sale.tax_rate) / 100) : 0;
         item.taxRate = (sale?.taxRate || sale?.tax_rate) || 0;
     });
 
-    const total = subtotal + totalTax;
+    const total = subtotal + items.reduce((sum, i) => sum + (i.taxAmount || 0), 0);
 
-    // --- Extract advance payment info ---
-    let advancePaymentDate = null;
-    let advancePaymentAmount = 0;
-    for (const item of items) {
-        if (item.advancePaymentDate) {
-            advancePaymentDate = item.advancePaymentDate;
-            if (item.hybridBreakdown?.credit > 0) advancePaymentAmount = item.hybridBreakdown.credit;
-            break;
-        }
-    }
+    // Get payment type from items
+    const paymentTypes = [...new Set(items.map(i => i.paymentType || 'Cash'))];
+    const paymentTypeDisplay = paymentTypes.length === 1 ? paymentTypes[0] : 'Mixed';
 
-    // --- Prepare receipt data WITH business_id ---
+    // --- Build full receipt object ---
     const receiptData = {
         receiptId: receiptId,
         date: date,
-        items: items,
+        items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            type: item.type || 'product',
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+            paymentType: item.paymentType || 'Cash',
+            mobileMoneyType: item.mobileMoneyType || '',
+            customerName: item.customerName || customer || '',
+            customerPhoneNumber: item.customerPhoneNumber || '',
+            taxAmount: item.taxAmount || 0,
+            taxRate: item.taxRate || 0
+        })),
         customerName: getMostFrequentCustomerName(items) || customer || 'Unknown',
         cashier: cashierName1,
         customerPhoneNumber: currentCustomReceiptData.customerPhoneNumber || '',
-        advancePaymentAmount: advancePaymentAmount,
-        advancePaymentDate: advancePaymentDate,
+        advancePaymentAmount: 0,
+        advancePaymentDate: null,
         amountPaid: total,
         balanceDue: 0,
-        paymentTypeDisplay: 'Cash',
-        business_id: currentBusinessId  // ✅ ADD THIS
+        paymentTypeDisplay: paymentTypeDisplay,
+        createdAt: new Date().toLocaleString(),
+        updatedAt: new Date().toISOString(),
+        source: 'custom',
+        business_id: currentBusinessId
     };
 
     // Show the receipt
     await showReceiptFromData(receiptData);
 
-    // Save receipt to backend
+    // Save to customer_receipts only
     await saveCustomerReceipt(receiptData);
 
     cleanupCustomReceiptModal();
@@ -585,45 +586,47 @@ document.getElementById('customReceiptGenerateBtn').onclick = async function() {
     if (typeof trackAppEvent === 'function') trackAppEvent('receipt_custom_generated', {}, null);
 };
 
-// And fix saveCustomerReceipt to include business_id:
+// Save ONLY to customer_receipts table (not sales)
 async function saveCustomerReceipt(receiptData) {
     try {
         const client = getSB();
         if (!client) throw new Error('Database not connected');
 
         const currentBusinessId = receiptData.business_id || currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
-        const items = receiptData.items || [];
-        const receiptId = receiptData.receiptId || `CR-${Date.now().toString().slice(-6)}`;
 
-        const salesToInsert = items.map(item => ({
-            product_name: item.name || 'Unknown Item',
-            type: item.type || 'product',
-            quantity: item.quantity || 1,
-            price: item.price || 0,
-            total_amount: item.price || 0,
-            payment_type: receiptData.paymentTypeDisplay || 'Cash',
-            customer_name: receiptData.customerName || '',
-            date_sold: receiptData.date || new Date().toISOString().split('T')[0],
-            username: receiptData.cashier || currentUser?.username || 'Unknown',
-            receipt_id: receiptId,
-            advance_payment: (receiptData.advancePaymentAmount || 0) / (items.length || 1),
-            amount_paid: (receiptData.amountPaid || 0) / (items.length || 1),
-            balance_due: (receiptData.balanceDue || 0) / (items.length || 1),
-            business_id: currentBusinessId,  // ✅ ADD THIS
+        const fullReceipt = {
+            receipt_id: receiptData.receiptId,
+            date: receiptData.date,
+            customer_name: receiptData.customerName,
+            cashier: receiptData.cashier,
+            customer_phone: receiptData.customerPhoneNumber || '',
+            items: receiptData.items || [],
+            amount_paid: receiptData.amountPaid || 0,
+            balance_due: receiptData.balanceDue || 0,
+            advance_payment_amount: receiptData.advancePaymentAmount || 0,
+            advance_payment_date: receiptData.advancePaymentDate || null,
+            payment_type_display: receiptData.paymentTypeDisplay || 'Cash',
+            business_id: currentBusinessId,
+            source: receiptData.source || 'custom',
             created_at: new Date().toISOString()
-        }));
+        };
 
-        const { error } = await client.from('sales').insert(salesToInsert);
+        const { data: savedReceipt, error } = await client
+            .from('customer_receipts')
+            .insert([fullReceipt])
+            .select()
+            .single();
+
         if (error) throw error;
 
-        console.log(`✅ Receipt saved: ${receiptId} with ${salesToInsert.length} items (business: ${currentBusinessId})`);
-        return { success: true, receiptId };
+        console.log('✅ Receipt saved to customer_receipts:', savedReceipt.id);
+        return { success: true, receiptId: receiptData.receiptId, id: savedReceipt.id };
+
     } catch (error) {
         console.error('Failed to save customer receipt:', error);
         return { success: false, error: error.message };
     }
 }
-
 function getMostFrequentCustomerName(items) {
     if (!items || items.length === 0) return null;
     

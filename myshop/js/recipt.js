@@ -3082,67 +3082,103 @@ async function loadFilteredReceipts(filters = {}) {
         const client = getSB();
         if (!client) throw new Error('Database connection not available');
 
-        // Build Supabase query
-        let query = client
+        const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
+        const receiptMap = new Map();
+
+        // ========== 1. LOAD FROM customer_receipts TABLE ==========
+        let customQuery = client
+            .from('customer_receipts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (currentBusinessId) customQuery = customQuery.eq('business_id', currentBusinessId);
+        if (filters.receiptId) customQuery = customQuery.ilike('receipt_id', `%${filters.receiptId}%`);
+        if (filters.customerName || filters.customerDropdown) {
+            const search = filters.customerDropdown || filters.customerName;
+            customQuery = customQuery.ilike('customer_name', `%${search}%`);
+        }
+        if (filters.filterDate) customQuery = customQuery.eq('date', filters.filterDate);
+
+        const { data: customReceipts, error: customError } = await customQuery.limit(50);
+
+        if (!customError && customReceipts) {
+            customReceipts.forEach(receipt => {
+                receiptMap.set(receipt.receipt_id, {
+                    receiptId: receipt.receipt_id,
+                    date: receipt.date,
+                    customerName: receipt.customer_name || '',
+                    paymentType: receipt.payment_type_display || 'Cash',
+                    cashier: receipt.cashier || '',
+                    items: (receipt.items || []).map(item => ({
+                        name: item.name || '',
+                        type: item.type || 'product',
+                        quantity: item.quantity || 1,
+                        price: item.price || 0
+                    })),
+                    totalAmount: receipt.amount_paid || 0,
+                    advancePayment: receipt.advance_payment_amount || 0,
+                    amountPaid: receipt.amount_paid || 0,
+                    balanceDue: receipt.balance_due || 0,
+                    source: receipt.source || 'custom'
+                });
+            });
+        }
+
+        // ========== 2. LOAD FROM sales TABLE (grouped by receipt_id) ==========
+        let salesQuery = client
             .from('sales')
             .select('*')
             .not('receipt_id', 'is', null)
             .order('date_sold', { ascending: false });
 
-        // Apply filters at database level
-        if (filters.receiptId) {
-            query = query.ilike('receipt_id', `%${filters.receiptId}%`);
-        }
+        if (currentBusinessId) salesQuery = salesQuery.eq('business_id', currentBusinessId);
+        if (filters.receiptId) salesQuery = salesQuery.ilike('receipt_id', `%${filters.receiptId}%`);
         if (filters.customerName || filters.customerDropdown) {
-            const customerSearch = filters.customerDropdown || filters.customerName;
-            query = query.ilike('customer_name', `%${customerSearch}%`);
+            const search = filters.customerDropdown || filters.customerName;
+            salesQuery = salesQuery.ilike('customer_name', `%${search}%`);
         }
-        if (filters.filterDate) {
-            query = query.eq('date_sold', filters.filterDate);
-        }
+        if (filters.filterDate) salesQuery = salesQuery.eq('date_sold', filters.filterDate);
 
-        const { data: salesData, error } = await query.limit(100);
+        const { data: salesData, error: salesError } = await salesQuery.limit(50);
 
-        if (error) throw error;
-
-        // Group sales by receipt_id to rebuild receipt objects
-        const receiptMap = new Map();
-        
-        (salesData || []).forEach(sale => {
-            const receiptId = sale.receipt_id;
-            if (!receiptMap.has(receiptId)) {
-                receiptMap.set(receiptId, {
-                    receiptId: receiptId,
-                    date: sale.date_sold,
-                    customerName: sale.customer_name,
-                    paymentType: sale.payment_type,
-                    cashier: sale.username,
-                    items: [],
-                    totalAmount: 0,
-                    advancePayment: sale.advance_payment || 0,
-                    amountPaid: sale.amount_paid || 0,
-                    balanceDue: sale.balance_due || 0
+        if (!salesError && salesData) {
+            salesData.forEach(sale => {
+                const receiptId = sale.receipt_id;
+                // Only add if not already in receiptMap from customer_receipts
+                if (!receiptMap.has(receiptId)) {
+                    receiptMap.set(receiptId, {
+                        receiptId: receiptId,
+                        date: sale.date_sold,
+                        customerName: sale.customer_name || '',
+                        paymentType: sale.payment_type || 'Cash',
+                        cashier: sale.username || '',
+                        items: [],
+                        totalAmount: 0,
+                        advancePayment: sale.advance_payment || 0,
+                        amountPaid: sale.amount_paid || 0,
+                        balanceDue: sale.balance_due || 0,
+                        source: 'sales'
+                    });
+                }
+                
+                const receipt = receiptMap.get(receiptId);
+                receipt.items.push({
+                    name: sale.product_name || '',
+                    type: sale.type || 'product',
+                    quantity: sale.quantity || 1,
+                    price: sale.total_amount || sale.price || 0
                 });
-            }
-            
-            const receipt = receiptMap.get(receiptId);
-            receipt.items.push({
-                name: sale.product_name,
-                type: sale.type || 'product',
-                quantity: sale.quantity,
-                price: sale.total_amount || sale.price
+                receipt.totalAmount += (parseFloat(sale.total_amount) || parseFloat(sale.price) || 0);
             });
-            receipt.totalAmount += (sale.total_amount || sale.price || 0);
-        });
+        }
 
         const receipts = Array.from(receiptMap.values());
         
-        // Display the receipts
         if (typeof displayReceiptsTable === 'function') {
             displayReceiptsTable(receipts);
         }
 
-        console.log(`✅ Loaded ${receipts.length} receipts`);
+        console.log(`✅ Loaded ${receipts.length} receipts (${customReceipts?.length || 0} custom, ${salesData?.length || 0} sales)`);
 
     } catch (error) {
         console.error('Error loading filtered receipts:', error);
@@ -3152,9 +3188,7 @@ async function loadFilteredReceipts(filters = {}) {
         if (cached) {
             try {
                 const receipts = JSON.parse(cached);
-                if (typeof displayReceiptsTable === 'function') {
-                    displayReceiptsTable(receipts);
-                }
+                if (typeof displayReceiptsTable === 'function') displayReceiptsTable(receipts);
             } catch (e) {
                 console.warn('Could not parse cached receipts');
             }
@@ -3861,21 +3895,59 @@ document.getElementById('searchCustomerReceiptBtn').addEventListener('click', as
 
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
 
-        // ========== FIX: If it starts with "CR-", search by receipt_id ==========
+        // ========== SEARCH customer_receipts table first ==========
+        let receiptQuery = client
+            .from('customer_receipts')
+            .select('*')
+            .eq('receipt_id', id);
+        if (currentBusinessId) receiptQuery = receiptQuery.eq('business_id', currentBusinessId);
+        
+        const { data: customReceipt, error: receiptError } = await receiptQuery.maybeSingle();
+
+        if (!receiptError && customReceipt) {
+            // Found in customer_receipts - use full receipt data
+            const normalizedData = {
+                receiptId: customReceipt.receipt_id,
+                customerName: customReceipt.customer_name || '',
+                date: customReceipt.date,
+                cashier: customReceipt.cashier,
+                paymentType: customReceipt.payment_type_display || 'Cash',
+                items: (customReceipt.items || []).map(item => ({
+                    name: item.name,
+                    type: item.type || 'product',
+                    quantity: item.quantity || 1,
+                    price: item.price || 0,
+                    paymentType: item.paymentType || 'Cash',
+                    customerName: item.customerName || ''
+                })),
+                totalAmount: customReceipt.amount_paid || 0,
+                advancePaymentAmount: customReceipt.advance_payment_amount || 0,
+                advancePaymentDate: customReceipt.advance_payment_date || null,
+                amountPaid: customReceipt.amount_paid || 0,
+                balanceDue: customReceipt.balance_due || 0,
+                paymentTypeDisplay: customReceipt.payment_type_display || 'Cash',
+                source: customReceipt.source || 'custom'
+            };
+
+            if (typeof hideLoading === 'function') hideLoading();
+            document.getElementById('searchCustomerReceiptInput').value = '';
+            if (typeof showReceiptFromData === 'function') await showReceiptFromData(normalizedData);
+            console.log('✅ Found in customer_receipts');
+            return;
+        }
+
+        // ========== If CR- format, also search sales by receipt_id ==========
         if (id.startsWith('CR-')) {
-            let receiptQuery = client
+            let salesQuery = client
                 .from('sales')
                 .select('*')
-                .eq('receipt_id', id)  // Search by receipt_id, not id
+                .eq('receipt_id', id)
                 .order('created_at', { ascending: true });
-            if (currentBusinessId) receiptQuery = receiptQuery.eq('business_id', currentBusinessId);
+            if (currentBusinessId) salesQuery = salesQuery.eq('business_id', currentBusinessId);
             
-            const { data: salesData, error } = await receiptQuery;
+            const { data: salesData, error: salesError } = await salesQuery;
 
-            if (error) throw error;
-
-            if (salesData && salesData.length > 0) {
-                // Build receipt from grouped sales
+            if (!salesError && salesData && salesData.length > 0) {
                 const normalizedData = {
                     receiptId: id,
                     customerName: salesData[0].customer_name || '',
@@ -3888,53 +3960,51 @@ document.getElementById('searchCustomerReceiptBtn').addEventListener('click', as
                         quantity: sale.quantity || 1,
                         price: sale.total_amount || sale.price || 0
                     })),
-                    totalAmount: salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount) || parseFloat(s.price) || 0), 0)
+                    totalAmount: salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount) || parseFloat(s.price) || 0), 0),
+                    source: 'sales'
                 };
 
                 if (typeof hideLoading === 'function') hideLoading();
                 document.getElementById('searchCustomerReceiptInput').value = '';
                 if (typeof showReceiptFromData === 'function') await showReceiptFromData(normalizedData);
+                console.log('✅ Found in sales by receipt_id');
                 return;
             }
-            
-            // Not found by receipt_id
-            if (typeof hideLoading === 'function') hideLoading();
-            showMessageModal(translate('receiptNotFound') || 'Receipt not found');
-            return;
         }
 
-        // ========== Otherwise try by UUID id ==========
+        // ========== Try by UUID id in sales ==========
         let singleQuery = client.from('sales').select('*').eq('id', id);
         if (currentBusinessId) singleQuery = singleQuery.eq('business_id', currentBusinessId);
         
         const { data: singleSale, error: singleError } = await singleQuery.maybeSingle();
 
-        if (singleError) throw singleError;
-        
-        if (!singleSale) {
+        if (!singleError && singleSale) {
+            const normalizedData = {
+                receiptId: singleSale.id,
+                customerName: singleSale.customer_name || '',
+                date: singleSale.date_sold,
+                cashier: singleSale.username,
+                paymentType: singleSale.payment_type,
+                items: [{
+                    name: singleSale.product_name,
+                    type: singleSale.type || 'product',
+                    quantity: singleSale.quantity || 1,
+                    price: singleSale.total_amount || singleSale.price || 0
+                }],
+                totalAmount: singleSale.total_amount || singleSale.price || 0,
+                source: 'sales'
+            };
+
             if (typeof hideLoading === 'function') hideLoading();
-            showMessageModal(translate('receiptNotFound') || 'Receipt not found');
+            document.getElementById('searchCustomerReceiptInput').value = '';
+            if (typeof showReceiptFromData === 'function') await showReceiptFromData(normalizedData);
+            console.log('✅ Found in sales by UUID');
             return;
         }
 
-        const normalizedData = {
-            receiptId: singleSale.id,
-            customerName: singleSale.customer_name || '',
-            date: singleSale.date_sold,
-            cashier: singleSale.username,
-            paymentType: singleSale.payment_type,
-            items: [{
-                name: singleSale.product_name,
-                type: singleSale.type || 'product',
-                quantity: singleSale.quantity || 1,
-                price: singleSale.total_amount || singleSale.price || 0
-            }],
-            totalAmount: singleSale.total_amount || singleSale.price || 0
-        };
-
+        // Not found anywhere
         if (typeof hideLoading === 'function') hideLoading();
-        document.getElementById('searchCustomerReceiptInput').value = '';
-        if (typeof showReceiptFromData === 'function') await showReceiptFromData(normalizedData);
+        showMessageModal(translate('receiptNotFound') || 'Receipt not found');
 
     } catch (error) {
         console.error('Error loading receipt:', error);
