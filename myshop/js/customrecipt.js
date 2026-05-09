@@ -796,13 +796,6 @@ function cleanupCustomReceiptModal() {
     if (typeof clearCustomReceiptData === 'function') clearCustomReceiptData();
 }
 
-// Toggle filter panel
-function togglefilterModal() {
-    const filterSection = document.querySelector('#customReceiptModal .grid');
-    if (filterSection) {
-        filterSection.classList.toggle('hidden');
-    }
-}
 
 function formatPaymentDueDate(dateStr) {
     if (!dateStr) return '';

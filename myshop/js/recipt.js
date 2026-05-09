@@ -3026,93 +3026,69 @@ function populateReceiptData(data) {
 }
 
 
-// Open filter modal
-function togglefilterModal() {
-    const modal = document.getElementById('filterModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        // Load customer names into dropdown
-        loadFilterCustomerDropdown();
+function toggleFilterPanel() {
+      
+    const filterPanel = document.getElementById('filterPanel');
+    if (filterPanel.classList.contains('translate-x-full')) {
+        filterPanel.classList.remove('translate-x-full');
+    } else {
+        filterPanel.classList.add('translate-x-full');
+        // Remove click outside listener when closing
+        document.removeEventListener('click', handleClickOutside);
     }
 }
-
-// Close filter modal
-function closeFilterModal(event) {
-    // If clicking the overlay background (not the modal content)
-    if (event && event.target !== document.getElementById('filterModal')) return;
-    
-    const modal = document.getElementById('filterModal');
-    if (modal) {
-        modal.classList.add('hidden');
+function cleanupModal() {
+    // Close the filter modal
+    const filterModal = document.getElementById('filterModal');
+    if (filterModal) {
+        filterModal.classList.add('hidden');
     }
+
+    // Also close the old filterPanel if it exists
+    const filterPanel = document.getElementById('filterPanel');
+    if (filterPanel) {
+        filterPanel.classList.add('translate-x-full');
+    }
+    
     // Show custom receipt modal again
     const customReceiptModal = document.getElementById('customReceiptModal');
     if (customReceiptModal) {
         customReceiptModal.classList.remove('hidden');
     }
 }
-
-// Load customer names into filter dropdown
-async function loadFilterCustomerDropdown() {
-    const dropdown = document.getElementById('filterCustomerDropdown');
-    if (!dropdown) return;
-
-    // Keep the first option
-    dropdown.innerHTML = '<option value="">Select a Customer</option>';
-
-    // Get unique customer names from sales
-    const names = new Set();
-    if (typeof sales !== 'undefined' && Array.isArray(sales)) {
-        sales.forEach(s => {
-            const name = s.customerName || s.customer_name;
-            if (name) names.add(name);
-        });
-    }
-
-    // Also check customer_receipts
-    try {
-        const client = getSB();
-        if (client) {
-            const { data } = await client.from('customer_receipts').select('customer_name').limit(100);
-            if (data) data.forEach(r => { if (r.customer_name) names.add(r.customer_name); });
-        }
-    } catch (e) {}
-
-    [...names].sort().forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        dropdown.appendChild(option);
-    });
-}
-
-// Apply filters and reload receipts
-async function applyFilters() {
-    const filters = {
-        receiptId: document.getElementById('filterReceiptId')?.value.trim() || null,
-        customerName: document.getElementById('filterCustomerName')?.value.trim() || null,
-        filterDate: document.getElementById('filterDate')?.value || null,
-        customerDropdown: document.getElementById('filterCustomerDropdown')?.value || null
-    };
-
-    closeFilterModal();
+function handleClickOutside(event) {
+    const filterPanel = document.getElementById('filterPanel');
+    const filterOptionsBtn = document.getElementById('filterOptionsBtn');
     
-    if (typeof showLoading === 'function') showLoading();
-    await loadFilteredReceipts(filters);
-    if (typeof hideLoading === 'function') hideLoading();
+    if (!filterPanel.contains(event.target) && !filterOptionsBtn.contains(event.target)) {
+        toggleFilterPanel();
+    }
+      document.getElementById('customReceiptModal').classList.remove('hidden');
 }
 
-// Close on Escape key
+// Close panel when pressing Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
-        const modal = document.getElementById('filterModal');
-        if (modal && !modal.classList.contains('hidden')) {
-            closeFilterModal();
+        const filterPanel = document.getElementById('filterPanel');
+        if (!filterPanel.classList.contains('translate-x-full')) {
+            toggleFilterPanel();
         }
     }
 });
 
 
+async function applyFilters() {
+    const receiptId = document.getElementById('filterReceiptId').value.trim();
+    const customerName = document.getElementById('filterCustomerName').value.trim();
+    const filterDate = document.getElementById('filterDate').value;
+    const customerDropdown = document.getElementById('filterCustomerDropdown').value;
+
+    console.log('Filters applied:', { receiptId, customerName, filterDate, customerDropdown });
+
+    // Load and display filtered receipts
+    await loadFilteredReceipts({ receiptId, customerName, filterDate, customerDropdown });
+   // Close the panel after applying filters
+}
 
 async function loadFilteredReceipts(filters = {}) {
     try {
@@ -3234,7 +3210,7 @@ async function loadFilteredReceipts(filters = {}) {
 }
 
 function displayReceiptsTable(receipts) {
-    const filterModal = document.getElementById('filterModal');
+    const filterPanel = document.getElementById('filterPanel');
     
     // Create or update receipts list section
     let receiptsListSection = document.getElementById('receiptsListSection');
@@ -3242,7 +3218,7 @@ function displayReceiptsTable(receipts) {
         receiptsListSection = document.createElement('div');
         receiptsListSection.id = 'receiptsListSection';
         receiptsListSection.className = 'mt-4 border-t pt-4';
-        filterModal.appendChild(receiptsListSection);
+        filterPanel.appendChild(receiptsListSection);
     }
 
     if (receipts.length === 0) {
@@ -3440,7 +3416,7 @@ async function openReceiptFromList(receiptId) {
                 source: customReceipt.source || 'custom'
             };
 
-            if (typeof togglefilterModal === 'function') togglefilterModal();
+            if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
             const customReceiptModal = document.getElementById('customReceiptModal');
             if (customReceiptModal) customReceiptModal.classList.add('hidden');
             if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
@@ -3475,7 +3451,7 @@ async function openReceiptFromList(receiptId) {
                     source: 'sales'
                 };
 
-                if (typeof togglefilterModal === 'function') togglefilterModal();
+                if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
                 const customReceiptModal = document.getElementById('customReceiptModal');
                 if (customReceiptModal) customReceiptModal.classList.add('hidden');
                 if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
@@ -3502,7 +3478,7 @@ async function openReceiptFromList(receiptId) {
                 source: 'sales'
             };
 
-            if (typeof togglefilterModal === 'function') togglefilterModal();
+            if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
             const customReceiptModal = document.getElementById('customReceiptModal');
             if (customReceiptModal) customReceiptModal.classList.add('hidden');
             if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
@@ -3529,19 +3505,19 @@ async function showCustomReceiptInModal(receiptData) {
         receiptData.total = calculatedTotal;
     
         const cashierName1 = currentUser ? currentUser.username : 'Unknown';
-const qrLines = [
-    translations[currentLanguage].customReceipt || 'CUSTOM RECEIPT',
-    `${translations[currentLanguage].id || 'ID'}: ${receiptData.receiptId}`,
-    `${translations[currentLanguage].customer || 'Customer'}: ${receiptData.customerName}`,
-    `${translations[currentLanguage].date || 'Date'}: ${receiptData.date}`,
-    `${translations[currentLanguage].items || 'Items'}:`
-];
+        const qrLines = [
+            translations[currentLanguage].customReceipt || 'CUSTOM RECEIPT',
+            `${translations[currentLanguage].id || 'ID'}: ${receiptData.receiptId}`,
+            `${translations[currentLanguage].customer || 'Customer'}: ${receiptData.customerName}`,
+            `${translations[currentLanguage].date || 'Date'}: ${receiptData.date}`,
+            `${translations[currentLanguage].items || 'Items'}:`
+        ];
 
-// Add items to QR
-receiptData.items.forEach(item => {
-    const quantityText = translations[currentLanguage].quantity ? translations[currentLanguage].quantity.toLowerCase() : 'quantity';
-    qrLines.push(`- ${item.name} ${quantityText} ${item.quantity} ${translations[currentLanguage].price ? translations[currentLanguage].price.toLowerCase() : 'price'} ${item.price} ${currentCurrency}`);
-});
+        // Add items to QR
+        receiptData.items.forEach(item => {
+            const quantityText = translations[currentLanguage].quantity ? translations[currentLanguage].quantity.toLowerCase() : 'quantity';
+            qrLines.push(`- ${item.name} ${quantityText} ${item.quantity} ${translations[currentLanguage].price ? translations[currentLanguage].price.toLowerCase() : 'price'} ${item.price} ${currentCurrency}`);
+        });
         const receiptCustomerPhoneNumber = document.getElementById('receiptCustomerPhoneNumber');
         if (receiptCustomerPhoneNumber) {
             // Check for phone number in multiple places

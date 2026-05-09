@@ -156,13 +156,7 @@ if (cleanupCustomReceiptModalBtn) {
         }
     });
 }
-const filterOptionsBtn = document.getElementById('filterOptionsBtn');
-    
-if (filterOptionsBtn) {
-    filterOptionsBtn.addEventListener('click', function() {
-        togglefilterModal();
-    });
-}
+
 
 const applyExpenseFiltersBtn = document.getElementById('applyExpenseFiltersBtn');
     

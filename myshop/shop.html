@@ -3085,7 +3085,7 @@
                             <!-- 3-dot button -->
                             <button id="filterOptionsBtn" 
                                     class="bg-gray-200  text-base p-2 rounded-full focus:outline-none"
-                                    onclick="togglefilterModal()"
+                                    onclick="toggleFilterPanel()"
                                     >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v.01M12 12v.01M12 18v.01" />
@@ -3191,12 +3191,16 @@
                     </div>
                 </div>
 
-                <div id="filterModall" class="fixed top-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-lg hidden ">
+                <div id="filterPanel" class="fixed top-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-lg transform translate-x-full transition-transform duration-300 z-99999999999999999999999999999999999999999999999999999999999999999999999999">
                     <div class="p-4">
                         <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4" data-translate="find_receipt_title">
                             Find Receipt
+
                         </h4>
-                        <div class="space-y-4">
+                        <button class="modal-close-btn text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none" onclick="cleanupModal()">
+                            &times;
+                        </button>
+                            <div class="space-y-4">
                             <!-- Search by Receipt ID -->
                             <div>
                                 <label for="filterReceiptId" class="block text-sm font-medium text-gray-600 dark:text-gray-400"
@@ -3244,8 +3248,10 @@
                                     <option value="Michael Brown">Michael Brown</option>
                                 </select>
                             </div>
+                               <div id="receiptsListSection" class="p-4 border"><!-- Dynamically populated list of receipts based on filters --></div>
                         </div>
                     </div>
+                
                     <div class="p-4 border-t">
                         <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700" 
                                 onclick="applyFilters()"
