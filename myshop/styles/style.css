@@ -2246,14 +2246,7 @@ font-family: 'Poppins', 'Segoe UI', 'Arial', sans-serif;
         display: none;
     }
 }
-div#filterPanel {
-  width: 800px;
-    z-index: 2000000000000099999999999999999;
-  max-width: none;
-      border: 2px solid rgb(255, 254, 254);
 
-
-}
 div#receiptsListSection {
   max-height: 600px;
   overflow-y: auto;
@@ -4329,39 +4322,14 @@ textarea {
   z-index: 9999999;
 }
 
-
-#filterPanel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  z-index: 2147483647;
-  background-color: white; /* Ensure it's not transparent */
-  box-shadow: -2px 0 10px rgba(0,0,0,0.1); /* Adds depth on desktop */
-  
-  /* Mobile First Approach */
-  left: 0; 
-  width: 100%;
-}
-
-/* For tablets and desktops (typically 768px and up) */
-@media (min-width: 768px) {
-  #filterPanel {
-    left: auto; /* Lets the panel "stick" to the right */
-    width: 400px; /* Fixed width for larger screens */
-  }
-}
-
-#filterPanel > .p-4:first-child {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
-}
-
-#filterPanel > .p-4.border-t {
-  flex-shrink: 0;
-}
-
+    #filterModal {
+        transition: opacity 0.2s ease;
+    }
+    #filterModal.hidden {
+        display: none !important;
+    }
+    @media-print {
+    floating-btn {
+        display: none !important;
+          }
+    }
