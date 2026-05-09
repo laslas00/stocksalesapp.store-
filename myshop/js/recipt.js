@@ -3026,56 +3026,93 @@ function populateReceiptData(data) {
 }
 
 
+// Open filter modal
 function toggleFilterPanel() {
-      document.getElementById('customReceiptModal').classList.add('hidden');
-    const filterPanel = document.getElementById('filterPanel');
-    if (filterPanel.classList.contains('translate-x-full')) {
-        filterPanel.classList.remove('translate-x-full');
-        // Add click outside listener when opening
-        setTimeout(() => {
-            document.addEventListener('click', handleClickOutside);
-        }, 10);
-    } else {
-        filterPanel.classList.add('translate-x-full');
-        // Remove click outside listener when closing
-        document.removeEventListener('click', handleClickOutside);
+    const modal = document.getElementById('filterModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Load customer names into dropdown
+        loadFilterCustomerDropdown();
     }
 }
 
-function handleClickOutside(event) {
-    const filterPanel = document.getElementById('filterPanel');
-    const filterOptionsBtn = document.getElementById('filterOptionsBtn');
+// Close filter modal
+function closeFilterModal(event) {
+    // If clicking the overlay background (not the modal content)
+    if (event && event.target !== document.getElementById('filterModal')) return;
     
-    // Check if click is outside the filter panel and not on the filter button
-    if (!filterPanel.contains(event.target) && !filterOptionsBtn.contains(event.target)) {
-        toggleFilterPanel();
+    const modal = document.getElementById('filterModal');
+    if (modal) {
+        modal.classList.add('hidden');
     }
-      document.getElementById('customReceiptModal').classList.remove('hidden');
+    // Show custom receipt modal again
+    const customReceiptModal = document.getElementById('customReceiptModal');
+    if (customReceiptModal) {
+        customReceiptModal.classList.remove('hidden');
+    }
 }
 
-// Close panel when pressing Escape key
+// Load customer names into filter dropdown
+async function loadFilterCustomerDropdown() {
+    const dropdown = document.getElementById('filterCustomerDropdown');
+    if (!dropdown) return;
+
+    // Keep the first option
+    dropdown.innerHTML = '<option value="">Select a Customer</option>';
+
+    // Get unique customer names from sales
+    const names = new Set();
+    if (typeof sales !== 'undefined' && Array.isArray(sales)) {
+        sales.forEach(s => {
+            const name = s.customerName || s.customer_name;
+            if (name) names.add(name);
+        });
+    }
+
+    // Also check customer_receipts
+    try {
+        const client = getSB();
+        if (client) {
+            const { data } = await client.from('customer_receipts').select('customer_name').limit(100);
+            if (data) data.forEach(r => { if (r.customer_name) names.add(r.customer_name); });
+        }
+    } catch (e) {}
+
+    [...names].sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+    });
+}
+
+// Apply filters and reload receipts
+async function applyFilters() {
+    const filters = {
+        receiptId: document.getElementById('filterReceiptId')?.value.trim() || null,
+        customerName: document.getElementById('filterCustomerName')?.value.trim() || null,
+        filterDate: document.getElementById('filterDate')?.value || null,
+        customerDropdown: document.getElementById('filterCustomerDropdown')?.value || null
+    };
+
+    closeFilterModal();
+    
+    if (typeof showLoading === 'function') showLoading();
+    await loadFilteredReceipts(filters);
+    if (typeof hideLoading === 'function') hideLoading();
+}
+
+// Close on Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
-        const filterPanel = document.getElementById('filterPanel');
-        if (!filterPanel.classList.contains('translate-x-full')) {
-            toggleFilterPanel();
+        const modal = document.getElementById('filterModal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeFilterModal();
         }
     }
 });
 
 
-async function applyFilters() {
-    const receiptId = document.getElementById('filterReceiptId').value.trim();
-    const customerName = document.getElementById('filterCustomerName').value.trim();
-    const filterDate = document.getElementById('filterDate').value;
-    const customerDropdown = document.getElementById('filterCustomerDropdown').value;
-
-    console.log('Filters applied:', { receiptId, customerName, filterDate, customerDropdown });
-
-    // Load and display filtered receipts
-    await loadFilteredReceipts({ receiptId, customerName, filterDate, customerDropdown });
-   // Close the panel after applying filters
-}
 
 async function loadFilteredReceipts(filters = {}) {
     try {
@@ -3370,17 +3407,59 @@ async function openReceiptFromList(receiptId) {
 
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
 
-        // ========== FIX: Check if it's a custom receipt ID (CR-) ==========
+        // ========== 1. SEARCH customer_receipts FIRST ==========
+        let customQuery = client
+            .from('customer_receipts')
+            .select('*')
+            .eq('receipt_id', receiptId);
+        if (currentBusinessId) customQuery = customQuery.eq('business_id', currentBusinessId);
+        
+        const { data: customReceipt, error: customError } = await customQuery.maybeSingle();
+
+        if (!customError && customReceipt) {
+            // Found in customer_receipts - use full receipt data
+            const receiptData = {
+                receiptId: customReceipt.receipt_id,
+                customerName: customReceipt.customer_name || '',
+                date: customReceipt.date,
+                paymentType: customReceipt.payment_type_display || 'Cash',
+                cashier: customReceipt.cashier || '',
+                items: (customReceipt.items || []).map(item => ({
+                    id: item.id || '',
+                    name: item.name || '',
+                    type: item.type || 'product',
+                    quantity: item.quantity || 1,
+                    price: item.price || 0,
+                    paymentType: item.paymentType || 'Cash',
+                    customerName: item.customerName || ''
+                })),
+                total: customReceipt.amount_paid || 0,
+                advancePayment: customReceipt.advance_payment_amount || 0,
+                amountPaid: customReceipt.amount_paid || 0,
+                balanceDue: customReceipt.balance_due || 0,
+                source: customReceipt.source || 'custom'
+            };
+
+            if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
+            const customReceiptModal = document.getElementById('customReceiptModal');
+            if (customReceiptModal) customReceiptModal.classList.add('hidden');
+            if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
+            console.log('✅ Opened from customer_receipts');
+            return;
+        }
+
+        // ========== 2. SEARCH sales by receipt_id (CR- format) ==========
         if (String(receiptId).startsWith('CR-')) {
-            // Search by receipt_id column
-            let receiptQuery = client.from('sales').select('*').eq('receipt_id', receiptId).order('created_at', { ascending: true });
-            if (currentBusinessId) receiptQuery = receiptQuery.eq('business_id', currentBusinessId);
+            let salesQuery = client
+                .from('sales')
+                .select('*')
+                .eq('receipt_id', receiptId)
+                .order('created_at', { ascending: true });
+            if (currentBusinessId) salesQuery = salesQuery.eq('business_id', currentBusinessId);
             
-            const { data: salesData, error } = await receiptQuery;
+            const { data: salesData, error: salesError } = await salesQuery;
 
-            if (error) throw error;
-
-            if (salesData && salesData.length > 0) {
+            if (!salesError && salesData && salesData.length > 0) {
                 const receiptData = {
                     receiptId: receiptId,
                     customerName: salesData[0].customer_name || '',
@@ -3393,26 +3472,25 @@ async function openReceiptFromList(receiptId) {
                         paymentType: sale.payment_type || 'Cash', customerName: sale.customer_name
                     })),
                     total: salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount) || parseFloat(s.price) || 0), 0),
-                    source: 'receipt'
+                    source: 'sales'
                 };
 
                 if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
                 const customReceiptModal = document.getElementById('customReceiptModal');
                 if (customReceiptModal) customReceiptModal.classList.add('hidden');
                 if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
+                console.log('✅ Opened from sales by receipt_id');
                 return;
             }
-            throw new Error('Receipt not found');
         }
 
-        // ========== Try UUID lookup ==========
+        // ========== 3. SEARCH sales by UUID ==========
         let singleQuery = client.from('sales').select('*').eq('id', receiptId);
         if (currentBusinessId) singleQuery = singleQuery.eq('business_id', currentBusinessId);
         
         const { data: singleSale, error: singleError } = await singleQuery.maybeSingle();
-        if (singleError) throw singleError;
-
-        if (singleSale) {
+        
+        if (!singleError && singleSale) {
             const receiptData = {
                 receiptId: singleSale.id,
                 customerName: singleSale.customer_name || '',
@@ -3428,6 +3506,7 @@ async function openReceiptFromList(receiptId) {
             const customReceiptModal = document.getElementById('customReceiptModal');
             if (customReceiptModal) customReceiptModal.classList.add('hidden');
             if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
+            console.log('✅ Opened from sales by UUID');
             return;
         }
         
