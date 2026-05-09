@@ -1333,10 +1333,7 @@ async function completeSetup() {
     completeBtn.disabled = true;
 
     try {
-        // Get or create the setup database client
         let client = getSetupDB();
-        
-        // If getSetupDB returned a Promise, await it
         if (client && typeof client.then === 'function') {
             client = await client;
         }
@@ -1345,12 +1342,7 @@ async function completeSetup() {
             throw new Error('Database connection failed. Please refresh the page and try again.');
         }
 
-        console.log('✅ Client ready');
-
         const selectedLanguage = setupData.settings?.language || 'en';
-        console.log('🌐 Selected language:', selectedLanguage);
-
-        // Save language to localStorage
         localStorage.setItem('language', selectedLanguage);
         localStorage.setItem('systemLanguage', selectedLanguage);
         currentLanguage = selectedLanguage;
@@ -1360,132 +1352,27 @@ async function completeSetup() {
         if (logoFile) {
             const fileExt = logoFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
-            
             try {
                 const { error: uploadError } = await client.storage
                     .from('logos')
-                    .upload(fileName, logoFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
+                    .upload(fileName, logoFile, { cacheControl: '3600', upsert: false });
                 if (!uploadError) {
-                    const { data: urlData } = client.storage
-                        .from('logos')
-                        .getPublicUrl(fileName);
+                    const { data: urlData } = client.storage.from('logos').getPublicUrl(fileName);
                     logoUrl = urlData.publicUrl;
-                    console.log('✅ Logo uploaded:', logoUrl);
-                } else {
-                    console.warn('⚠️ Logo upload failed (non-critical):', uploadError.message);
                 }
             } catch (uploadErr) {
                 console.warn('⚠️ Logo upload error (non-critical):', uploadErr);
             }
         }
 
-        // ========== STEP 2: Create user in Supabase Auth FIRST ==========
+        // ========== STEP 2: Setup variables ==========
         const adminEmail = setupData.business.email || `${setupData.owner.username}@stockapp.local`;
         const adminPassword = setupData.owner.password;
         const adminUsername = setupData.owner.username;
         const adminFullName = setupData.owner.name;
         
-        console.log('📤 Creating admin user in Auth...');
-        
-        let authUserId = null;
-        
-        try {
-            const { data: authData, error: authError } = await client.auth.signUp({
-                email: adminEmail,
-                password: adminPassword,
-                options: {
-                    data: {
-                        username: adminUsername,
-                        full_name: adminFullName,
-                        role: 'administrator'
-                    }
-                }
-            });
-
-            if (authError) {
-                // If user already exists, that's OK - try to sign in to get the ID
-                if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-                    console.log('⚠️ User already exists in Auth, trying sign in...');
-                    const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
-                        email: adminEmail,
-                        password: adminPassword
-                    });
-                    
-                    if (!signInError && signInData.user) {
-                        authUserId = signInData.user.id;
-                        console.log('✅ Got existing Auth user ID:', authUserId);
-                    } else {
-                        console.warn('⚠️ Could not sign in existing user:', signInError?.message);
-                    }
-                } else {
-                    console.warn('⚠️ Auth signup failed (non-critical):', authError.message);
-                }
-            } else if (authData.user) {
-                authUserId = authData.user.id;
-                console.log('✅ Auth user created:', authUserId);
-            }
-        } catch (authErr) {
-            console.warn('⚠️ Auth creation error (non-critical):', authErr);
-        }
-
-        // ========== STEP 3: Save user to public.users table (ALWAYS) ==========
-        // Generate a UUID if Auth didn't give us one
-        const userId = authUserId || crypto.randomUUID ? crypto.randomUUID() : 'user_' + Date.now();
-        
-        const userProfile = {
-            id: userId,
-            username: adminUsername,
-            password: adminPassword, // Store password for direct login
-            full_name: adminFullName,
-            role: 'administrator',
-            email: adminEmail,
-            phone: setupData.business.primaryPhone || '',
-            address: setupData.business.address || '',
-            is_owner: true,
-            photo_url: 'image/THE ADMIN.png',
-            created_at: new Date().toISOString()
-        };
-
-        console.log('📤 Saving user profile to users table...');
-
-        // Check if user already exists in users table
-        const { data: existingUser } = await client
-            .from('users')
-            .select('id')
-            .eq('username', adminUsername)
-            .maybeSingle();
-
-        if (existingUser) {
-            // Update existing user
-            const { error: updateError } = await client
-                .from('users')
-                .update(userProfile)
-                .eq('username', adminUsername);
-            
-            if (updateError) {
-                console.error('❌ User update failed:', updateError);
-                throw new Error('Failed to save user: ' + updateError.message);
-            }
-            console.log('✅ User profile updated');
-        } else {
-            // Insert new user
-            const { error: insertError } = await client
-                .from('users')
-                .insert([userProfile]);
-
-            if (insertError) {
-                console.error('❌ User insert failed:', insertError);
-                throw new Error('Failed to save user: ' + insertError.message);
-            }
-            console.log('✅ User profile created');
-        }
-
-        // ========== STEP 4: Save business info ==========
-        const businessInfo = {
+        // ========== STEP 3: ALWAYS INSERT new business info FIRST ==========
+        const newBusinessInfo = {
             name: setupData.business.name || '',
             address: setupData.business.address || '',
             phone: setupData.business.primaryPhone || '',
@@ -1500,85 +1387,91 @@ async function completeSetup() {
             created_at: new Date().toISOString()
         };
 
-        console.log('📤 Saving business info...');
-
-        // Check if business info already exists
-        const { data: existingBiz } = await client
+        console.log('📤 Creating new business...');
+        const { data: newBiz, error: bizInsertError } = await client
             .from('business_info')
+            .insert([newBusinessInfo])
+            .select()
+            .single();
+
+        if (bizInsertError) {
+            throw new Error('Failed to create business: ' + bizInsertError.message);
+        }
+        const newBusinessId = newBiz.id;
+        console.log('✅ New business created:', newBusinessId);
+
+        // ========== STEP 4: Create user with business_id ==========
+        const userProfile = {
+            username: adminUsername,
+            password: adminPassword,
+            full_name: adminFullName,
+            role: 'administrator',
+            email: adminEmail,
+            phone: setupData.business.primaryPhone || '',
+            address: setupData.business.address || '',
+            is_owner: true,
+            photo_url: 'image/THE ADMIN.png',
+            business_id: newBusinessId,
+            created_at: new Date().toISOString()
+        };
+
+        console.log('📤 Saving user...');
+
+        // Check if username already exists
+        const { data: existingUser } = await client
+            .from('users')
             .select('id')
-            .limit(1)
+            .eq('username', adminUsername)
             .maybeSingle();
 
-        if (existingBiz) {
-            const { error: bizUpdateError } = await client
-                .from('business_info')
-                .update(businessInfo)
-                .eq('id', existingBiz.id);
-            
-            if (bizUpdateError) {
-                console.error('❌ Business info update failed:', bizUpdateError);
-                throw new Error('Failed to save business info: ' + bizUpdateError.message);
-            }
-            console.log('✅ Business info updated');
+        if (existingUser) {
+            await client.from('users').update(userProfile).eq('username', adminUsername);
+            console.log('✅ User updated');
         } else {
-            const { error: bizInsertError } = await client
-                .from('business_info')
-                .insert([businessInfo]);
-            
-            if (bizInsertError) {
-                console.error('❌ Business info insert failed:', bizInsertError);
-                throw new Error('Failed to save business info: ' + bizInsertError.message);
-            }
-            console.log('✅ Business info saved');
+            await client.from('users').insert([userProfile]);
+            console.log('✅ User created');
         }
 
-        // ========== STEP 5: Save to localStorage ==========
-        const setupStatus = {
+        // ========== STEP 5: Cache business ID ==========
+        localStorage.setItem('businessId', newBusinessId);
+        localStorage.setItem('businessInfo', JSON.stringify({ ...newBusinessInfo, id: newBusinessId }));
+
+        // ========== STEP 6: Save setup completion ==========
+        localStorage.setItem('StockApp_setup', JSON.stringify({
             isFirstTime: false,
             completedAt: new Date().toISOString(),
             businessName: setupData.business.name,
             ownerName: adminFullName,
             ownerUsername: adminUsername,
+            businessId: newBusinessId,
             language: selectedLanguage,
             version: '5.3.5'
-        };
-        localStorage.setItem('StockApp_setup', JSON.stringify(setupStatus));
+        }));
         localStorage.setItem('setup_completed', 'true');
-        localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
 
-        // ========== STEP 6: Track setup ==========
+        // ========== STEP 7: Track ==========
         if (typeof trackAppEvent === 'function') {
-            trackAppEvent('setup_complete', {
-                businessName: setupData.business.name,
-                language: selectedLanguage
-            }, adminUsername);
+            trackAppEvent('setup_complete', { businessName: setupData.business.name, language: selectedLanguage }, adminUsername);
         }
 
-        // ========== STEP 7: Show success ==========
+        // ========== STEP 8: Success ==========
         document.querySelectorAll('.setup-step').forEach(step => {
             step.classList.remove('active');
             step.style.display = 'none';
         });
-        
-        const successElement = document.getElementById('success-content');
-        if (successElement) {
-            successElement.style.display = 'block';
-            successElement.classList.add('active');
-        }
+        document.getElementById('success-content').style.display = 'block';
+        document.getElementById('success-content').classList.add('active');
 
-        console.log('✅ Setup completed successfully!');
-        console.log('📋 Login credentials: Username =', adminUsername, '| Password =', adminPassword);
+        console.log('✅ Setup complete! Business:', newBusinessId, '| User:', adminUsername);
 
-        // ========== STEP 8: Redirect ==========
+        // ========== STEP 9: Redirect ==========
         setTimeout(() => {
             window.location.href = `shop.html?newSetup=true&lang=${encodeURIComponent(selectedLanguage)}`;
         }, 3000);
 
     } catch (error) {
         console.error('❌ Setup error:', error);
-        const errorMessage = (translate('setup_failed_prefix') || 'Setup failed') + ': ' + error.message;
-        showMessageModal(errorMessage);
-        
+        showMessageModal((translate('setup_failed_prefix') || 'Setup failed') + ': ' + error.message);
         if (completeBtn) {
             completeBtn.innerHTML = (translate('launch_system') || 'Launch System') + ' <i class="fas fa-rocket"></i>';
             completeBtn.disabled = false;
