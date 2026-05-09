@@ -160,7 +160,7 @@ const filterOptionsBtn = document.getElementById('filterOptionsBtn');
     
 if (filterOptionsBtn) {
     filterOptionsBtn.addEventListener('click', function() {
-        toggleFilterPanel();
+        togglefilterModal();
     });
 }
 

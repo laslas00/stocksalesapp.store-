@@ -797,7 +797,7 @@ function cleanupCustomReceiptModal() {
 }
 
 // Toggle filter panel
-function toggleFilterPanel() {
+function togglefilterModal() {
     const filterSection = document.querySelector('#customReceiptModal .grid');
     if (filterSection) {
         filterSection.classList.toggle('hidden');

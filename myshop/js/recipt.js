@@ -3027,7 +3027,7 @@ function populateReceiptData(data) {
 
 
 // Open filter modal
-function toggleFilterPanel() {
+function togglefilterModal() {
     const modal = document.getElementById('filterModal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -3234,7 +3234,7 @@ async function loadFilteredReceipts(filters = {}) {
 }
 
 function displayReceiptsTable(receipts) {
-    const filterPanel = document.getElementById('filterPanel');
+    const filterModal = document.getElementById('filterModal');
     
     // Create or update receipts list section
     let receiptsListSection = document.getElementById('receiptsListSection');
@@ -3242,7 +3242,7 @@ function displayReceiptsTable(receipts) {
         receiptsListSection = document.createElement('div');
         receiptsListSection.id = 'receiptsListSection';
         receiptsListSection.className = 'mt-4 border-t pt-4';
-        filterPanel.appendChild(receiptsListSection);
+        filterModal.appendChild(receiptsListSection);
     }
 
     if (receipts.length === 0) {
@@ -3440,7 +3440,7 @@ async function openReceiptFromList(receiptId) {
                 source: customReceipt.source || 'custom'
             };
 
-            if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
+            if (typeof togglefilterModal === 'function') togglefilterModal();
             const customReceiptModal = document.getElementById('customReceiptModal');
             if (customReceiptModal) customReceiptModal.classList.add('hidden');
             if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
@@ -3475,7 +3475,7 @@ async function openReceiptFromList(receiptId) {
                     source: 'sales'
                 };
 
-                if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
+                if (typeof togglefilterModal === 'function') togglefilterModal();
                 const customReceiptModal = document.getElementById('customReceiptModal');
                 if (customReceiptModal) customReceiptModal.classList.add('hidden');
                 if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
@@ -3502,7 +3502,7 @@ async function openReceiptFromList(receiptId) {
                 source: 'sales'
             };
 
-            if (typeof toggleFilterPanel === 'function') toggleFilterPanel();
+            if (typeof togglefilterModal === 'function') togglefilterModal();
             const customReceiptModal = document.getElementById('customReceiptModal');
             if (customReceiptModal) customReceiptModal.classList.add('hidden');
             if (typeof showCustomReceiptInModal === 'function') await showCustomReceiptInModal(receiptData);
