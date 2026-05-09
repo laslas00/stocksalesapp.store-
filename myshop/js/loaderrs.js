@@ -44,13 +44,29 @@ function connectWebSocket() {
         return;
     }
 
-    // Listen for new sales
+    // Get current business ID for filtering
+    const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
+    
+    console.log('🔍 Realtime filtering by business_id:', currentBusinessId);
+
+    // Listen for new sales (filtered by business)
     realtimeSubscription = client
         .channel('public-sales')
         .on('postgres_changes', 
-            { event: 'INSERT', schema: 'public', table: 'sales' },
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'sales',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
             (payload) => {
                 const sale = payload.new;
+                
+                // Double-check business match
+                if (currentBusinessId && sale.business_id !== currentBusinessId) {
+                    return; // Skip - different business
+                }
+                
                 const saleUser = (typeof users !== 'undefined' ? users.find(u => u.username === sale.username) : null) || currentUser;
                 
                 if (typeof loadSalesForYear === 'function') {
@@ -65,20 +81,40 @@ function connectWebSocket() {
                 }
             }
         )
-        // Listen for new tasks
+        // Listen for new tasks (filtered by business)
         .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'tasks' },
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'tasks',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
             (payload) => {
                 const task = payload.new;
+                
+                if (currentBusinessId && task.business_id !== currentBusinessId) {
+                    return;
+                }
+                
                 if (typeof showTaskNotificationBar === 'function') showTaskNotificationBar(task);
                 if (typeof loadTasks === 'function') loadTasks();
             }
         )
-        // Listen for stock changes (low stock)
+        // Listen for stock changes - low stock (filtered by business)
         .on('postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'stock' },
+            { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'stock',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
             (payload) => {
                 const item = payload.new;
+                
+                if (currentBusinessId && item.business_id !== currentBusinessId) {
+                    return;
+                }
+                
                 if (item.quantity < 3) {
                     if (typeof enqueueNotification === 'function') {
                         enqueueNotification(
@@ -91,7 +127,7 @@ function connectWebSocket() {
         )
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                console.log('✅ Supabase Realtime connected');
+                console.log('✅ Supabase Realtime connected (business:', currentBusinessId || 'all', ')');
             } else {
                 console.log('🔄 Realtime status:', status);
             }
@@ -102,6 +138,7 @@ function connectWebSocket() {
 function disconnectRealtime() {
     if (realtimeSubscription) {
         realtimeSubscription.unsubscribe();
+        realtimeSubscription = null;
         console.log('🔌 Realtime disconnected');
     }
 }
