@@ -4328,3 +4328,25 @@ textarea {
   justify-content: center;
   z-index: 9999999;
 }
+
+
+#filterPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: 100%;            /* Full width on small screens */
+    max-width: 400px;       /* Limits width on larger screens */
+    height: 100vh;          /* Full height */
+    display: flex;
+    flex-direction: column; /* Stacks children vertically */
+    z-index: 2147483647;    /* Keeps it above all other elements */
+}
+#filterPanel > .p-4:first-child {
+    flex: 1;                /* Grows to fill available vertical space */
+    overflow-y: auto;       /* Adds a scrollbar if content is too long */
+}
+#filterPanel > .p-4.border-t {
+    flex-shrink: 0;         /* Prevents the footer from getting squashed */
+}
