@@ -3191,69 +3191,75 @@
                     </div>
                 </div>
 
-                <div id="filterPanel" class="fixed top-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-lg transform translate-x-full transition-transform duration-300 z-99999999999999999999999999999999999999999999999999999999999999999999999999">
-                    <div class="p-4">
-                        <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4" data-translate="find_receipt_title">
+
+            <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 z-[999999] hidden flex items-center justify-center" onclick="closeFilterModal(event)">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                        <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300" data-translate="find_receipt_title">
                             Find Receipt
                         </h4>
-                        <div class="space-y-4">
-                            <!-- Search by Receipt ID -->
-                            <div>
-                                <label for="filterReceiptId" class="block text-sm font-medium text-gray-600 dark:text-gray-400"
-                                    data-translate="search_receipt_id_label">
-                                    Search by Receipt ID
-                                </label>
-                                <input id="filterReceiptId" type="text" 
-                                    placeholder="Enter Receipt ID" 
-                                    data-translate-placeholder="enter_receipt_id_placeholder"
-                                    class="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                            </div>
+                        <button onclick="closeFilterModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none">&times;</button>
+                    </div>
 
-                            <!-- Search by Customer Name -->
-                            <div>
-                                <label for="filterCustomerName" class="block text-sm font-medium text-gray-600 dark:text-gray-400"
-                                    data-translate="search_customer_name_label">
-                                    Search by Customer Name
-                                </label>
-                                <input id="filterCustomerName" type="text" 
-                                    placeholder="Enter Customer Name" 
-                                    data-translate-placeholder="enter_customer_name_placeholder"
-                                    class="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                            </div>
+                    <!-- Scrollable Content -->
+                    <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                        <!-- Search by Receipt ID -->
+                        <div>
+                            <label for="filterReceiptId" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1"
+                                data-translate="search_receipt_id_label">
+                                Search by Receipt ID
+                            </label>
+                            <input id="filterReceiptId" type="text" 
+                                placeholder="Enter Receipt ID" 
+                                data-translate-placeholder="enter_receipt_id_placeholder"
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
 
-                            <!-- Filter by Date -->
-                            <div>
-                                <label for="filterDate" class="block text-sm font-medium text-gray-600 dark:text-gray-400"
-                                    data-translate="filter_by_date_label">
-                                    Filter by Date
-                                </label>
-                                <input id="filterDate" type="date" 
-                                    class="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                            </div>
+                        <!-- Search by Customer Name -->
+                        <div>
+                            <label for="filterCustomerName" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1"
+                                data-translate="search_customer_name_label">
+                                Search by Customer Name
+                            </label>
+                            <input id="filterCustomerName" type="text" 
+                                placeholder="Enter Customer Name" 
+                                data-translate-placeholder="enter_customer_name_placeholder"
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
 
-                            <!-- Dropdown of Customer Names -->
-                            <div>
-                                <label for="filterCustomerDropdown" class="block text-sm font-medium text-gray-600 dark:text-gray-400"
-                                    data-translate="select_customer_label">
-                                    Select Customer
-                                </label>
-                                <select id="filterCustomerDropdown" class="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="" data-translate="select_customer_option">Select a Customer</option>
-                                    <option value="John Doe">John Doe</option>
-                                    <option value="Jane Smith">Jane Smith</option>
-                                    <option value="Michael Brown">Michael Brown</option>
-                                </select>
-                            </div>
+                        <!-- Filter by Date -->
+                        <div>
+                            <label for="filterDate" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1"
+                                data-translate="filter_by_date_label">
+                                Filter by Date
+                            </label>
+                            <input id="filterDate" type="date" 
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- Dropdown of Customer Names -->
+                        <div>
+                            <label for="filterCustomerDropdown" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1"
+                                data-translate="select_customer_label">
+                                Select Customer
+                            </label>
+                            <select id="filterCustomerDropdown" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="" data-translate="select_customer_option">Select a Customer</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="p-4 border-t">
-                        <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700" 
+
+                    <!-- Footer -->
+                    <div class="p-4 border-t dark:border-gray-700">
+                        <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors" 
                                 onclick="applyFilters()"
                                 data-translate="apply_filters_button">
                             Apply Filters
                         </button>
                     </div>
                 </div>
+            </div>
             <div id="itemDetailsModal" class="itemmodal-overlay adaptive-modal hidden">
                 <div class="modal-content">
                 <button class="modal-close-btn" onclick="closeItemDetailsModal()">&times;</button>
