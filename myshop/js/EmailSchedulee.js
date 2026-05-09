@@ -84,8 +84,8 @@ class EmailScheduler {
     _getClient() {
         if (typeof getSB === 'function') return getSB();
         if (window.supabase?.createClient) {
-            const SUPABASE_URL = 'https://axndkzmmzwpvwuftbkuw.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bmRrem1tendwdnd1ZnRia3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTc4ODIsImV4cCI6MjA5MzI5Mzg4Mn0.RqV7d3p0FMFQn_RO_ncxHVtfQbM41eBYceJbwsrGu9A';
+            const SUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://axndkzmmzwpvwuftbkuw.supabase.co';
+            const SUPABASE_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
             return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
         return null;

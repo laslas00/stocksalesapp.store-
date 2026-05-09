@@ -1,6 +1,6 @@
 
-const MYSUPABASE_URL = 'https://axndkzmmzwpvwuftbkuw.supabase.co';
-const  MY_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bmRrem1tendwdnd1ZnRia3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTc4ODIsImV4cCI6MjA5MzI5Mzg4Mn0.RqV7d3p0FMFQn_RO_ncxHVtfQbM41eBYceJbwsrGu9A';
+const MYSUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://axndkzmmzwpvwuftbkuw.supabase.co';
+const  MY_ANON_KEY =window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Initialize Supabase client
 let setupDB = null;
