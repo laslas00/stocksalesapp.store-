@@ -797,73 +797,7 @@ function renderSetupsTable() {
   document.getElementById('pageInfo').textContent = '';
 }
 
-function renderFeedbackTable() {
-  const tbody = document.getElementById('eventsTableBody');
-  tbody.innerHTML = '';
-  
-  document.getElementById('eventsTableHead').innerHTML = `
-    <tr>
-      <th>Date</th>
-      <th>Sentiment</th>
-      <th>Feedback</th>
-      <th>Username</th>
-      <th>Location</th>
-      <th>Status</th>
-    </tr>
-  `;
-  
-  if (!feedbackData || feedbackData.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6">
-          <div class="empty-state">
-            <i class="fas fa-comment-dots"></i>
-            <p>No feedback submitted yet</p>
-          </div>
-        </td>
-      </tr>
-    `;
-    document.getElementById('tableInfo').textContent = 'No feedback';
-    document.getElementById('pageButtons').innerHTML = '';
-    document.getElementById('pageInfo').textContent = '';
-    return;
-  }
-  
-  feedbackData.forEach(f => {
-    const row = tbody.insertRow();
-    row.insertCell(0).textContent = formatDate(f.created_at);
-    
-    const sentimentEmoji = {
-      'Happy': '😊',
-      'Neutral': '😐',
-      'Sad': '😞'
-    };
-    row.insertCell(1).innerHTML = `
-      <span style="font-size: 1.5rem;">${sentimentEmoji[f.sentiment] || '🤔'}</span>
-      <span style="font-size: 0.8rem; color: var(--text-dim);">${f.sentiment}</span>
-    `;
-    
-    row.insertCell(2).textContent = f.suggestions?.slice(0, 80) + (f.suggestions?.length > 80 ? '…' : '');
-    
-    row.insertCell(3).textContent = f.username || 'Anonymous';
-    
-    row.insertCell(4).textContent = `${f.city || ''}, ${f.country || ''}`.replace(/^, /, '') || '—';
-    
-    const statusColors = {
-      'new': 'background: rgba(59,130,246,0.2); color: #60a5fa;',
-      'reviewed': 'background: rgba(16,185,129,0.2); color: #34d399;',
-      'addressed': 'background: rgba(139,92,246,0.2); color: #a78bfa;'
-    };
-    row.insertCell(5).innerHTML = `
-      <span class="event-badge" style="${statusColors[f.status] || statusColors['new']}">${f.status || 'new'}</span>
-    `;
-  });
-  
-  document.getElementById('tableInfo').textContent = `${feedbackData.length} feedback entries`;
-  document.getElementById('tableTitle').textContent = '💬 User Feedback';
-  document.getElementById('pageButtons').innerHTML = '';
-  document.getElementById('pageInfo').textContent = '';
-}
+
 
 function renderCountriesView() {
   const countryCount = {};
@@ -1041,7 +975,7 @@ function renderSettingsPanel() {
 }
 
 // ========== TAB SWITCHING ==========
-function switchTab(tab, clickedElement) {
+async function switchTab(tab, clickedElement) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   if (clickedElement) {
     clickedElement.classList.add('active');
@@ -1060,11 +994,41 @@ function switchTab(tab, clickedElement) {
   const presetContainer = document.getElementById('presetContainer');
   const profileDetailSection = document.getElementById('profileDetailSection');
   
+  // ============================================
+  // 🧹 CLEANUP: Remove feedback-specific elements
+  // ============================================
+  
+  // Remove feedback stats grid if exists
+  const existingFeedbackStats = document.querySelector('.feedback-stats-grid');
+  if (existingFeedbackStats) existingFeedbackStats.remove();
+  
+  // Remove any chart cards that were added by feedback tab
+  const feedbackChartCards = document.querySelectorAll('.feedback-chart-card');
+  feedbackChartCards.forEach(card => card.remove());
+  
+  // Destroy any feedback-specific charts to prevent memory leaks
+  if (window.charts) {
+    if (window.charts.sentiment) {
+      window.charts.sentiment.destroy();
+      delete window.charts.sentiment;
+    }
+    if (window.charts.feedbackTrend) {
+      window.charts.feedbackTrend.destroy();
+      delete window.charts.feedbackTrend;
+    }
+  }
+  
+  // Hide profile detail section
   if (profileDetailSection) {
     profileDetailSection.style.display = 'none';
   }
   
+  // Reset table headers to default
   resetTableHeaders();
+  
+  // ============================================
+  // 🔄 RENDER BASED ON TAB
+  // ============================================
   
   switch(tab) {
     case 'dashboard':
@@ -1080,6 +1044,7 @@ function switchTab(tab, clickedElement) {
       renderStats();
       renderCharts();
       renderTable();
+       hideFeedbackDashboard();
       break;
       
     case 'events':
@@ -1093,6 +1058,7 @@ function switchTab(tab, clickedElement) {
       pagination.style.display = 'flex';
       document.getElementById('tableTitle').textContent = '📋 Events Log';
       renderTable();
+       hideFeedbackDashboard();
       break;
       
     case 'setups':
@@ -1103,6 +1069,7 @@ function switchTab(tab, clickedElement) {
       tableContainer.style.display = 'block';
       pagination.style.display = 'none';
       renderSetupsTable();
+       hideFeedbackDashboard();
       break;
       
     case 'countries':
@@ -1115,6 +1082,7 @@ function switchTab(tab, clickedElement) {
       tableContainer.style.display = 'block';
       pagination.style.display = 'none';
       renderCountriesView();
+       hideFeedbackDashboard();
       break;
       
     case 'devices':
@@ -1126,8 +1094,8 @@ function switchTab(tab, clickedElement) {
       chartsGrid.style.display = 'none';
       tableContainer.style.display = 'block';
       pagination.style.display = 'none';
-      if (profileDetailSection) profileDetailSection.style.display = 'none';
       renderDevicesTable();
+       hideFeedbackDashboard();
       break;
 
     case 'profiles':
@@ -1140,18 +1108,52 @@ function switchTab(tab, clickedElement) {
       tableContainer.style.display = 'block';
       pagination.style.display = 'none';
       renderUserProfilesTable();
+     hideFeedbackDashboard(); // Ensure feedback dashboard is hidden when switching to profiles tab
       break;
 
-    case 'feedback':
-      pageHeading.innerHTML = '<i class="fas fa-comments"></i> User Feedback';
-      filterBar.style.display = 'none';
-      statsGrid.style.display = 'none';
-      chartsGrid.style.display = 'none';
-      tableContainer.style.display = 'block';
-      pagination.style.display = 'none';
-      if (profileDetailSection) profileDetailSection.style.display = 'none';
-      renderFeedbackTable();
-      break;
+case 'feedback':
+    pageHeading.innerHTML = '<i class="fas fa-comments"></i> User Feedback Analytics';
+    filterBar.style.display = 'none';
+    statsGrid.style.display = 'none';
+    chartsGrid.style.display = 'none';
+    tableContainer.style.display = 'block';
+    pagination.style.display = 'none';
+    
+    // Clean up any existing feedback elements first
+    cleanupFeedbackElements();
+    
+    try {
+        // Fetch data without auto-rendering (pass false)
+        if (typeof window.fetchFeedbackWithStats === 'function') {
+            await window.fetchFeedbackWithStats(false); // false = don't render automatically
+        } else if (typeof window.fetchFeedbackData === 'function') {
+            await window.fetchFeedbackData();
+        }
+        
+        // Render only once after data is loaded
+        if (typeof window.renderEnhancedFeedbackDashboard === 'function') {
+            window.renderEnhancedFeedbackDashboard();
+        } else if (typeof window.renderFeedbackTable === 'function') {
+            window.renderFeedbackTable();
+        }
+    } catch (error) {
+        console.error('Error loading feedback tab:', error);
+        const tbody = document.getElementById('eventsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Error loading feedback data</p>
+                            <p style="font-size: 0.85rem;">Please check console for details</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    break;
       
     case 'settings':
       pageHeading.innerHTML = '<i class="fas fa-cog"></i> Settings';
@@ -1168,6 +1170,61 @@ function switchTab(tab, clickedElement) {
   closeMobileSidebar();
 }
 
+
+// ============================================
+// 🧹 CLEANUP FUNCTIONS FOR FEEDBACK TAB
+// ============================================
+
+function cleanupFeedbackElements() {
+    // Remove feedback stats grid
+    const feedbackStats = document.querySelector('.feedback-stats-grid');
+    if (feedbackStats) feedbackStats.remove();
+    
+    // Remove feedback chart cards
+    const feedbackCharts = document.querySelectorAll('.feedback-chart-card');
+    feedbackCharts.forEach(card => card.remove());
+    
+    // Also remove any chart cards that were added by feedback tab (without specific class)
+    const chartCards = document.querySelectorAll('.chart-card');
+    chartCards.forEach(card => {
+        // Only remove if it contains sentiment or trend chart
+        if (card.querySelector('#sentimentChart') || card.querySelector('#feedbackTrendChart')) {
+            card.remove();
+        }
+    });
+    
+    // Destroy charts
+    if (window.charts) {
+        if (window.charts.sentiment) {
+            window.charts.sentiment.destroy();
+            window.charts.sentiment = null;
+        }
+        if (window.charts.feedbackTrend) {
+            window.charts.feedbackTrend.destroy();
+            window.charts.feedbackTrend = null;
+        }
+    }
+}
+
+// Simple hide function that actually works
+function hideFeedbackDashboard() {
+    // Remove feedback-specific elements
+    const feedbackStats = document.querySelector('.feedback-stats-grid');
+    if (feedbackStats) feedbackStats.remove();
+    
+    const chartCards = document.querySelectorAll('.chart-card');
+    chartCards.forEach(card => {
+        if (card.querySelector('#sentimentChart') || card.querySelector('#feedbackTrendChart')) {
+            card.remove();
+        }
+    });
+}
+
+// Simple show function (just a placeholder, actual rendering happens in switchTab)
+function showFeedbackDashboard() {
+    // This is just a flag, actual rendering is done in switchTab
+    console.log('Showing feedback dashboard');
+}
 // ========== ACTIONS ==========
 async function refreshDashboard() {
   showLoading('Refreshing dashboard data...');
