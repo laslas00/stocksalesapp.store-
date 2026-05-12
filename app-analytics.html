@@ -40,7 +40,486 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
+/* ============================================
+   🍎 MODERN iPHONE-STYLE FEEDBACK UI
+============================================ */
 
+.feedback-dashboard {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn 0.4s ease;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.feedback-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.feedback-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.feedback-title h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -1px;
+}
+
+.feedback-title p {
+    color: #94a3b8;
+    font-size: 0.92rem;
+}
+
+/* =========================
+   STATS GRID
+========================= */
+
+.feedback-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 22px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.25s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255,255,255,0.08);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.stat-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: white;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.25);
+}
+
+.stat-icon.purple {
+    background: linear-gradient(135deg,#8b5cf6,#6d28d9);
+}
+
+.stat-icon.green {
+    background: linear-gradient(135deg,#34d399,#059669);
+}
+
+.stat-icon.yellow {
+    background: linear-gradient(135deg,#fbbf24,#d97706);
+}
+
+.stat-icon.red {
+    background: linear-gradient(135deg,#fb7185,#dc2626);
+}
+
+.stat-icon.blue {
+    background: linear-gradient(135deg,#60a5fa,#2563eb);
+}
+
+.stat-icon.orange {
+    background: linear-gradient(135deg,#fb923c,#ea580c);
+}
+
+.stat-label {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -1px;
+}
+
+.stat-change {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-change.positive {
+    color: #22c55e;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+/* =========================
+   CHART CARD
+========================= */
+
+.chart-card {
+    border-radius: 30px;
+    padding: 24px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.chart-header {
+    margin-bottom: 18px;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+/* =========================
+   TABLE CONTAINER
+========================= */
+
+.feedback-table-wrapper {
+    overflow: hidden;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.feedback-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.feedback-table thead {
+    background: rgba(255,255,255,0.04);
+}
+
+.feedback-table th {
+    padding: 18px;
+    text-align: left;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.feedback-table td {
+    padding: 18px;
+    color: white;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.feedback-table tbody tr {
+    transition: 0.2s ease;
+}
+
+.feedback-table tbody tr:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+/* =========================
+   SENTIMENT BADGES
+========================= */
+
+.sentiment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.sentiment-happy {
+    background: rgba(16,185,129,0.12);
+    color: #34d399;
+}
+
+.sentiment-neutral {
+    background: rgba(245,158,11,0.12);
+    color: #fbbf24;
+}
+
+.sentiment-sad {
+    background: rgba(239,68,68,0.12);
+    color: #f87171;
+}
+
+/* =========================
+   STATUS SELECT
+========================= */
+
+.feedback-status-select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: white;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    outline: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.feedback-status-select:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+
+.feedback-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.feedback-action-btn {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    color: white;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.feedback-action-btn:hover {
+    transform: scale(1.08);
+    background: rgba(255,255,255,0.12);
+}
+
+.feedback-action-btn.view {
+    color: #60a5fa;
+}
+
+.feedback-action-btn.delete {
+    color: #f87171;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+
+.empty-state {
+    padding: 70px 20px;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    color: #64748b;
+}
+
+.empty-state p {
+    color: #94a3b8;
+    margin-top: 6px;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.feedback-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.feedback-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+    .feedback-dashboard {
+        padding: 16px;
+    }
+
+    .feedback-title h2 {
+        font-size: 1.5rem;
+    }
+
+    .feedback-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feedback-table th,
+    .feedback-table td {
+        padding: 14px;
+        font-size: 0.8rem;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .chart-card {
+        padding: 18px;
+    }
+}
+/* ============================================
+   🍞 MODERN iPHONE TOAST
+============================================ */
+
+.modern-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    min-width: 280px;
+    max-width: 400px;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    padding: 16px 18px;
+
+    border-radius: 22px;
+
+    background: rgba(20,20,20,0.75);
+    backdrop-filter: blur(20px);
+
+    border: 1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,0.35),
+        inset 0 1px 1px rgba(255,255,255,0.05);
+
+    color: white;
+
+    z-index: 999999;
+
+    transform: translateY(-20px) scale(0.96);
+    opacity: 0;
+
+    transition:
+        transform 0.35s cubic-bezier(.2,.8,.2,1),
+        opacity 0.35s ease;
+}
+
+.modern-toast.show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.toast-icon {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.1rem;
+
+    flex-shrink: 0;
+}
+
+.toast-message {
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* =========================
+   TYPES
+========================= */
+
+.toast-success .toast-icon {
+    background: rgba(16,185,129,0.15);
+    color: #34d399;
+}
+
+.toast-error .toast-icon {
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+}
+
+.toast-warning .toast-icon {
+    background: rgba(245,158,11,0.15);
+    color: #fbbf24;
+}
+
+.toast-info .toast-icon {
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+    .modern-toast {
+        top: auto;
+        bottom: 20px;
+        right: 16px;
+        left: 16px;
+
+        min-width: unset;
+        max-width: unset;
+    }
+}
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
     /* ========== SIDEBAR ========== */
     .sidebar {
       width: var(--sidebar-width);
@@ -1208,5 +1687,7 @@
 <script src="bobo/app-analytics2.js"></script>
 <script src="bobo/export.js"></script>
 <script src="bobo/ui.js"></script>
+<script src="bobo/feedback.js"></script>
+
 </body>
 </html>
