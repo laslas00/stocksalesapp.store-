@@ -313,39 +313,42 @@ if (watermarkElement) {
         }
 
         // 9. QR Code (include tax)
-        const qrTextLines = [
-            `${translate('receipt.product')}: ${sale.productName}`,
-            `${translate('receipt.quantity')}: ${sale.quantity}`,
-            `${translate('receipt.subtotal')}: ${formatCurrency(subtotal)} ${currentCurrency}`,
-            `${translate('receipt.tax')}: ${formatCurrency(tax)} ${currentCurrency}`,
-            `${translate('receipt.total')}: ${formatCurrency(total)} ${currentCurrency}`,
-            `${translate('receipt.paymentType')}: ${paymentTypeDisplay}`,
-            `${translate('receipt.amountPaid')}: ${formatCurrency(amountPaid)}`,
-            `${translate('receipt.balanceDue')}: ${formatCurrency(balanceDue)}`,
-            ...(advancePaymentDate ? [`${translate('receipt.advancePaymentDate')}: ${formatDateWithDay(new Date(advancePaymentDate))}`] : []),
-            `${translate('receipt.cashier')}: ${cashierName}`,
-            `${translate('receipt.date')}: ${sale.dateSold}`,
-            `${translate('receipt.receiptId')}: ${receiptSaleId ? receiptSaleId.textContent : ''}`
-        ];
-
-        const customerNameToShow = sale.customerName || sale.hybridBreakdown?.customerName || '';
-        if (customerNameToShow) qrTextLines.splice(1, 0, `${translate('receipt.customer')}: ${customerNameToShow}`);
-
+        // 9. QR Code - Generate link to view receipt
         try {
             if (typeof QRious !== 'undefined') {
-                const qr = new QRious({
-                    value: qrTextLines.join('\n'),
-                    size: 160,
-                    level: 'M'
-                });
                 const qrImg = document.getElementById('receiptQRCode');
                 if (qrImg) {
+                    // Get receipt ID
+                    const receiptId = receiptSaleId ? receiptSaleId.textContent : sale.id || 'NEW-RCPT';
+                    const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
+                    
+                    // Build URL that links to view this receipt
+const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+
+                    // Generate QR with just the link
+                    const qr = new QRious({
+                        value: viewUrl,
+                        size: 160,
+                        level: 'M'
+                    });
+                    
                     qrImg.src = qr.toDataURL();
                     qrImg.classList.remove('hidden');
+                    qrImg.style.cursor = 'pointer';
+                    qrImg.title = 'Scan to view receipt or click to copy link';
+                    
+                    // Click to copy link
+                    qrImg.onclick = function() {
+                        navigator.clipboard.writeText(viewUrl).then(() => {
+                            showMessageModal('Receipt link copied! Share it to view this receipt.');
+                        });
+                    };
+
+                    console.log('🔗 QR Link:', viewUrl);
                 }
             }
         } catch (e) {
-            console.warn(translate('receipt.qrGenerationFailed'), e);
+            console.warn('QR generation failed:', e);
         }
 
         // 10. Customer Info
@@ -681,40 +684,37 @@ if (paymentTypeDisplayElement) {
         }
 
         // 9. QR Code - Using simpler translation keys
-       const qrTextLines = [
-            `${translate('product')}: ${sale.productName}`,
-            `${translate('quantity')}: ${sale.quantity}`,
-            `${translate('subtotal')}: ${formatCurrency(subtotal)} ${currentCurrency}`,
-            `${translate('tax')}: ${formatCurrency(tax)} ${currentCurrency}`,
-            `${translate('total')}: ${formatCurrency(total)} ${currentCurrency}`,
-            `${translate('paymentType')}: ${paymentTypeDisplay}`,
-            `${translate('amountPaid')}: ${formatCurrency(amountPaid)}`,
-            `${translate('balanceDue')}: ${formatCurrency(balanceDue)}`,
-            ...(advancePaymentDate ? [`${translate('advancePaymentDate')}: ${formatDateWithDay(new Date(advancePaymentDate))}`] : []),
-            `${translate('cashier')}: ${cashierName}`,
-            `${translate('date')}: ${sale.dateSold}`,
-            `${translate('receiptId')}: ${receiptSaleId ? receiptSaleId.textContent : ''}`
-        ];
-        const customerNameToShow = sale.customerName || sale.hybridBreakdown?.customerName || '';
-        if (customerNameToShow) qrTextLines.splice(1, 0, `${translate('customer')}: ${customerNameToShow}`);
-
+        // QR Code - Generate link to view receipt
         try {
             if (typeof QRious !== 'undefined') {
-                const qr = new QRious({
-                    value: qrTextLines.join('\n'),
-                    size: 160,
-                    level: 'M'
-                });
                 const qrImg = document.getElementById('receiptQRCode');
                 if (qrImg) {
+                    const receiptId = document.getElementById('receiptSaleId')?.textContent || 'NEW-RCPT';
+                    const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
+                    
+                 const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+
+                    const qr = new QRious({
+                        value: viewUrl,
+                        size: 160,
+                        level: 'M'
+                    });
+                    
                     qrImg.src = qr.toDataURL();
                     qrImg.classList.remove('hidden');
+                    qrImg.style.cursor = 'pointer';
+                    qrImg.title = 'Scan to view receipt or click to copy link';
+                    qrImg.onclick = function() {
+                        navigator.clipboard.writeText(viewUrl).then(() => {
+                            showMessageModal('Receipt link copied!');
+                        });
+                    };
                 }
             }
         } catch (e) {
-            console.warn(translate('qrGenerationFailed'), e);
+            console.warn('QR generation failed:', e);
         }
-
+        const customerNameToShow = sale.customerName || sale.customer || '';
        const eceiptCustomerNameInput = document.getElementById('receiptCustomerNameInput');
         const customerInfoDiv = document.getElementById('receiptCustomerInfo');
         if (customerInfoDiv) {
@@ -1066,39 +1066,35 @@ if (typeof receiptPaymentType !== 'undefined' && receiptPaymentType) {
         }
 
         // 9. QR Code
-      const qrTextLines = [
-            `${translate('product')}: ${sale.productName}`,
-            `${translate('quantity')}: ${sale.quantity}`,
-            `${translate('subtotal')}: ${formatCurrency(subtotal)} ${currentCurrency}`,
-            `${translate('tax')}: ${formatCurrency(tax)} ${currentCurrency}`,
-            `${translate('total')}: ${formatCurrency(total)} ${currentCurrency}`,
-            `${translate('paymentType')}: ${paymentTypeDisplay}`,
-            `${translate('amountPaid')}: ${formatCurrency(amountPaid)}`,
-            `${translate('balanceDue')}: ${formatCurrency(balanceDue)}`,
-            ...(advancePaymentDate ? [`${translate('advancePaymentDate')}: ${formatDateWithDay(new Date(advancePaymentDate))}`] : []),
-            `${translate('cashier')}: ${cashierName}`,
-            `${translate('date')}: ${sale.dateSold}`,
-            `${translate('receiptId')}: ${document.getElementById('receiptSaleId')?.textContent || ''}`
-        ];
-
-        const customerNameToShow = sale.customerName || sale.hybridBreakdown?.customerName || '';
-        if (customerNameToShow) qrTextLines.splice(1, 0, `${translate('customer')}: ${customerNameToShow}`);
-
+        // QR Code - Generate link to view receipt
         try {
             if (typeof QRious !== 'undefined') {
-                const qr = new QRious({
-                    value: qrTextLines.join('\n'),
-                    size: 160,
-                    level: 'M'
-                });
                 const qrImg = document.getElementById('receiptQRCode');
                 if (qrImg) {
+                    const receiptId = document.getElementById('receiptSaleId')?.textContent || 'NEW-RCPT';
+                    const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
+                    
+const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+ 
+                    const qr = new QRious({
+                        value: viewUrl,
+                        size: 160,
+                        level: 'M'
+                    });
+                    
                     qrImg.src = qr.toDataURL();
                     qrImg.classList.remove('hidden');
+                    qrImg.style.cursor = 'pointer';
+                    qrImg.title = 'Scan to view receipt or click to copy link';
+                    qrImg.onclick = function() {
+                        navigator.clipboard.writeText(viewUrl).then(() => {
+                            showMessageModal('Receipt link copied!');
+                        });
+                    };
                 }
             }
         } catch (e) {
-            console.warn(translate('qrGenerationFailed'), e);
+            console.warn('QR generation failed:', e);
         }
 
         // 10. Customer Info Display
@@ -2254,76 +2250,64 @@ function updatePaymentCalculations(total) {
 function generateReceiptQRCode(receiptData) {
     try {
         if (typeof QRious === 'undefined') {
-            console.warn(translate('qrLibraryNotLoaded'));
+            console.warn('QR library not loaded');
             return;
         }
-        
-        // Collect receipt data
-        const rows = document.querySelectorAll('.receipt-item-row');
-        let itemsText = '';
-        rows.forEach((row, index) => {
-            const name = row.querySelector('.item-name-input')?.value;
-            const serial = row.querySelector('.item-serial-input')?.value;
-            const quantity = row.querySelector('.item-quantity-input')?.value;
-            const price = row.querySelector('.item-price-input')?.value;
-            
-            if (name && quantity && price && parseFloat(quantity) > 0 && parseFloat(price) > 0) {
-                let itemLine = `${index + 1}. ${name} - ${quantity} ${translate('x')} ${formatCurrency(price)}`;
-                if (serial) {
-                    itemLine += ` (${translate('serial')}: ${serial})`;
-                }
-                itemsText += itemLine + '\n';
-            }
-        });
-        const advancePaymentDate = receiptData.advancePaymentDate || 
-                                 document.getElementById('receiptAdvanceDateValue')?.textContent || 
-                                 null;
-        const customerName = document.getElementById('receiptCustomerNameInput')?.value || '';
-        const serialNumber = document.getElementById('receiptSerialNumberInput')?.value || '';
-        
-        const qrTextLines = [
-            `${translate('receiptId')}: ${receiptData.id}`,
-            `${translate('date')}: ${receiptData.date}`,
-            `${translate('cashier')}: ${receiptData.cashier}`,
-            `${translate('paymentType')}: ${receiptData.paymentType}`,
-            customerName ? `${translate('customer')}: ${customerName}` : null,
-            serialNumber ? `${translate('serial')}: ${serialNumber}` : null,
-            `${translate('items')}:`,
-            itemsText || translate('noItems'),
-            `${translate('subtotal')}: ${document.getElementById('receiptSubtotal')?.textContent || '0.00'}`,
-            `${translate('tax')}: ${document.getElementById('receiptTax')?.textContent || '0.00'}`,
-            `${translate('total')}: ${document.getElementById('receiptTotalAmount')?.textContent || '0.00'}`,
-            `${translate('amountPaid')}: ${document.getElementById('receiptAmountPaidValue')?.textContent || '0.00'}`,
-            `${translate('balanceDue')}: ${document.getElementById('receiptBalanceValue')?.textContent || '0.00'}`,
-            ...(advancePaymentDate ? [`${translate('advancePaymentDate')}: ${formatDateWithDay(new Date(advancePaymentDate))}`] : [])
-        ].filter(line => line !== null); // Remove null lines
-        
-        const qr = new QRious({
-            value: qrTextLines.join('\n'),
-            size: 160,
-            level: 'M'
-        });
-        
+
         const qrImg = document.getElementById('receiptQRCode');
-        if (qrImg) {
-            qrImg.src = qr.toDataURL();
-            qrImg.classList.remove('hidden');
-        }
+        if (!qrImg) return;
+
+        // Get the receipt ID and business ID
+        const receiptId = receiptData?.receiptId || receiptData?.id || 
+                         document.getElementById('receiptSaleId')?.textContent || 'NEW-RCPT';
         
+        const businessId = currentUser?.business_id || businessInfo?.id || 
+                          localStorage.getItem('businessId') || 'unknown';
+
+        // Build a URL that links to view the receipt
+       const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+
+        // Simple QR with just the link
+        const qr = new QRious({
+            value: viewUrl,
+            size: 180,
+            level: 'M',
+            foreground: '#000000',
+            background: '#ffffff'
+        });
+
+        qrImg.src = qr.toDataURL();
+        qrImg.classList.remove('hidden');
+        
+        // Add click to copy link
+        qrImg.style.cursor = 'pointer';
+        qrImg.title = 'Click to copy receipt link';
+        qrImg.onclick = function() {
+            navigator.clipboard.writeText(viewUrl).then(() => {
+                showMessageModal('Receipt link copied! Share it to view this receipt.');
+            }).catch(() => {
+                // Fallback
+                const input = document.createElement('input');
+                input.value = viewUrl;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showMessageModal('Receipt link copied!');
+            });
+        };
+
+        console.log('🔗 QR Link:', viewUrl);
+
     } catch (e) {
-        console.warn(translate('qrGenerationFailed'), e);
+        console.warn('QR generation failed:', e);
     }
 }
 // Update QR code in real-time
+// Also update the QR in real-time when editing
 function updateQRCode() {
-    const receiptData = {
-        id: document.getElementById('receiptSaleId')?.textContent || '',
-        date: document.getElementById('receiptDate')?.textContent || '',
-        cashier: document.getElementById('receiptCashierName')?.textContent || '',
-        paymentType: document.getElementById('receiptPaymentType')?.textContent || 'Cash'
-    };
-    
-    generateReceiptQRCode(receiptData);
+    const receiptId = document.getElementById('receiptSaleId')?.textContent || '';
+    generateReceiptQRCode({ receiptId });
 }
 async function saveReceiptToServer() {
     try {
@@ -4461,72 +4445,36 @@ if (receiptBusinessLogo) {
                 receiptAdvancePaymentDateElement.classList.add('hidden');
             }
         }
-        
-        // 9. QR Code - build with all items
-        const qrTextLines = [
-            `${translate('receiptId')}: ${data.receiptId || data.id || ''}`,
-            `${translate('date')}: ${displayDate}`,
-            `${translate('cashier')}: ${cashierName}`,
-            `${translate('paymentType')}: ${paymentTypeDisplay}`,
-            ``,
-            `${translate('items')}:`
-        ];
-
-        // Add all items to QR
-        if (data.items && Array.isArray(data.items)) {
-            data.items.forEach((item, index) => {
-                const itemName = item.name || item.productName || 'Item';
-                const itemQty = item.quantity || 1;
-                const itemPrice = item.price || 0;
-                qrTextLines.push(`${index + 1}. ${itemName}`);
-                qrTextLines.push(`   ${translate('quantity')}: ${itemQty}`);
-                qrTextLines.push(`   ${translate('price')}: ${formatCurrency(itemPrice)}`);
-                qrTextLines.push(`   ${translate('subtotal')}: ${formatCurrency(itemPrice)}`);
-                qrTextLines.push(``);
-            });
-        }
-
-        // Add advance payment info to QR code
-        if (advancePaymentDate) {
-            const formattedAdvanceDate = formatDateWithDay(new Date(advancePaymentDate));
-            const advanceDateLabel = translate('advance_payment_date') || 'Advance Payment Date';
-            qrTextLines.push(`${advanceDateLabel}: ${formattedAdvanceDate}`);
-            
-            if (advancePayment > 0) {
-                const advanceAmountLabel = translate('advance_payment') || 'Advance Payment';
-                qrTextLines.push(`${advanceAmountLabel}: ${formatCurrency(advancePayment)}`);
-            }
-        }
-
-        // Add totals
-        qrTextLines.push(`${translate('subtotal')}: ${formatCurrency(calculatedSubtotal)}`);
-        qrTextLines.push(`${translate('tax')}: ${formatCurrency(calculatedTaxTotal)}`);
-        qrTextLines.push(`${translate('total')}: ${formatCurrency(calculatedTotalAmount)}`);
-        qrTextLines.push(`${translate('amountPaid')}: ${formatCurrency(amountPaid)}`);
-        qrTextLines.push(`${translate('balanceDue')}: ${formatCurrency(balanceDue)}`);
-
-        const customerNameToShow = data.customerName || data.customer || '';
-        if (customerNameToShow && customerNameToShow !== 'Tapez le nom du client') {
-            qrTextLines.splice(2, 0, `${translate('customer')}: ${customerNameToShow}`);
-        }
-
+        // QR Code - Generate link to view receipt
         try {
             if (typeof QRious !== 'undefined') {
-                const qr = new QRious({
-                    value: qrTextLines.join('\n'),
-                    size: 160,
-                    level: 'M'
-                });
                 const qrImg = document.getElementById('receiptQRCode');
                 if (qrImg) {
+                    const receiptId = data.receiptId || data.id || 'NEW-RCPT';
+                    const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
+                    
+                const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+
+                    const qr = new QRious({
+                        value: viewUrl,
+                        size: 160,
+                        level: 'M'
+                    });
+                    
                     qrImg.src = qr.toDataURL();
                     qrImg.classList.remove('hidden');
+                    qrImg.style.cursor = 'pointer';
+                    qrImg.title = 'Scan to view receipt or click to copy link';
+                    qrImg.onclick = function() {
+                        navigator.clipboard.writeText(viewUrl).then(() => {
+                            showMessageModal('Receipt link copied!');
+                        });
+                    };
                 }
             }
         } catch (e) {
-            console.warn(translate('qrGenerationFailed'), e);
+            console.warn('QR generation failed:', e);
         }
-
         // 10. Customer Info Display
         const customerInfoDiv = document.getElementById('receiptCustomerInfo');
         if (customerInfoDiv) {
@@ -4689,4 +4637,104 @@ function extractAdvancePaymentInfo(items) {
     
     return { advancePaymentDate, advancePaymentAmount };
 }
+
+async function handleReceiptFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const receiptId = urlParams.get('receipt');
+    
+    if (!receiptId) return; // No receipt in URL
+
+    const businessId = urlParams.get('bid');
+
+    console.log('🔍 Loading receipt from URL:', receiptId, 'Business:', businessId);
+
+    try {
+        const client = getSB();
+        if (!client) {
+            showMessageModal('Cannot load receipt - no connection');
+            return;
+        }
+
+        // Search customer_receipts first
+        let query = client.from('customer_receipts').select('*').eq('receipt_id', receiptId);
+        if (businessId) query = query.eq('business_id', businessId);
+        
+        const { data: customReceipt } = await query.maybeSingle();
+
+        if (customReceipt) {
+            // Found full receipt
+            const receiptData = {
+                receiptId: customReceipt.receipt_id,
+                date: customReceipt.date,
+                customerName: customReceipt.customer_name || '',
+                cashier: customReceipt.cashier || '',
+                paymentType: customReceipt.payment_type_display || 'Cash',
+                items: (customReceipt.items || []).map(item => ({
+                    name: item.name || '',
+                    type: item.type || 'product',
+                    quantity: item.quantity || 1,
+                    price: item.price || 0,
+                    paymentType: item.paymentType || 'Cash',
+                    customerName: item.customerName || ''
+                })),
+                totalAmount: customReceipt.amount_paid || 0,
+                amountPaid: customReceipt.amount_paid || 0,
+                balanceDue: customReceipt.balance_due || 0,
+                source: customReceipt.source || 'custom'
+            };
+
+            if (typeof showReceiptFromData === 'function') {
+                await showReceiptFromData(receiptData);
+            }
+            return;
+        }
+
+        // Search sales table
+        let salesQuery = client.from('sales').select('*').eq('receipt_id', receiptId);
+        if (businessId) salesQuery = salesQuery.eq('business_id', businessId);
+        
+        const { data: salesData } = await salesQuery.order('created_at', { ascending: true });
+
+        if (salesData && salesData.length > 0) {
+            const receiptData = {
+                receiptId: receiptId,
+                customerName: salesData[0].customer_name || '',
+                date: salesData[0].date_sold,
+                cashier: salesData[0].username || '',
+                paymentType: salesData[0].payment_type || 'Cash',
+                items: salesData.map(sale => ({
+                    name: sale.product_name || '',
+                    type: sale.type || 'product',
+                    quantity: sale.quantity || 1,
+                    price: sale.total_amount || sale.price || 0
+                })),
+                totalAmount: salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount) || parseFloat(s.price) || 0), 0),
+                source: 'sales'
+            };
+
+            if (typeof showReceiptFromData === 'function') {
+                await showReceiptFromData(receiptData);
+            }
+            return;
+        }
+
+        showMessageModal('Receipt not found. It may have been deleted or the link is invalid.');
+
+    } catch (error) {
+        console.error('Error loading receipt from URL:', error);
+        showMessageModal('Failed to load receipt.');
+    }
+}
+
+// ============================================
+// CHECK URL ON PAGE LOAD
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if URL has receipt parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('receipt')) {
+        // Wait for page to fully load, then show receipt
+        setTimeout(() => handleReceiptFromUrl(), 1500);
+    }
+});
 

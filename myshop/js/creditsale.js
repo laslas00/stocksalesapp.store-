@@ -292,6 +292,7 @@ async function markCreditSaleAsPaid(creditSaleId) {
 
                 if (saleInsertError) {
                     console.warn('Could not record final payment as sale:', saleInsertError);
+                    showMessageModal(translate('final_payment_record_failed') + ': ' + saleInsertError.message);
                 } else {
                     console.log('✅ Final payment recorded with business_id:', currentBusinessId);
                 }

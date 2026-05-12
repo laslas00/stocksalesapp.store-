@@ -542,12 +542,12 @@ if (saveNewSalesAssociateBtn) {
                     created_at: new Date().toISOString()
                 }]);
 
-                // In saveNewSalesAssociateBtn, change the error handling to show the full error:
-                if (insertError) {
-                    console.error('Insert error details:', JSON.stringify(insertError));
-                    showMessageModal('Failed to add: ' + insertError.message + ' | Code: ' + insertError.code);
-                    return;
-                }
+                        // In saveNewSalesAssociateBtn, change the error handling to show the full error:
+            if (insertError) {
+                console.error('Insert error details:', JSON.stringify(insertError));
+                showMessageModal('Failed to add: ' + insertError.message + ' | Code: ' + insertError.code);
+                return;
+            };
 
             // Clear form
             if (typeof clearSalesAssociateForm === 'function') clearSalesAssociateForm();
@@ -819,12 +819,12 @@ if (saveNewAdminBtn) {
                     created_at: new Date().toISOString()
                 }]);
 
-                           // In saveNewSalesAssociateBtn, change the error handling to show the full error:
-                if (insertError) {
-                    console.error('Insert error details:', JSON.stringify(insertError));
-                    showMessageModal('Failed to add: ' + insertError.message + ' | Code: ' + insertError.code);
-                    return;
-                }
+            // In saveNewSalesAssociateBtn, change the error handling to show the full error:
+            if (insertError) {
+                console.error('Insert error details:', JSON.stringify(insertError));
+                showMessageModal('Failed to add: ' + insertError.message + ' | Code: ' + insertError.code);
+                return;
+            }
 
             showMessageModal(translations[currentLanguage]?.new_admin_created || 'New admin created!');
             

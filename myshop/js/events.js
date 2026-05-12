@@ -296,6 +296,20 @@ document.getElementById('loginBtn').onclick = async function() {
             localStorage.setItem('businessId', finalBusinessId);
             console.log('🔍 Cached business_id:', finalBusinessId);
         }
+        const businessName = (businessInfo?.name || 'shop').toLowerCase().replace(/\s+/g, '-');
+        const urlParams = new URLSearchParams({
+            lang: currentLanguage || 'en',
+            user: user.username,
+            role: user.role,
+            business: businessName
+        });
+
+        // Update the URL without reloading the page
+        const newUrl = `shop.html?${urlParams.toString()}`;
+        window.history.replaceState({}, '', newUrl);
+        document.title = `StockApp* -> ${businessInfo?.name || 'Shop'} | ${user.username} (${user.role})`;
+
+        console.log('🔗 URL updated:', newUrl);
         // Save session to localStorage
         localStorage.setItem('currentRole', role);
         localStorage.setItem('currentUsername', username);
@@ -327,6 +341,7 @@ document.getElementById('loginBtn').onclick = async function() {
         }
 
         // ========== STEP 8: Show main content ==========
+        await restoreDeviceBackup(); // Start restoring backup immediately, but don't wait for it to finish before showing the UI
         document.getElementById('loginModal').classList.add('hidden');
         const loadingIndicator = document.getElementById('loadingIndicator');
         if (loadingIndicator) loadingIndicator.classList.add('hidden');
@@ -369,6 +384,7 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof showDashboard === 'function') showDashboard();
             if (typeof connectWebSocket === 'function') connectWebSocket();
+            checkSecuritySetup(user) 
         } else if (user.role === 'manager') {
             if (typeof removeSalesAssociateInfo === 'function') removeSalesAssociateInfo();
             if (typeof showManagerInfo === 'function') showManagerInfo(user);
@@ -378,6 +394,7 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkForUpdates === 'function') checkForUpdates();
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof connectWebSocket === 'function') connectWebSocket();
+            checkSecuritySetup(user) 
         } else {
             if (typeof showSalesAssociateInfo === 'function') showSalesAssociateInfo(user);
             const isFirstLogin = !localStorage.getItem('tourCompleted');
@@ -386,6 +403,7 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkForUpdates === 'function') checkForUpdates();
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof connectWebSocket === 'function') connectWebSocket();
+            checkSecuritySetup(user) 
         }
 
     } catch (err) {
@@ -449,8 +467,78 @@ window.addEventListener('storage', function(e) {
     }
 });
 
+async function restoreDeviceBackup() {
+    try {
+        const client = getSB();
+        if (!client) {
+            console.warn('⚠️ Cannot restore backup - no database connection');
+            return;
+        }
 
+        const userId = currentUser?.id || localStorage.getItem('currentUserId');
+        if (!userId) {
+            console.warn('⚠️ Cannot restore backup - no user ID found');
+            return;
+        }
 
+        console.log('📥 Checking for backup for user:', userId);
+
+        const { data: backup, error } = await client
+            .from('user_backups')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error || !backup) {
+            console.log('ℹ️ No backup found for this user');
+            return { success: false, message: 'No backup found' };
+        }
+
+        const backupData = backup.data || {};
+        let restoredCount = 0;
+
+        // Restore each item to localStorage
+        for (const [key, value] of Object.entries(backupData)) {
+            try {
+                const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                localStorage.setItem(key, stringValue);
+                restoredCount++;
+            } catch (e) {
+                console.warn(`⚠️ Could not restore key: ${key}`);
+            }
+        }
+
+        console.log(`✅ Restored ${restoredCount} items from backup`);
+        console.log('📅 Backup from:', backup.created_at);
+
+        return { 
+            success: true, 
+            restoredCount,
+            backupDate: backup.created_at,
+            deviceInfo: backup.device_info
+        };
+
+    } catch (error) {
+        console.error('❌ Restore failed:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// Auto-backup every 30 minutes
+function startAutoBackup() {
+    // Run first backup after 30 seconds
+    setTimeout(async () => {
+        console.log('🔄 Running auto-backup...');
+        await performDeviceBackup();
+    }, 30000);
+
+    // Then backup every 30 minutes
+    setInterval(async () => {
+        console.log('🔄 Running scheduled backup...');
+        await performDeviceBackup();
+    }, 30 * 60 * 1000); // 30 minutes
+}
+startAutoBackup()
 function showSyncingOverlayPersistent() {
     if (syncingTimeout) clearTimeout(syncingTimeout);
     showSyncingOverlay();
@@ -1359,56 +1447,142 @@ document.getElementById('loginHelpLink').addEventListener('click', function(e) {
 
 
 async function performDeviceBackup() {
+    try {
+        const client = getSB();
+        if (!client) {
+            console.warn('⚠️ Cannot perform backup - no database connection');
+            return;
+        }
+
+        const userId = currentUser?.id || localStorage.getItem('currentUserId');
+        if (!userId) {
+            console.warn('⚠️ Cannot perform backup - no user ID found');
+            return;
+        }
+
+        // Collect all localStorage data (excluding sensitive keys)
+        const backupData = {};
+        const sensitiveKeys = ['password', 'token', 'secret', 'key', 'supabase'];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            
+            // Skip sensitive keys
+            const isSensitive = sensitiveKeys.some(sensitive => 
+                key.toLowerCase().includes(sensitive)
+            );
+            
+            if (!isSensitive) {
+                try {
+                    const value = localStorage.getItem(key);
+                    // Try to parse JSON
+                    try {
+                        backupData[key] = JSON.parse(value);
+                    } catch {
+                        backupData[key] = value;
+                    }
+                } catch (e) {
+                    // Skip items that can't be read
+                }
+            }
+        }
+
+        // Add metadata
+        const backupEntry = {
+            user_id: userId,
+            username: currentUser?.username || localStorage.getItem('currentUsername') || 'Unknown',
+            data: backupData,
+            device_info: {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenResolution: `${screen.width}x${screen.height}`,
+                timestamp: new Date().toISOString()
+            },
+            created_at: new Date().toISOString()
+        };
+
+        console.log('📤 Uploading backup for user:', userId);
+        console.log('📤 Backup size:', JSON.stringify(backupData).length, 'chars');
+
+        // Check if backup already exists for this user
+        const { data: existingBackup } = await client
+            .from('user_backups')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        let result;
+        if (existingBackup) {
+            // Update existing backup
+            const { data, error } = await client
+                .from('user_backups')
+                .update({
+                    data: backupData,
+                    device_info: backupEntry.device_info,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+            result = data;
+            console.log('✅ Backup updated:', result.id);
+        } else {
+            // Create new backup
+            const { data, error } = await client
+                .from('user_backups')
+                .insert([backupEntry])
+                .select()
+                .single();
+
+            if (error) throw error;
+            result = data;
+            console.log('✅ Backup created:', result.id);
+        }
+
+        // Save backup timestamp locally
+        localStorage.setItem('lastBackupTime', new Date().toISOString());
+        
+        return { success: true, id: result.id };
+
+    } catch (error) {
+        console.error('❌ Backup failed (non-blocking):', error.message);
+        return { success: false, error: error.message };
+    }
 }
+
  
 
 
 
 async function checkSecuritySetup(user) {
-    // --- NEW: Check if the "What's New" modal needs to be seen first ---
-    // If the modal instance exists and the user hasn't seen the current version yet
-    if (window._wnModal && !window._wnModal.hasSeenVersion()) {
-        console.log("What's New modal is pending. Delaying security setup...");
-        
-        // Temporarily intercept the close functions of the What's New modal
-        // so we can automatically trigger this security check right after it closes.
-        const originalDestroy = window._wnModal.destroy;
-        window._wnModal.destroy = function() {
-            originalDestroy.call(this); // Close What's New normally
-            setTimeout(() => checkSecuritySetup(user), 500); // Check security 0.5s later
-        };
-        
-        const originalDestroy123 = window._wnModal.destroy123;
-        window._wnModal.destroy123 = function() {
-            originalDestroy123.call(this); // Close What's New normally
-            setTimeout(() => checkSecuritySetup(user), 500); // Check security 0.5s later
-        };
-        
-        // Stop executing the security check for now. It will resume later.
-        return; 
+    // Check localStorage first
+    const isLocallySet = localStorage.getItem('securityQuestions') === 'true';
+    if (isLocallySet) {
+        console.log("Security questions already set (localStorage).");
+        return;
     }
 
-    // --- EXISTING LOGIC ---
-    // 1. Check if we already marked this as done in this browser
-    const isLocallySet = localStorage.getItem('securityQuestions') === 'true';
+    // ========== FIX: Check both camelCase and snake_case ==========
+    const securityQuestions = user.securityQuestions || user.security_questions;
+    const hasValidQuestions = securityQuestions && 
+                              Array.isArray(securityQuestions) && 
+                              securityQuestions.length >= 2 &&
+                              securityQuestions[0]?.answer?.trim() &&
+                              securityQuestions[1]?.answer?.trim();
 
-    // 2. Only open the modal if it's missing from the database AND the local flag isn't set
-    if (!isLocallySet && (!user.securityQuestions || user.securityQuestions.length === 0)) {
+    if (!hasValidQuestions) {
         console.log("Security questions not set. Opening setup modal...");
         setupSecurityQuestions(user.id || user.username);
     } else {
         console.log("Security questions already configured.");
+        localStorage.setItem('securityQuestions', 'true');
     }
 }
 
-function setupSecurityQuestions(userId) {
-    const modal = document.getElementById('securityQuestionsModal');
-    modal.classList.remove('hidden');
-    const saveBtn = document.getElementById('saveSecurityQuestionsBtn');
-    saveBtn.onclick = function() {
-        saveSecurityQuestions(userId);
-    };
-}
+
 
 function showOfflineRecoveryOptions() {
     const modal = document.getElementById('offlineRecoveryModal');
@@ -1416,15 +1590,47 @@ function showOfflineRecoveryOptions() {
 
 }
 
+function setupSecurityQuestions(userId) {
+    const modal = document.getElementById('securityQuestionsModal');
+    if (!modal) {
+        console.error('Security questions modal not found!');
+        return;
+    }
+    
+    // Pre-select first options as defaults
+    const secQ1 = document.getElementById('secQ1');
+    const secQ2 = document.getElementById('secQ2');
+    const secA1 = document.getElementById('secA1');
+    const secA2 = document.getElementById('secA2');
+    
+    if (secQ1) secQ1.selectedIndex = 0;
+    if (secQ2) secQ2.selectedIndex = 1;
+    if (secA1) secA1.value = '';
+    if (secA2) secA2.value = '';
+    
+    modal.classList.remove('hidden');
+    
+    const saveBtn = document.getElementById('saveSecurityQuestionsBtn');
+    if (saveBtn) {
+        // Remove old listener by cloning
+        const newBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+        
+        newBtn.onclick = function() {
+            saveSecurityQuestions(userId);
+        };
+    }
+}
+
 async function saveSecurityQuestions(userId) {
     const questions = [
         {
-            question: document.getElementById('secQ1')?.value || '',
-            answer: document.getElementById('secA1')?.value.toLowerCase().trim() || ''
+            question: document.getElementById('secQ1')?.value || 'What is your mother\'s maiden name?',
+            answer: (document.getElementById('secA1')?.value || '').toLowerCase().trim()
         },
         {
-            question: document.getElementById('secQ2')?.value || '',
-            answer: document.getElementById('secA2')?.value.toLowerCase().trim() || ''
+            question: document.getElementById('secQ2')?.value || 'What was your favorite childhood book?',
+            answer: (document.getElementById('secA2')?.value || '').toLowerCase().trim()
         }
     ];
     
@@ -1439,15 +1645,22 @@ async function saveSecurityQuestions(userId) {
         showMessageModal('Please select both security questions.');
         return;
     }
+
+    // Validate minimum answer length
+    if (questions[0].answer.length < 2 || questions[1].answer.length < 2) {
+        showMessageModal('Answers must be at least 2 characters long.');
+        return;
+    }
     
     try {
         const client = getSB();
         if (!client) throw new Error('Database not connected');
 
-        // Get business ID for multi-tenant safety
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId');
 
-        // Build update query with business safety
+        console.log('🔒 Saving security questions for user:', userId);
+        console.log('🔒 Questions:', questions);
+
         let query = client
             .from('users')
             .update({ 
@@ -1456,7 +1669,6 @@ async function saveSecurityQuestions(userId) {
             })
             .eq('id', userId);
 
-        // Extra safety: only update user in same business
         if (currentBusinessId) {
             query = query.eq('business_id', currentBusinessId);
         }
@@ -1468,24 +1680,25 @@ async function saveSecurityQuestions(userId) {
             throw new Error(error.message);
         }
         
-        // Success
+        // Update local user object
+        if (currentUser && currentUser.id === userId) {
+            currentUser.security_questions = questions;
+            currentUser.securityQuestions = questions;
+        }
+        
         showMessageModal(translate('security_questions_saved') || 'Security questions saved successfully!');
         
         // Close modal
         const modal = document.getElementById('securityQuestionsModal');
         if (modal) modal.classList.add('hidden');
         
-        // Remove overlay if exists
-        const overlay = document.querySelector('.fixed.inset-0');
-        if (overlay) overlay.remove();
-        
-        // Mark as set in localStorage
+        // Mark as set
         localStorage.setItem('securityQuestions', 'true');
         
     } catch (error) {
         console.error('Error saving security questions:', error);
         showMessageModal(
-            (translate('save_questions_error') || 'Failed to save security questions: ') + error.message
+            (translate('save_questions_error') || 'Failed to save: ') + error.message
         );
     }
 }
@@ -1545,3 +1758,25 @@ if (window.electronAPI && window.electronAPI.onFreeModeLimitReached) {
         }, 3000);
     });
 }
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const urlUser = urlParams.get('user');
+    const urlRole = urlParams.get('role');
+    const urlBusiness = urlParams.get('business');
+    const urlLang = urlParams.get('lang');
+
+    if (urlLang) {
+        currentLanguage = urlLang;
+        localStorage.setItem('language', urlLang);
+    }
+
+    console.log('🔗 URL params:', {
+        user: urlUser,
+        role: urlRole,
+        business: urlBusiness,
+        lang: urlLang
+    });
+});
