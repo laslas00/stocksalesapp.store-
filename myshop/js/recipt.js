@@ -692,7 +692,7 @@ if (paymentTypeDisplayElement) {
                     const receiptId = document.getElementById('receiptSaleId')?.textContent || 'NEW-RCPT';
                     const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
                     
-                 const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+                  const viewUrl = `${window.location.origin}/myshop/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
 
                     const qr = new QRious({
                         value: viewUrl,
@@ -2265,7 +2265,7 @@ function generateReceiptQRCode(receiptData) {
                           localStorage.getItem('businessId') || 'unknown';
 
         // Build a URL that links to view the receipt
-       const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+        const viewUrl = `${window.location.origin}/myshop/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
 
         // Simple QR with just the link
         const qr = new QRious({
@@ -4453,7 +4453,7 @@ if (receiptBusinessLogo) {
                     const receiptId = data.receiptId || data.id || 'NEW-RCPT';
                     const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
                     
-                const viewUrl = `${window.location.origin}/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+                 const viewUrl = `${window.location.origin}/myshop/receiptpage.html?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
 
                     const qr = new QRious({
                         value: viewUrl,
