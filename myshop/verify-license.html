@@ -276,32 +276,42 @@ async function verifyPayment() {
     resultDiv.style.display = 'none';
 
     try {
-        // ========== CALL OUR OWN API (avoids CORS) ==========
+        // Call our Vercel API (avoids CORS)
         const apiResponse = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email })
         });
 
+        console.log('API response status:', apiResponse.status);
+
+        if (!apiResponse.ok) {
+            const errorText = await apiResponse.text();
+            console.error('API error:', errorText);
+            showResult('error', '❌', 'Server error. Please try again later.');
+            return;
+        }
+
         const apiData = await apiResponse.json();
+        console.log('API data:', apiData);
 
         if (!apiData.success) {
             showResult('error', '❌', 
-                `<strong>Could not verify payment</strong><br><br>${apiData.message}<br><br>
-                <small>Make sure you completed payment on Selar with this email.</small>`
+                `<strong>No payment found</strong><br><br>
+                ${apiData.message || 'Could not verify payment'}<br><br>
+                <small>Make sure you completed payment on Selar with this email.</small><br><br>
+                <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
             );
             return;
         }
 
         const orders = apiData.orders;
 
-        if (orders.length === 0) {
+        if (!orders || orders.length === 0) {
             showResult('error', '❌', 
                 `<strong>No payment found</strong><br><br>
-                Please make sure:<br>
-                • You completed payment on Selar<br>
-                • You're using the same email<br>
-                • Payment has been confirmed<br><br>
+                Please make sure you completed payment on Selar<br>
+                and used this email: <strong>${email}</strong><br><br>
                 <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
             );
             return;
@@ -318,9 +328,8 @@ async function verifyPayment() {
         if (!completedOrder) {
             showResult('info', '⏳', 
                 `<strong>Found ${orders.length} order(s)</strong><br><br>
-                But none are marked as "completed" yet.<br>
-                This can take a few minutes after payment.<br><br>
-                <small>If you just paid, wait 2-3 minutes and try again.</small>`
+                But none are confirmed yet.<br>
+                Wait 2-3 minutes after payment and try again.`
             );
             return;
         }
@@ -329,16 +338,13 @@ async function verifyPayment() {
         let plan = selectedPlan;
         if (!plan) {
             const productId = completedOrder.product_id || completedOrder.product?.id || '';
-            for (const [key, value] of Object.entries(SELAR_PRODUCT_MAP)) {
-                if (productId.includes(key)) {
-                    plan = value;
-                    break;
-                }
-            }
-            if (!plan) plan = 'starter';
+            if (productId.includes('1174a971wo')) plan = 'starter';
+            else if (productId.includes('4242672261')) plan = 'professional';
+            else if (productId.includes('55t6z0q76t')) plan = 'business';
+            else plan = 'starter';
         }
 
-        // Find user in Supabase
+        // Activate license in Supabase
         const client = getSB();
         if (!client) throw new Error('Database connection failed');
 
@@ -348,57 +354,32 @@ async function verifyPayment() {
             .eq('email', email)
             .maybeSingle();
 
-        // Calculate expiry
         const expiresAt = new Date();
-        if (plan === 'starter') {
-            expiresAt.setMonth(expiresAt.getMonth() + 1);
-        } else {
-            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-        }
+        if (plan === 'starter') expiresAt.setMonth(expiresAt.getMonth() + 1);
+        else expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-        // Save license
-        const licenseData = {
+        const licenseEntry = {
             plan: plan,
             status: 'active',
             expires_at: expiresAt.toISOString(),
-            selar_transaction_id: completedOrder.transaction_id || completedOrder.id || completedOrder.reference,
-            activated_at: new Date().toISOString(),
+            selar_transaction_id: completedOrder.transaction_id || completedOrder.id || '',
             updated_at: new Date().toISOString()
         };
 
         if (user) {
-            licenseData.user_id = user.id;
-            licenseData.business_id = user.business_id;
-        } else {
-            licenseData.email = email;
+            licenseEntry.user_id = user.id;
+            licenseEntry.business_id = user.business_id;
+
+            const { data: existing } = await client.from('licenses')
+                .select('id').eq('user_id', user.id).maybeSingle();
+
+            if (existing) {
+                await client.from('licenses').update(licenseEntry).eq('user_id', user.id);
+            } else {
+                await client.from('licenses').insert([{ ...licenseEntry, activated_at: new Date().toISOString() }]);
+            }
         }
 
-        // Check if license exists
-        const { data: existingLicense } = await client
-            .from('licenses')
-            .select('id')
-            .eq('user_id', user?.id || '00000000-0000-0000-0000-000000000000')
-            .maybeSingle();
-
-        if (existingLicense && user) {
-            await client.from('licenses').update(licenseData).eq('user_id', user.id);
-        } else {
-            await client.from('licenses').insert([licenseData]);
-        }
-
-        // Save payment history
-        await client.from('payment_history').insert([{
-            user_id: user?.id || null,
-            email: email,
-            transaction_id: completedOrder.transaction_id || completedOrder.id,
-            amount: completedOrder.amount,
-            plan: plan,
-            status: 'completed',
-            payment_data: completedOrder,
-            created_at: new Date().toISOString()
-        }]);
-
-        // Success!
         const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
         showResult('success', '🎉', 
             `<strong>License Activated!</strong><br><br>
@@ -410,14 +391,15 @@ async function verifyPayment() {
         );
 
     } catch (error) {
-        console.error('Verification error:', error);
-        showResult('error', '❌', 'Verification failed: ' + error.message);
+        console.error('Error:', error);
+        showResult('error', '❌', 'Error: ' + error.message);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
     }
 }
-        function showResult(type, icon, message) {
+       
+function showResult(type, icon, message) {
             const resultDiv = document.getElementById('result');
             resultDiv.className = 'result ' + type;
             resultDiv.innerHTML = `<div class="result-icon">${icon}</div><div>${message}</div>`;
