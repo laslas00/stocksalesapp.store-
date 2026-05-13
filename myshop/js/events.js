@@ -111,7 +111,7 @@ function updateHomeLogo() {
                 // Local asset - keep as-is
             } else {
                 // Supabase storage path - convert to full URL
-                logoUrl = `https://axndkzmmzwpvwuftbkuw.supabase.co/storage/v1/object/public/${logoUrl}`;
+                logoUrl = `https://zexxdoxuzvkovszfqcio.supabase.co/storage/v1/object/public/${logoUrl}`;
             }
         }
         

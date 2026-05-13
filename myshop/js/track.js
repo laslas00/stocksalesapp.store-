@@ -140,9 +140,7 @@ function initSupabase() {
         };
     }
 
-    // ==================== CORE: trackAppEvent ====================
-    // ✅ THIS IS THE MAIN FUNCTION EVERYTHING CALLS
-    // trackAppEvent(eventType, eventData = {}, username = null)
+
     window.trackAppEvent = async function(eventType, eventData = {}, username = null) {
         try {
             const client = initSupabase();
@@ -354,95 +352,319 @@ function initSupabase() {
 
 
 
-// ==================== AUTOMATIC FEEDBACK PROMPT SYSTEM ====================
-// Add this AFTER your Supabase tracker code
-
-
-
 (function() {
     'use strict';
 
-    // 📊 TRACK COUNTERS (stored in localStorage)
+    // ============================================
+    // 📊 CONFIGURATION
+    // ============================================
+    const CONFIG = {
+        TARGETS: {
+            sales: 3,      // Show after 3 sales
+            stock: 2,      // Show after 2 stock additions  
+            customer: 3    // Show after 3 customer additions
+        },
+        COOLDOWN_HOURS: 24,
+        UI: {
+            debugMode: true,
+            autoCloseDelay: 15000,  // Auto-close after 15 seconds
+            showToastFirst: true,    // Show toast before modal
+            toastDelay: 2500         // Delay before showing modal
+        }
+    };
+
+    // ============================================
+    // 📦 STORAGE KEYS
+    // ============================================
+    const STORAGE_KEYS = {
+        sales: 'feedback_sales_count',
+        stock: 'feedback_stock_count',
+        customer: 'feedback_customer_count',
+        lastFeedback: 'feedback_last_date',
+        lastFeedbackTimestamp: 'feedback_last_timestamp',
+        skippedToday: 'feedback_skipped_today'
+    };
+
+    // ============================================
+    // 📈 COUNTERS STATE
+    // ============================================
     let counters = {
-        salesCount: parseInt(localStorage.getItem('feedback_sales_count') || '0'),
-        stockCount: parseInt(localStorage.getItem('feedback_stock_count') || '0'),
-        customerCount: parseInt(localStorage.getItem('feedback_customer_count') || '0'),
-        lastFeedbackDate: localStorage.getItem('feedback_last_date') || null
+        sales: parseInt(localStorage.getItem(STORAGE_KEYS.sales) || '0'),
+        stock: parseInt(localStorage.getItem(STORAGE_KEYS.stock) || '0'),
+        customer: parseInt(localStorage.getItem(STORAGE_KEYS.customer) || '0'),
+        lastFeedbackDate: localStorage.getItem(STORAGE_KEYS.lastFeedback) || null,
+        lastFeedbackTimestamp: parseInt(localStorage.getItem(STORAGE_KEYS.lastFeedbackTimestamp) || '0'),
+        skippedToday: localStorage.getItem(STORAGE_KEYS.skippedToday) === 'true'
     };
 
-    // 🎯 TARGETS - Show feedback after these many actions
-    const TARGETS = {
-        sales: 1,      // Show after 3 sales
-        stock: 2,      // Show after 2 stock items added
-        customer: 3    // Show after 3 customers added
-    };
+    let currentFeedbackType = '';
+    let currentSentiment = 'Great';
+    let supabaseClient = null;
+    let autoCloseTimeout = null;
 
-    // ⏰ COOLDOWN - Only show feedback once per day max
-    const COOLDOWN_HOURS = 24;
+    // ============================================
+    // 🔧 HELPER FUNCTIONS
+    // ============================================
+    
+    function log(...args) {
+        if (CONFIG.UI.debugMode) {
+            console.log('[Feedback System]', ...args);
+        }
+    }
 
-    // ==================== FEEDBACK MODAL HTML ====================
+    function getSupabaseClient() {
+        if (window.supabaseClient) return window.supabaseClient;
+        if (window._supabaseClient) return window._supabaseClient;
+        if (window.SUPABASE_CLIENT) return window.SUPABASE_CLIENT;
+        
+        const supabaseUrl = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+        const supabaseKey = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
+        
+        if (window.supabase) {
+            try {
+                const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+                window._supabaseClient = client;
+                return client;
+            } catch(e) {
+                log('Failed to create supabase client:', e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    function hasCooldownExpired() {
+        // Check if user skipped today
+        if (counters.skippedToday) {
+            const today = new Date().toDateString();
+            if (counters.lastFeedbackDate === today) {
+                log('⏰ User skipped today');
+                return false;
+            } else {
+                // Reset skip for new day
+                counters.skippedToday = false;
+                localStorage.setItem(STORAGE_KEYS.skippedToday, 'false');
+            }
+        }
+        
+        if (!counters.lastFeedbackTimestamp) return true;
+        const hoursSinceLast = (Date.now() - counters.lastFeedbackTimestamp) / (1000 * 60 * 60);
+        return hoursSinceLast >= CONFIG.COOLDOWN_HOURS;
+    }
+
+    function saveCounters() {
+        localStorage.setItem(STORAGE_KEYS.sales, counters.sales);
+        localStorage.setItem(STORAGE_KEYS.stock, counters.stock);
+        localStorage.setItem(STORAGE_KEYS.customer, counters.customer);
+        if (counters.lastFeedbackDate) {
+            localStorage.setItem(STORAGE_KEYS.lastFeedback, counters.lastFeedbackDate);
+        }
+        if (counters.lastFeedbackTimestamp) {
+            localStorage.setItem(STORAGE_KEYS.lastFeedbackTimestamp, counters.lastFeedbackTimestamp);
+        }
+    }
+
+    // ============================================
+    // 🎯 MAIN FEEDBACK CHECK LOGIC
+    // ============================================
+    async function checkAndShowFeedback(type, actionName) {
+        log(`Checking feedback for: ${type}`);
+        
+        if (!hasCooldownExpired()) {
+            log(`⏰ Cooldown active`);
+            return false;
+        }
+        
+        let shouldShow = false;
+        let target = CONFIG.TARGETS[type];
+        
+        if (!target) return false;
+        
+        // Increment counter
+        counters[type]++;
+        saveCounters();
+        
+        // Check if target reached
+        if (counters[type] >= target) {
+            shouldShow = true;
+            log(`🎯 Target reached! Showing feedback after ${counters[type]} ${type}`);
+        } else {
+            log(`📊 Progress: ${counters[type]}/${target}`);
+        }
+        
+        if (shouldShow) {
+            // Record that we showed feedback
+            counters.lastFeedbackDate = new Date().toDateString();
+            counters.lastFeedbackTimestamp = Date.now();
+            saveCounters();
+            
+            // Show toast first, then modal with delay
+            if (CONFIG.UI.showToastFirst) {
+                showSuccessToast(getCelebrationMessage(type, counters[type]));
+                setTimeout(() => {
+                    showFeedbackModal(getFeedbackMessage(type, counters[type]), type);
+                }, CONFIG.UI.toastDelay);
+            } else {
+                await showFeedbackModal(getFeedbackMessage(type, counters[type]), type);
+            }
+            
+            // Reset counter after showing
+            counters[type] = 0;
+            saveCounters();
+            
+            return true;
+        }
+        
+        return false;
+    }
+
+    function getCelebrationMessage(type, count) {
+        const messages = {
+            sales: `🔥 ${count} sales completed! Great momentum!`,
+            stock: `📦 ${count} items added to inventory!`,
+            customer: `👋 ${count} new customers added!`
+        };
+        return messages[type] || '🎉 Great progress today!';
+    }
+
+    function getFeedbackMessage(type, count) {
+        const messages = {
+            sales: [
+                `🔥 Nice work! You just completed ${count} sales.`,
+                `💸 Business is moving! ${count} sales already.`,
+                `🚀 You're doing great today — ${count} sales completed!`,
+                `💰 ${count} sales in the books! Keep the momentum going!`
+            ],
+            stock: [
+                `📦 Inventory updated smoothly.`,
+                `🛒 ${count} products added successfully.`,
+                `📈 Your stock is growing nicely!`,
+                `✅ Stock management is on point today!`
+            ],
+            customer: [
+                `👋 New customers added successfully.`,
+                `🤝 Your customer list keeps growing!`,
+                `⭐ ${count} customers added today.`,
+                `🎯 Building your business, one customer at a time!`
+            ]
+        };
+
+        const list = messages[type] || [`Great work today!`];
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    // ============================================
+    // 🎨 MODERN BOTTOM SHEET MODAL
+    // ============================================
     function injectFeedbackModal() {
-        if (document.getElementById('autoFeedbackSimpleModal')) return;
+        if (document.getElementById('autoFeedbackModal')) return;
         
         const modalHTML = `
-            <div id="autoFeedbackSimpleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[99999]" style="backdrop-filter: blur(4px);">
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 transform transition-all scale-95 animate-modal-popup">
-                    <div class="text-center mb-4">
-                        <div class="w-20 h-20 mx-auto bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-3 animate-bounce">
-                            <i class="fas fa-trophy text-4xl text-white"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                            🎉 Great Progress!
-                        </h3>
-                        <p id="feedbackMessage" class="text-gray-600 dark:text-gray-300">
-                            You're doing amazing work!
-                        </p>
+            <div id="autoFeedbackModal" class="fixed inset-0 bg-black/40 hidden items-end justify-center z-[99999]" style="backdrop-filter: blur(2px);">
+                <div class="feedback-card w-full max-w-sm bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl transform transition-all">
+                    <!-- Drag indicator -->
+                    <div class="flex justify-center pt-3 pb-1">
+                        <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
                     </div>
                     
-                    <!-- Quick Stats -->
-                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-2 gap-3 text-center">
-                            <div>
-                                <div class="text-2xl font-bold text-blue-600" id="statSales">0</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400">Sales Today</div>
+                    <div class="p-5">
+                        <!-- Header -->
+                        <div class="text-center mb-4">
+                            <div class="w-16 h-16 mx-auto bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-3 shadow-lg">
+                                <i class="fas fa-chart-line text-2xl text-white"></i>
                             </div>
-                            <div>
-                                <div class="text-2xl font-bold text-green-600" id="statStock">0</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400">Items Added</div>
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+                                🎯 Progress Check!
+                            </h3>
+                            <p id="feedbackMessage" class="text-gray-600 dark:text-gray-300 text-sm mt-1">
+                                You're doing amazing work!
+                            </p>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-xl p-3 mb-4">
+                            <div class="flex justify-around text-center">
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="statSales">0</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">Sales Today</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-600 dark:text-green-400" id="statStock">0</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">Items Added</div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="text-xs text-green-600 dark:text-green-400">
+                                    🔥 Keep going! You're building momentum.
+                                </span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Simple Sentiment -->
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-2 text-center">How are you feeling?</p>
-                        <div class="flex justify-around">
-                            <button onclick="setSimpleSentiment('Sad')" class="simple-sentiment p-3 rounded-lg transition-all hover:scale-105">
-                                <i class="far fa-frown text-2xl text-red-500"></i>
-                            </button>
-                            <button onclick="setSimpleSentiment('Neutral')" class="simple-sentiment p-3 rounded-lg transition-all hover:scale-105">
-                                <i class="far fa-meh text-2xl text-yellow-500"></i>
-                            </button>
-                            <button onclick="setSimpleSentiment('Happy')" class="simple-sentiment p-3 rounded-lg transition-all hover:scale-105 active">
-                                <i class="far fa-smile-wink text-2xl text-green-500"></i>
-                            </button>
+                        
+                        <!-- Modern Sentiment Options -->
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-3 text-center">How's everything working?</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button data-sentiment="Great" class="sentiment-btn flex flex-col items-center p-3 rounded-xl transition-all hover:scale-105 bg-gray-50 dark:bg-gray-700">
+                                    <i class="far fa-grin-beam text-2xl text-green-500"></i>
+                                    <span class="text-xs mt-1">Great</span>
+                                </button>
+                                <button data-sentiment="Okay" class="sentiment-btn flex flex-col items-center p-3 rounded-xl transition-all hover:scale-105 bg-gray-50 dark:bg-gray-700">
+                                    <i class="far fa-smile text-2xl text-yellow-500"></i>
+                                    <span class="text-xs mt-1">Okay</span>
+                                </button>
+                                <button data-sentiment="Needs Improvement" class="sentiment-btn flex flex-col items-center p-3 rounded-xl transition-all hover:scale-105 bg-gray-50 dark:bg-gray-700">
+                                    <i class="far fa-lightbulb text-2xl text-purple-500"></i>
+                                    <span class="text-xs mt-1">Needs Work</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Feedback Text -->
-                    <div class="mb-4">
-                        <textarea id="simpleFeedbackText" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" 
-                            placeholder="Quick feedback... (optional)"></textarea>
-                    </div>
-                    
-                    <!-- Actions -->
-                    <div class="flex gap-3">
-                        <button onclick="closeSimpleFeedback()" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                            Later
-                        </button>
-                        <button onclick="submitSimpleFeedback()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            Send ❤️
-                        </button>
+                        
+                        <!-- Quick Reactions -->
+                        <div class="mb-3">
+                            <div class="flex gap-2 flex-wrap justify-center">
+                                <button class="quick-reaction text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-blue-100 transition-colors">
+                                    👍 Easy to use
+                                </button>
+                                <button class="quick-reaction text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-blue-100 transition-colors">
+                                    ⚡ Fast
+                                </button>
+                                <button class="quick-reaction text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-blue-100 transition-colors">
+                                    🐛 Found issue
+                                </button>
+                                <button class="quick-reaction text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-blue-100 transition-colors">
+                                    💡 Suggestion
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Feedback Text with Counter -->
+                        <div class="mb-4">
+                            <textarea id="feedbackText" rows="2" maxlength="200" 
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none" 
+                                placeholder="Share your thoughts... (optional)"></textarea>
+                            <div class="flex justify-between mt-1 text-xs text-gray-500">
+                                <span>Optional feedback</span>
+                                <span id="charCount">0/200</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col gap-2">
+                            <button id="submitFeedbackBtn" 
+                                class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:scale-[1.02] transition-all shadow-lg">
+                                Send Feedback ❤️
+                            </button>
+                            <div class="flex gap-2">
+                                <button id="closeFeedbackBtn" 
+                                    class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all text-sm">
+                                    Later
+                                </button>
+                                <button id="skipTodayBtn" 
+                                    class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all text-sm">
+                                    Don't ask today
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -450,109 +672,139 @@ function initSupabase() {
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Add animation styles
-        if (!document.querySelector('#simple-feedback-styles')) {
+        // Add styles
+        if (!document.querySelector('#feedback-styles')) {
             const style = document.createElement('style');
-            style.id = 'simple-feedback-styles';
+            style.id = 'feedback-styles';
             style.textContent = `
-                @keyframes modal-popup {
-                    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-                    to { opacity: 1; transform: scale(1) translateY(0); }
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
-                @keyframes bounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-10px); }
+                
+                .feedback-card {
+                    animation: slideUp 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
                 }
-                .animate-modal-popup { animation: modal-popup 0.3s ease-out; }
-                .animate-bounce { animation: bounce 0.5s ease-in-out; }
-                .simple-sentiment.active {
-                    background: linear-gradient(135deg, #3b82f6, #6366f1);
+                
+                .sentiment-btn.active {
+                    background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
                     transform: scale(1.05);
                 }
-                .simple-sentiment.active i { color: white !important; }
+                
+                .sentiment-btn.active i,
+                .sentiment-btn.active span {
+                    color: white !important;
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translate(-50%, 20px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+                
+                .animate-fade-in {
+                    animation: fadeIn 0.3s ease-out;
+                }
+                
+                .feedback-toast-premium {
+                    animation: slideUp 0.3s ease-out;
+                }
             `;
             document.head.appendChild(style);
         }
+        
+        attachModalEvents();
+        setupCharacterCounter();
     }
-
-    // ==================== CHECK AND SHOW FEEDBACK ====================
-    function checkAndShowFeedback(type, actionName) {
-        // Check cooldown (once per day)
-        const now = new Date().toDateString();
-        if (counters.lastFeedbackDate === now) {
-            console.log(`⏰ Already showed feedback today. Skipping.`);
-            return false;
-        }
+    
+    function setupCharacterCounter() {
+        const textarea = document.getElementById('feedbackText');
+        const charCount = document.getElementById('charCount');
         
-        let shouldShow = false;
-        let message = '';
-        
-        switch(type) {
-            case 'sale':
-                counters.salesCount++;
-                localStorage.setItem('feedback_sales_count', counters.salesCount);
-                
-                if (counters.salesCount >= TARGETS.sales) {
-                    shouldShow = true;
-                    message = `🎉 You've made ${counters.salesCount} sales! Amazing job! How's the sales process?`;
-                    // Reset counter after showing
-                    counters.salesCount = 0;
-                    localStorage.setItem('feedback_sales_count', 0);
-                } else {
-                    console.log(`📊 Sales: ${counters.salesCount}/${TARGETS.sales} until feedback`);
+        if (textarea && charCount) {
+            textarea.addEventListener('input', () => {
+                const length = textarea.value.length;
+                charCount.textContent = `${length}/200`;
+                if (length > 200) {
+                    textarea.value = textarea.value.slice(0, 200);
+                    charCount.textContent = '200/200';
                 }
-                break;
-                
-            case 'stock':
-                counters.stockCount++;
-                localStorage.setItem('feedback_stock_count', counters.stockCount);
-                
-                if (counters.stockCount >= TARGETS.stock) {
-                    shouldShow = true;
-                    message = `📦 You've added ${counters.stockCount} items to inventory! How's the stock management working?`;
-                    counters.stockCount = 0;
-                    localStorage.setItem('feedback_stock_count', 0);
-                } else {
-                    console.log(`📊 Stock: ${counters.stockCount}/${TARGETS.stock} until feedback`);
-                }
-                break;
-                
-            case 'customer':
-                counters.customerCount++;
-                localStorage.setItem('feedback_customer_count', counters.customerCount);
-                
-                if (counters.customerCount >= TARGETS.customer) {
-                    shouldShow = true;
-                    message = `👋 You've added ${counters.customerCount} customers! Building your business! How's it going?`;
-                    counters.customerCount = 0;
-                    localStorage.setItem('feedback_customer_count', 0);
-                } else {
-                    console.log(`📊 Customers: ${counters.customerCount}/${TARGETS.customer} until feedback`);
-                }
-                break;
-        }
-        
-        if (shouldShow) {
-            // Update last feedback date
-            counters.lastFeedbackDate = now;
-            localStorage.setItem('feedback_last_date', now);
-            
-            // Show the feedback modal
-            showSimpleFeedback(message, type, {
-                sales: parseInt(localStorage.getItem('feedback_sales_count') || '0'),
-                stock: parseInt(localStorage.getItem('feedback_stock_count') || '0')
             });
-            return true;
         }
-        
-        return false;
     }
     
-    // ==================== SHOW FEEDBACK MODAL ====================
-    let currentFeedbackType = '';
+    function attachModalEvents() {
+        // Close button
+        document.getElementById('closeFeedbackBtn')?.addEventListener('click', closeFeedbackModal);
+        
+        // Submit button
+        document.getElementById('submitFeedbackBtn')?.addEventListener('click', submitFeedback);
+        
+        // Skip today button
+        document.getElementById('skipTodayBtn')?.addEventListener('click', () => {
+            counters.skippedToday = true;
+            localStorage.setItem(STORAGE_KEYS.skippedToday, 'true');
+            counters.lastFeedbackTimestamp = Date.now();
+            saveCounters();
+            showSuccessToast("We won't ask again today. Thanks for your hard work! 🙌");
+            closeFeedbackModal();
+        });
+        
+        // Sentiment buttons
+        document.querySelectorAll('.sentiment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setSentiment(btn.dataset.sentiment);
+            });
+        });
+        
+        // Quick reactions
+        document.querySelectorAll('.quick-reaction').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const textarea = document.getElementById('feedbackText');
+                const currentText = textarea.value;
+                const reaction = btn.textContent.trim();
+                textarea.value = currentText ? `${currentText}\n${reaction}` : reaction;
+                textarea.dispatchEvent(new Event('input'));
+                textarea.focus();
+            });
+        });
+        
+        // Close on backdrop click
+        const modal = document.getElementById('autoFeedbackModal');
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) closeFeedbackModal();
+        });
+        
+        // Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                closeFeedbackModal();
+            }
+        });
+    }
     
-    function showSimpleFeedback(message, type, stats) {
-        const modal = document.getElementById('autoFeedbackSimpleModal');
+    function setSentiment(sentiment) {
+        currentSentiment = sentiment;
+        document.querySelectorAll('.sentiment-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.sentiment === sentiment) {
+                btn.classList.add('active');
+            }
+        });
+    }
+    
+    async function showFeedbackModal(message, type) {
+        // Clear any existing auto-close timeout
+        if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+        
+        injectFeedbackModal();
+        
+        const modal = document.getElementById('autoFeedbackModal');
         const messageEl = document.getElementById('feedbackMessage');
         const statSales = document.getElementById('statSales');
         const statStock = document.getElementById('statStock');
@@ -560,46 +812,40 @@ function initSupabase() {
         currentFeedbackType = type;
         messageEl.textContent = message;
         
-        // Show stats (even if not at target yet)
-        if (statSales) statSales.textContent = stats.sales;
-        if (statStock) statStock.textContent = stats.stock;
+        statSales.textContent = counters.sales;
+        statStock.textContent = counters.stock;
         
-        // Reset form
-        document.getElementById('simpleFeedbackText').value = '';
-        setSimpleSentiment('Happy');
+        const textarea = document.getElementById('feedbackText');
+        if (textarea) textarea.value = '';
+        setSentiment('Great');
         
-        // Show modal
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         
-        // Track that we showed feedback
-        if (typeof window.trackAppEvent === 'function') {
-            window.trackAppEvent('auto_feedback_shown', {
-                type: type,
-                message: message
-            });
+        // Auto-close after delay
+        autoCloseTimeout = setTimeout(() => {
+            closeFeedbackModal();
+        }, CONFIG.UI.autoCloseDelay);
+        
+        log(`Modal shown for type: ${type}`);
+    }
+    
+    function closeFeedbackModal() {
+        if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+        
+        const modal = document.getElementById('autoFeedbackModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
     }
     
-    // ==================== FEEDBACK SUBMISSION ====================
-    let simpleSentiment = 'Happy';
-    
-    window.setSimpleSentiment = function(sentiment) {
-        simpleSentiment = sentiment;
-        document.querySelectorAll('.simple-sentiment').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.textContent.includes(sentiment) || 
-                (sentiment === 'Happy' && btn.querySelector('.fa-smile-wink')) ||
-                (sentiment === 'Sad' && btn.querySelector('.fa-frown')) ||
-                (sentiment === 'Neutral' && btn.querySelector('.fa-meh'))) {
-                btn.classList.add('active');
-            }
-        });
-    };
-    
-    window.submitSimpleFeedback = async function() {
-        const feedbackText = document.getElementById('simpleFeedbackText')?.value?.trim();
-        const submitBtn = document.querySelector('#autoFeedbackSimpleModal .bg-blue-600');
+    // ============================================
+    // 💾 SAVE FEEDBACK TO SUPABASE
+    // ============================================
+    async function submitFeedback() {
+        const feedbackText = document.getElementById('feedbackText')?.value?.trim();
+        const submitBtn = document.getElementById('submitFeedbackBtn');
         
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -607,184 +853,199 @@ function initSupabase() {
         }
         
         try {
-            const client = window.initSupabase ? window.initSupabase() : null;
+            supabaseClient = getSupabaseClient();
             
-            if (client) {
-                const deviceId = localStorage.getItem('deviceId') || 'device-' + Date.now();
-                const username = window.currentUser?.username || localStorage.getItem('username') || 'Anonymous';
+            if (supabaseClient) {
+                const deviceId = localStorage.getItem('deviceId') || 
+                                localStorage.getItem('app_device_id') || 
+                                'device-' + Date.now();
                 
-                const { error } = await client
+                const username = window.currentUser?.username || 
+                                localStorage.getItem('username') || 
+                                localStorage.getItem('app_username') || 
+                                'Anonymous';
+                
+                let city = null, country = null;
+                try {
+                    if (window.userLocation) {
+                        city = window.userLocation.city;
+                        country = window.userLocation.country;
+                    }
+                } catch(e) {}
+                
+                const feedbackData = {
+                    sentiment: currentSentiment,
+                    suggestions: feedbackText || `Feedback provided after ${currentFeedbackType}`,
+                    username: username,
+                    device_id: deviceId,
+                    city: city,
+                    country: country,
+                    status: 'new',
+                    created_at: new Date().toISOString()
+                };
+                
+                log('Submitting feedback:', feedbackData);
+                
+                const { data, error } = await supabaseClient
                     .from('user_feedback')
-                    .insert({
-                        sentiment: simpleSentiment,
-                        suggestions: feedbackText || `Feedback after ${currentFeedbackType}`,
-                        username: username,
-                        device_id: deviceId,
-                        feedback_source: 'auto_trigger',
-                        feedback_type: currentFeedbackType,
-                        status: 'new',
-                        created_at: new Date().toISOString()
-                    });
+                    .insert(feedbackData)
+                    .select();
                 
                 if (error) throw error;
+                
+                log('✅ Feedback saved!', data);
+                showSuccessToast('Thanks for your feedback! ❤️');
+                
+            } else {
+                saveFeedbackLocally(feedbackText);
+                showSuccessToast('Feedback saved! Thanks! ❤️');
             }
             
-            // Show success message
-            showSuccessToast('Thank you for your feedback! ❤️');
-            
-            // Close modal
-            closeSimpleFeedback();
+            closeFeedbackModal();
             
         } catch (err) {
             console.error('Feedback error:', err);
-            alert('Thanks for your feedback! (Will save next time)');
-            closeSimpleFeedback();
+            showSuccessToast('Thanks for sharing! ❤️');
+            closeFeedbackModal();
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Send ❤️';
+                submitBtn.innerHTML = 'Send Feedback ❤️';
             }
         }
-    };
+    }
     
-    window.closeSimpleFeedback = function() {
-        const modal = document.getElementById('autoFeedbackSimpleModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    };
+    function saveFeedbackLocally(feedbackText) {
+        const localFeedbacks = JSON.parse(localStorage.getItem('local_feedbacks') || '[]');
+        localFeedbacks.push({
+            sentiment: currentSentiment,
+            feedback: feedbackText,
+            type: currentFeedbackType,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('local_feedbacks', JSON.stringify(localFeedbacks));
+        log('Feedback saved locally');
+    }
     
     function showSuccessToast(message) {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-[99999] animate-fade-in';
-        toast.innerHTML = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        const existingToast = document.querySelector('.feedback-toast-premium');
+        if (existingToast) existingToast.remove();
         
-        // Add animation style if not exists
-        if (!document.querySelector('#toast-styles')) {
-            const style = document.createElement('style');
-            style.id = 'toast-styles';
-            style.textContent = `
-                @keyframes fade-in {
-                    from { opacity: 0; transform: translate(-50%, 20px); }
-                    to { opacity: 1; transform: translate(-50%, 0); }
-                }
-                .animate-fade-in {
-                    animation: fade-in 0.3s ease-out;
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        const toast = document.createElement('div');
+        toast.className = 'feedback-toast-premium fixed bottom-24 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md bg-black/80 text-white text-sm z-[99999]';
+        toast.innerHTML = `<i class="fas fa-check-circle mr-2 text-green-400"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
     
-    // ==================== PUBLIC FUNCTIONS TO CALL ====================
-    
-    // Call this AFTER successfully recording a sale
-    window.onSaleRecorded = function() {
-        console.log('💰 Sale recorded! Checking feedback trigger...');
-        checkAndShowFeedback('sale', 'Sale Recorded');
-    };
-    
-    // Call this AFTER successfully adding an item to stock
-    window.onItemAdded = function() {
-        console.log('📦 Item added! Checking feedback trigger...');
-        checkAndShowFeedback('stock', 'Item Added');
-    };
-    
-    // Call this AFTER successfully adding a customer
-    window.onCustomerAdded = function() {
-        console.log('👋 Customer added! Checking feedback trigger...');
-        checkAndShowFeedback('customer', 'Customer Added');
-    };
-    
-    // Reset counters manually (for testing)
-    window.resetFeedbackCounters = function() {
-        counters.salesCount = 0;
-        counters.stockCount = 0;
-        counters.customerCount = 0;
-        localStorage.setItem('feedback_sales_count', 0);
-        localStorage.setItem('feedback_stock_count', 0);
-        localStorage.setItem('feedback_customer_count', 0);
-        console.log('🔄 Feedback counters reset!');
-    };
-    
-    // View current counters
-    window.viewFeedbackCounters = function() {
-        console.log('📊 Feedback Counters:', {
-            sales: parseInt(localStorage.getItem('feedback_sales_count') || '0'),
-            stock: parseInt(localStorage.getItem('feedback_stock_count') || '0'),
-            customers: parseInt(localStorage.getItem('feedback_customer_count') || '0'),
-            lastFeedback: localStorage.getItem('feedback_last_date') || 'Never'
-        });
-    };
-    
-    // ==================== AUTO-HOOK INTO EXISTING FUNCTIONS ====================
+    // ============================================
+    // 🔌 AUTO-HOOK FUNCTIONS (FIXED)
+    // ============================================
+    function hookFunction(obj, functionName, hookType) {
+        if (typeof obj[functionName] === 'function') {
+            const original = obj[functionName];
+            obj[functionName] = async function(...args) {
+                try {
+                    const result = await original.apply(this, args);
+                    const isSuccess = result !== false && result !== null && !result?.error;
+                    if (isSuccess) {
+                        setTimeout(() => {
+                            checkAndShowFeedback(hookType, functionName);
+                        }, 500);
+                    }
+                    return result;
+                } catch (err) {
+                    console.error(`Error in ${functionName}:`, err);
+                    throw err; // Fixed: Don't call original again on error
+                }
+            };
+            log(`✅ Hooked into ${functionName}()`);
+            return true;
+        }
+        return false;
+    }
     
     function autoHookFunctions() {
-        // Hook into recordSale function if it exists
-        if (typeof window.recordSale === 'function') {
-            const originalRecordSale = window.recordSale;
-            window.recordSale = async function(...args) {
-                const result = await originalRecordSale.apply(this, args);
-                // If sale was successful, trigger feedback check
-                if (result !== false && result !== null && !result?.error) {
-                    setTimeout(() => window.onSaleRecorded(), 500);
-                }
-                return result;
-            };
-            console.log('✅ Auto-hooked into recordSale()');
-        }
+        const hooks = [
+            { obj: window, name: 'recordSale', type: 'sales' },
+            { obj: window, name: 'saveSale', type: 'sales' },
+            { obj: window, name: 'addSale', type: 'sales' },
+            { obj: window, name: 'addItem', type: 'stock' },
+            { obj: window, name: 'addStockItem', type: 'stock' },
+            { obj: window, name: 'addCustomer', type: 'customer' },
+            { obj: window, name: 'saveCustomer', type: 'customer' }
+        ];
         
-        // Hook into addItem function if it exists
-        if (typeof window.addItem === 'function') {
-            const originalAddItem = window.addItem;
-            window.addItem = async function(...args) {
-                const result = await originalAddItem.apply(this, args);
-                if (result !== false && result !== null && !result?.error) {
-                    setTimeout(() => window.onItemAdded(), 500);
-                }
-                return result;
-            };
-            console.log('✅ Auto-hooked into addItem()');
-        }
-        
-        // Hook into addCustomer function if it exists
-        if (typeof window.addCustomer === 'function') {
-            const originalAddCustomer = window.addCustomer;
-            window.addCustomer = async function(...args) {
-                const result = await originalAddCustomer.apply(this, args);
-                if (result !== false && result !== null && !result?.error) {
-                    setTimeout(() => window.onCustomerAdded(), 500);
-                }
-                return result;
-            };
-            console.log('✅ Auto-hooked into addCustomer()');
-        }
+        let hooked = 0;
+        hooks.forEach(hook => {
+            if (hookFunction(hook.obj, hook.name, hook.type)) hooked++;
+        });
+        log(`Auto-hooked into ${hooked} functions`);
     }
     
-    // ==================== INITIALIZE ====================
-    function initSimpleFeedback() {
-        console.log('🎯 Simple Auto-Feedback System Initialized');
-        console.log(`📊 Settings: Show after ${TARGETS.sales} sales, ${TARGETS.stock} stock items, or ${TARGETS.customer} customers`);
+    // ============================================
+    // 🌐 PUBLIC API
+    // ============================================
+    
+    window.FeedbackSystem = {
+        onSale: () => checkAndShowFeedback('sales', 'Manual'),
+        onStock: () => checkAndShowFeedback('stock', 'Manual'),
+        onCustomer: () => checkAndShowFeedback('customer', 'Manual'),
+        reset: () => {
+            counters = { sales: 0, stock: 0, customer: 0, lastFeedbackDate: null, lastFeedbackTimestamp: 0, skippedToday: false };
+            localStorage.setItem(STORAGE_KEYS.skippedToday, 'false');
+            saveCounters();
+            log('Counters reset');
+            console.log('✅ Counters reset!');
+        },
+        setTargets: (targets) => {
+            Object.assign(CONFIG.TARGETS, targets);
+            console.log('🎯 New targets:', CONFIG.TARGETS);
+        },
+        setDebug: (enabled) => {
+            CONFIG.UI.debugMode = enabled;
+            console.log(`Debug mode: ${enabled ? 'ON' : 'OFF'}`);
+        },
+        showModal: (message, type) => showFeedbackModal(message, type),
+        status: () => {
+            console.log('=== Feedback System Status ===');
+            console.log('Counters:', counters);
+            console.log('Targets:', CONFIG.TARGETS);
+            const hoursLeft = counters.lastFeedbackTimestamp ? 
+                Math.max(0, CONFIG.COOLDOWN_HOURS - (Date.now() - counters.lastFeedbackTimestamp) / (1000 * 60 * 60)).toFixed(1) : 0;
+            console.log(`Cooldown: ${hoursLeft} hours remaining`);
+            console.log('===============================');
+        }
+    };
+    
+    // Legacy support
+    window.onSaleRecorded = () => checkAndShowFeedback('sales', 'Sale');
+    window.onItemAdded = () => checkAndShowFeedback('stock', 'Stock');
+    window.onCustomerAdded = () => checkAndShowFeedback('customer', 'Customer');
+    window.resetFeedbackCounters = () => window.FeedbackSystem.reset();
+    window.viewFeedbackCounters = () => window.FeedbackSystem.status();
+    
+    // ============================================
+    // 🚀 INITIALIZATION
+    // ============================================
+    function init() {
+        log('🎯 UX-Enhanced Auto-Feedback System v3.0 Initialized');
+        log(`📊 Settings: ${CONFIG.TARGETS.sales} sales, ${CONFIG.TARGETS.stock} stock, ${CONFIG.TARGETS.customer} customers`);
+        log(`🎨 Modern bottom sheet + toast-first UX enabled`);
         
         injectFeedbackModal();
         
-        // Try to auto-hook into existing functions after a delay
-        setTimeout(autoHookFunctions, 2000);
-        
-        // Display current counters on load
-        console.log('Current counters:', {
-            sales: parseInt(localStorage.getItem('feedback_sales_count') || '0'),
-            stock: parseInt(localStorage.getItem('feedback_stock_count') || '0'),
-            customers: parseInt(localStorage.getItem('feedback_customer_count') || '0')
-        });
+        setTimeout(autoHookFunctions, 1500);
     }
     
-    // Start the system
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSimpleFeedback);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initSimpleFeedback();
+        init();
     }
     
 })();

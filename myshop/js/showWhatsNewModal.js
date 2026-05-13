@@ -356,6 +356,6 @@ window._wnModal = new WhatsNewModal('5.3.0', newFeatures);
 
 
 if (localStorage.getItem('tourCompleted') === 'true') {
-    window._wnModal.showIfNew();
+   
 }
 

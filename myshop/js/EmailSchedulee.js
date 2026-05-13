@@ -84,7 +84,7 @@ class EmailScheduler {
     _getClient() {
         if (typeof getSB === 'function') return getSB();
         if (window.supabase?.createClient) {
-            const SUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://axndkzmmzwpvwuftbkuw.supabase.co';
+            const SUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://zexxdoxuzvkovszfqcio.supabase.co';
             const SUPABASE_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
             return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }

@@ -1,5 +1,5 @@
 
-const MYSUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://axndkzmmzwpvwuftbkuw.supabase.co';
+const MYSUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://zexxdoxuzvkovszfqcio.supabase.co';
 const  MY_ANON_KEY =window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Initialize Supabase client

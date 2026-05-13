@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Sales Pro · Upgrade Plan</title>
+  <link rel="icon" type="image/png" href="image/icon.ico">
+  <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
+  <script src="js/env.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+    }
+    
+    /* Business header */
+    .biz-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .biz-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .biz-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+    .biz-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .biz-email {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .current-plan {
+      background: #eff6ff;
+      color: #3b82f6;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .pricing-header {
+      text-align: center;
+      padding: 40px 20px 20px;
+    }
+    .pricing-header h1 { font-size: 2rem; font-weight: 700; }
+    .pricing-header p { color: #64748b; margin-top: 8px; }
+    
+    .plans {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .plan-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 32px;
+      width: 320px;
+      transition: 0.2s;
+    }
+    .plan-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+    .plan-card.popular {
+      border: 2px solid #3b82f6;
+      position: relative;
+    }
+    .popular-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+      color: white;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .plan-name { font-size: 1rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; }
+    .plan-price { font-size: 2.5rem; font-weight: 800; margin: 16px 0 4px; }
+    .plan-price span { font-size: 0.9rem; color: #64748b; font-weight: 400; }
+    .plan-period { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+    .plan-features { list-style: none; margin-bottom: 24px; }
+    .plan-features li { padding: 8px 0; color: #475569; font-size: 0.9rem; }
+    .plan-features li i { color: #10b981; margin-right: 8px; }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      text-align: center;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: 0.2s;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-outline { background: white; color: #3b82f6; border: 2px solid #3b82f6; }
+    .btn-outline:hover { background: #eff6ff; }
+    
+    .info-box {
+      text-align: center;
+      margin: 30px auto;
+      padding: 20px;
+      max-width: 600px;
+      background: #eff6ff;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+    .info-box i { margin-right: 6px; }
+    
+    .back-link { text-align: center; margin: 20px 0 40px; }
+    .back-link a { color: #3b82f6; text-decoration: none; margin: 0 12px; }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal.show { display: flex; }
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-box h3 { margin-bottom: 4px; }
+    .modal-box p { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+    .modal-box input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .modal-box input:focus { outline: none; border-color: #3b82f6; }
+    .btn-success { background: #10b981; color: white; margin-bottom: 8px; }
+    .btn-ghost { background: #f1f5f9; color: #64748b; }
+
+    .currency-selector {
+      text-align: center;
+      margin-top: 12px;
+    }
+    .currency-selector select {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Business Header -->
+<div class="biz-header" id="bizHeader">
+  <div class="biz-info">
+    <img id="bizLogo" class="biz-logo" src="image/logo.jpg" alt="Logo">
+    <div>
+      <div class="biz-name" id="bizName">Loading...</div>
+      <div class="biz-email" id="bizEmail"></div>
+    </div>
+  </div>
+  <div class="current-plan" id="currentPlanBadge">Free Trial</div>
+</div>
+
+<!-- Pricing -->
+<div class="pricing-header">
+  <h1>Stock Sales Pro</h1>
+  <p>Choose the plan that fits your business</p>
+  <div class="currency-selector">
+    <select id="currencySelect" onchange="changeCurrency()">
+      <option value="CI">XOF (CFA) - West Africa</option>
+      <option value="NG">₦ NGN - Nigeria</option>
+      <option value="GH">₵ GHS - Ghana</option>
+      <option value="KE">KSh KES - Kenya</option>
+      <option value="US">$ USD</option>
+      <option value="GB">£ GBP</option>
+      <option value="FR">€ EUR</option>
+    </select>
+  </div>
+</div>
+
+<div class="plans">
+  <!-- Starter -->
+  <div class="plan-card">
+    <div class="plan-name">Starter</div>
+    <div class="plan-price" id="starterPrice">3,500 CFA<span>/month</span></div>
+    <div class="plan-period">Billed monthly</div>
+    <ul class="plan-features">
+      <li><i class="fas fa-check"></i> Inventory Management</li>
+      <li><i class="fas fa-check"></i> Sales Recording</li>
+      <li><i class="fas fa-check"></i> Dashboard & Reports</li>
+      <li><i class="fas fa-check"></i> 1 Device</li>
+      <li><i class="fas fa-check"></i> Email Support</li>
+    </ul>
+    <button class="btn btn-outline" onclick="startPayment('starter')">
+      Subscribe
+    </button>
+  </div>
+
+  <!-- Pro -->
+  <div class="plan-card popular">
+    <div class="popular-badge">Most Popular</div>
+    <div class="plan-name">Professional</div>
+    <div class="plan-price" id="proPrice">40,000 CFA<span>/year</span></div>
+    <div class="plan-period">Save 5% with annual billing</div>
+    <ul class="plan-features">
+      <li><i class="fas fa-check"></i> Everything in Starter</li>
+      <li><i class="fas fa-check"></i> Up to 3 Devices</li>
+      <li><i class="fas fa-check"></i> Advanced Analytics</li>
+      <li><i class="fas fa-check"></i> Priority Support</li>
+      <li><i class="fas fa-check"></i> Custom Receipts</li>
+    </ul>
+    <button class="btn btn-primary" onclick="startPayment('professional')">
+      Subscribe
+    </button>
+  </div>
+
+  <!-- Business -->
+  <div class="plan-card">
+    <div class="plan-name">Business</div>
+    <div class="plan-price" id="bizPrice">85,000 CFA<span>/year</span></div>
+    <div class="plan-period">Billed annually</div>
+    <ul class="plan-features">
+      <li><i class="fas fa-check"></i> Everything in Pro</li>
+      <li><i class="fas fa-check"></i> Unlimited Devices</li>
+      <li><i class="fas fa-check"></i> API Access</li>
+      <li><i class="fas fa-check"></i> White Label</li>
+      <li><i class="fas fa-check"></i> Dedicated Support</li>
+    </ul>
+    <button class="btn btn-outline" onclick="startPayment('business')">
+      Subscribe
+    </button>
+  </div>
+</div>
+
+<div class="info-box">
+  <i class="fas fa-info-circle"></i>
+  <strong>How it works:</strong> Pay on Selar → Come back here → Click <strong>"I've Paid"</strong> → License auto-activated with your business email
+</div>
+
+<div class="back-link">
+  <a href="shop.html">← Back to Shop</a>
+  <a href="index.html">Home</a>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal" id="paymentModal">
+  <div class="modal-box">
+    <h3 id="modalTitle">Subscribe to Starter</h3>
+    <p>Your business email is pre-filled</p>
+    <input type="email" id="paymentEmail" readonly>
+    <button class="btn btn-success" onclick="goToSelar()">
+      <i class="fas fa-lock"></i> Pay on Selar
+    </button>
+    <button class="btn btn-ghost" onclick="closePaymentModal()">Cancel</button>
+    <p style="font-size:0.8rem;color:#64748b;margin-top:12px;">
+      After payment, come back and click <strong>"I've Paid - Verify"</strong>
+    </p>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
+
+const SELAR_LINKS = {
+    starter: 'https://selar.com/70x7757547',
+    professional: 'https://selar.com/4242672261',
+    business: 'https://selar.com/55t6z0q76t'
+};
+let selectedPlan = 'starter';
+
+function getSB() {
+    if (window._sb) return window._sb;
+    if (window.supabase?.createClient) {
+        window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        return window._sb;
+    }
+    return null;
+}
+
+// ============ LOAD USER'S BUSINESS INFO ============
+async function loadBusinessInfo() {
+    const client = getSB();
+    if (!client) return;
+
+    // Try to get from localStorage first
+    const saved = localStorage.getItem('businessInfo');
+    if (saved) {
+        try {
+            const info = JSON.parse(saved);
+            document.getElementById('bizName').textContent = info.name || 'Your Business';
+            document.getElementById('bizEmail').textContent = info.email || '';
+            document.getElementById('paymentEmail').value = info.email || '';
+            if (info.logo_url || info.logoData) {
+                document.getElementById('bizLogo').src = info.logo_url || info.logoData;
+            }
+        } catch(e) {}
+    }
+
+    // Try to load from Supabase
+    const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
+    if (data) {
+        document.getElementById('bizName').textContent = data.name || 'Your Business';
+        document.getElementById('bizEmail').textContent = data.email || '';
+        document.getElementById('paymentEmail').value = data.email || '';
+        if (data.logo_url) {
+            document.getElementById('bizLogo').src = data.logo_url;
+        }
+    }
+
+    // Check current license
+    const userId = localStorage.getItem('currentUserId');
+    if (userId) {
+        const { data: license } = await client.from('licenses')
+            .select('plan, status')
+            .eq('user_id', userId)
+            .maybeSingle();
+        if (license && license.status === 'active') {
+            document.getElementById('currentPlanBadge').textContent = 
+                license.plan.charAt(0).toUpperCase() + license.plan.slice(1) + ' Active';
+            document.getElementById('currentPlanBadge').style.background = '#f0fdf4';
+            document.getElementById('currentPlanBadge').style.color = '#166534';
+        }
+    }
+}
+
+// ============ PAYMENT FLOW ============
+function startPayment(plan) {
+    selectedPlan = plan;
+    const titles = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+    document.getElementById('modalTitle').textContent = 'Subscribe to ' + titles[plan];
+    document.getElementById('paymentModal').classList.add('show');
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.remove('show');
+}
+
+function goToSelar() {
+    const link = SELAR_LINKS[selectedPlan];
+    // Save pending order
+    const email = document.getElementById('paymentEmail').value;
+    localStorage.setItem('pendingPayment', JSON.stringify({
+        plan: selectedPlan,
+        email: email,
+        timestamp: new Date().toISOString()
+    }));
+    
+    // Open Selar
+    window.open(link, '_blank');
+    closePaymentModal();
+    
+    // Show reminder
+    alert('After completing payment on Selar, come back and verify your license.');
+}
+
+// ============ CURRENCY ============
+const currencyData = {
+    CI: { symbol: 'CFA', rate: 1 },
+    NG: { symbol: '₦', rate: 0.59 },
+    GH: { symbol: '₵', rate: 0.098 },
+    KE: { symbol: 'KSh', rate: 0.0078 },
+    US: { symbol: '$', rate: 0.0016 },
+    GB: { symbol: '£', rate: 0.0013 },
+    FR: { symbol: '€', rate: 0.0015 }
+};
+
+function formatPrice(xof, country) {
+    const r = currencyData[country] || currencyData.CI;
+    const converted = Math.round(xof * r.rate);
+    return r.symbol === 'CFA' ? converted.toLocaleString() + ' ' + r.symbol : r.symbol + converted.toLocaleString();
+}
+
+function changeCurrency() {
+    const c = document.getElementById('currencySelect').value;
+    localStorage.setItem('preferredCurrency', c);
+    document.getElementById('starterPrice').innerHTML = formatPrice(3500, c) + '<span>/month</span>';
+    document.getElementById('proPrice').innerHTML = formatPrice(40000, c) + '<span>/year</span>';
+    document.getElementById('bizPrice').innerHTML = formatPrice(85000, c) + '<span>/year</span>';
+}
+
+// ============ INIT ============
+loadBusinessInfo();
+changeCurrency();
+</script>
+</body>
+</html>

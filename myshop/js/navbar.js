@@ -9,7 +9,7 @@ function safeFixImagePath(path) {
     if (path.startsWith('data:')) return path;
     
     // Supabase storage paths - convert to full URL
-    const SUPABASE_STORAGE_URL = 'https://axndkzmmzwpvwuftbkuw.supabase.co/storage/v1/object/public';
+    const SUPABASE_STORAGE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co/storage/v1/object/public';
     
     // If it's a Supabase storage path (logos/, photos/, images/, public/)
     if (path.includes('logos/') || path.includes('photos/') || path.includes('images/') || path.includes('public/')) {
@@ -79,6 +79,10 @@ function safeFixImagePath(path) {
                         `).join('')}
                     </ul>
                 </nav>
+                <a href="pricing.html" class="nav-link">
+                    <i class="fas fa-crown"></i>
+                    <span>Upgrade Plan</span>
+                </a>
                 <div class="sidebar-footer">
                     <div class="user-section" id="sidebar-user-section">
                         <div class="user-avatar" id="sidebar-user-avatar">

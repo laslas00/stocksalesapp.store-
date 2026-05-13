@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate License - StockApp*</title>
+    <link rel="icon" type="image/png" href="image/icon.ico">
+    <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
+    <script src="js/env.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* Business Info Header */
+        .biz-header {
+            margin-bottom: 28px;
+        }
+        .biz-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+            background: #f1f5f9;
+            margin-bottom: 12px;
+            border: 3px solid #e2e8f0;
+        }
+        .biz-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .biz-email {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .icon-circle {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: white;
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        h1 { font-size: 1.4rem; color: #0f172a; margin-bottom: 4px; }
+        .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+
+        .steps {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #475569;
+            line-height: 1.8;
+        }
+        .steps i { color: #3b82f6; margin-right: 8px; width: 16px; }
+
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; }
+        select { cursor: pointer; background: white; }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .btn-verify:hover { transform: translateY(-1px); }
+        .btn-verify:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            display: none;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .result.success { display: block; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .result.error { display: block; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .result.info { display: block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .result-icon { font-size: 2rem; margin-bottom: 8px; }
+
+        .back-link { margin-top: 24px; }
+        .back-link a { color: #3b82f6; text-decoration: none; font-size: 0.9rem; margin: 0 8px; }
+        .back-link a:hover { text-decoration: underline; }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Business Info -->
+        <div class="biz-header">
+            <img id="bizLogo" class="biz-logo" src="image/logo.jpg" alt="Logo" onerror="this.src='image/logo.jpg'">
+            <div class="biz-name" id="bizName">StockApp*</div>
+            <div class="biz-email" id="bizEmail">Activate your license</div>
+        </div>
+
+        <div class="icon-circle">
+            <i class="fas fa-crown"></i>
+        </div>
+
+        <h1>Activate Your License</h1>
+        <p class="subtitle">Verify your Selar payment to unlock premium features</p>
+
+        <div class="steps">
+            <div><i class="fas fa-1"></i> <strong>Step 1:</strong> Pay on Selar using your business email</div>
+            <div><i class="fas fa-2"></i> <strong>Step 2:</strong> Enter the same email below</div>
+            <div><i class="fas fa-3"></i> <strong>Step 3:</strong> Select your plan & click Verify</div>
+            <div><i class="fas fa-4"></i> <strong>Step 4:</strong> License auto-activated!</div>
+        </div>
+
+        <div class="form-group">
+            <label>Email used for payment</label>
+            <input type="email" id="emailInput" placeholder="you@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>Plan you purchased</label>
+            <select id="planSelect">
+                <option value="">Auto-detect from payment</option>
+                <option value="starter">Starter - 3,500 CFA/month</option>
+                <option value="professional">Professional - 40,000 CFA/year</option>
+                <option value="business">Business - 85,000 CFA/year</option>
+            </select>
+        </div>
+
+        <button class="btn btn-verify" onclick="verifyPayment()">
+            <i class="fas fa-check-circle"></i> Verify & Activate License
+        </button>
+
+        <div class="result" id="result"></div>
+
+        <div class="back-link">
+            <a href="pricing.html">← See Plans</a>
+            <a href="shop.html">Login to Shop</a>
+            <a href="index.html">Home</a>
+        </div>
+    </div>
+
+    <script>
+        // ============ CONFIG ============
+        const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
+        const SELAR_API_KEY = 'sat_w339i3151403a7b74dp2949581g';
+
+        // Selar product IDs (for auto-detection)
+        const SELAR_PRODUCT_MAP = {
+            '1174a971wo': 'starter',
+            '4242672261': 'professional',
+            '55t6z0q76t': 'business'
+        };
+
+        function getSB() {
+            if (window._sb) return window._sb;
+            if (window.supabase?.createClient) {
+                window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                return window._sb;
+            }
+            return null;
+        }
+
+        // ============ LOAD BUSINESS INFO ============
+        async function loadBusinessInfo() {
+            const client = getSB();
+            if (!client) return;
+
+            // Try localStorage first
+            const saved = localStorage.getItem('businessInfo');
+            if (saved) {
+                try {
+                    const info = JSON.parse(saved);
+                    document.getElementById('bizName').textContent = info.name || 'StockApp*';
+                    document.getElementById('bizEmail').textContent = info.email || 'Activate your license';
+                    document.getElementById('emailInput').value = info.email || '';
+                    if (info.logo_url || info.logoData) {
+                        document.getElementById('bizLogo').src = info.logo_url || info.logoData;
+                    }
+                } catch(e) {}
+            }
+
+            // Try Supabase
+            const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
+            if (data) {
+                document.getElementById('bizName').textContent = data.name || 'StockApp*';
+                document.getElementById('bizEmail').textContent = data.email || '';
+                if (!document.getElementById('emailInput').value) {
+                    document.getElementById('emailInput').value = data.email || '';
+                }
+                if (data.logo_url) {
+                    document.getElementById('bizLogo').src = data.logo_url;
+                }
+            }
+        }
+
+        // ============ VERIFY PAYMENT ============
+        async function verifyPayment() {
+            const email = document.getElementById('emailInput').value.trim();
+            const selectedPlan = document.getElementById('planSelect').value;
+            const btn = document.querySelector('.btn-verify');
+            const resultDiv = document.getElementById('result');
+
+            if (!email || !email.includes('@')) {
+                showResult('error', '❌', 'Please enter a valid email address');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Checking Selar payment...';
+            resultDiv.style.display = 'none';
+
+            try {
+                // 1. Check Selar API for orders
+                const selarResponse = await fetch(`https://selar.co/api/v1/orders?email=${encodeURIComponent(email)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${SELAR_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!selarResponse.ok) {
+                    throw new Error('Could not connect to Selar. Try again.');
+                }
+
+                const selarData = await selarResponse.json();
+                const orders = selarData.orders || selarData.data || [];
+
+                console.log('Selar orders found:', orders.length);
+
+                if (orders.length === 0) {
+                    showResult('error', '❌', 
+                        `<strong>No payment found</strong><br><br>
+                        Please make sure:<br>
+                        • You completed payment on Selar<br>
+                        • You're using the same email<br>
+                        • Payment has been confirmed<br><br>
+                        <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
+                    );
+                    return;
+                }
+
+                // 2. Find completed order
+                const completedOrder = orders.find(o => 
+                    o.status === 'completed' || 
+                    o.status === 'success' || 
+                    o.payment_status === 'paid' ||
+                    o.payment_status === 'successful'
+                );
+
+                if (!completedOrder) {
+                    showResult('info', '⏳', 
+                        `<strong>Found ${orders.length} order(s)</strong><br><br>
+                        But none are marked as "completed" yet.<br>
+                        This can take a few minutes after payment.<br><br>
+                        <small>If you just paid, wait 2-3 minutes and try again.</small>`
+                    );
+                    return;
+                }
+
+                // 3. Determine plan
+                let plan = selectedPlan;
+                if (!plan) {
+                    // Auto-detect from product ID
+                    const productId = completedOrder.product_id || completedOrder.product?.id || '';
+                    for (const [key, value] of Object.entries(SELAR_PRODUCT_MAP)) {
+                        if (productId.includes(key)) {
+                            plan = value;
+                            break;
+                        }
+                    }
+                    if (!plan) plan = 'starter'; // Default
+                }
+
+                // 4. Find user in Supabase
+                const client = getSB();
+                if (!client) throw new Error('Database connection failed');
+
+                const { data: user } = await client
+                    .from('users')
+                    .select('id, username, business_id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                // 5. Calculate expiry
+                const expiresAt = new Date();
+                if (plan === 'starter') {
+                    expiresAt.setMonth(expiresAt.getMonth() + 1);
+                } else {
+                    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+                }
+
+                // 6. Save license
+                const licenseData = {
+                    plan: plan,
+                    status: 'active',
+                    expires_at: expiresAt.toISOString(),
+                    selar_transaction_id: completedOrder.transaction_id || completedOrder.id || completedOrder.reference,
+                    activated_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                if (user) {
+                    licenseData.user_id = user.id;
+                    licenseData.business_id = user.business_id;
+                } else {
+                    licenseData.email = email;
+                }
+
+                const { data: existingLicense } = await client
+                    .from('licenses')
+                    .select('id')
+                    .eq('user_id', user?.id || '00000000-0000-0000-0000-000000000000')
+                    .maybeSingle();
+
+                if (existingLicense && user) {
+                    await client.from('licenses').update(licenseData).eq('user_id', user.id);
+                } else {
+                    await client.from('licenses').insert([licenseData]);
+                }
+
+                // 7. Save payment history
+                await client.from('payment_history').insert([{
+                    user_id: user?.id || null,
+                    email: email,
+                    transaction_id: completedOrder.transaction_id || completedOrder.id,
+                    amount: completedOrder.amount,
+                    plan: plan,
+                    status: 'completed',
+                    payment_data: completedOrder,
+                    created_at: new Date().toISOString()
+                }]);
+
+                // 8. Success!
+                const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+                showResult('success', '🎉', 
+                    `<strong>License Activated!</strong><br><br>
+                    <strong>Plan:</strong> ${planNames[plan] || plan}<br>
+                    <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                    ${user ? `<strong>User:</strong> ${user.username}<br>` : ''}
+                    <br>
+                    <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
+                );
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                showResult('error', '❌', 'Verification failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
+            }
+        }
+
+        function showResult(type, icon, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
+            resultDiv.innerHTML = `<div class="result-icon">${icon}</div><div>${message}</div>`;
+            resultDiv.style.display = 'block';
+        }
+
+        // ============ INIT ============
+        loadBusinessInfo();
+    </script>
+</body>
+</html>
