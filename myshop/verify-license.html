@@ -204,210 +204,176 @@
         </div>
     </div>
 
-    <script>
-        // ============ CONFIG ============
-        const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
-        const SELAR_API_KEY = 'sat_w339i3151403a7b74dp2949581g';
+<script>
+    // ============ CONFIG ============
+    const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
 
-        // Selar product IDs (for auto-detection)
-        const SELAR_PRODUCT_MAP = {
-            '1174a971wo': 'starter',
-            '4242672261': 'professional',
-            '55t6z0q76t': 'business'
-        };
-
-        function getSB() {
-            if (window._sb) return window._sb;
-            if (window.supabase?.createClient) {
-                window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                return window._sb;
-            }
-            return null;
+    function getSB() {
+        if (window._sb) return window._sb;
+        if (window.supabase?.createClient) {
+            window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            return window._sb;
         }
-
-        // ============ LOAD BUSINESS INFO ============
-        async function loadBusinessInfo() {
-            const client = getSB();
-            if (!client) return;
-
-            // Try localStorage first
-            const saved = localStorage.getItem('businessInfo');
-            if (saved) {
-                try {
-                    const info = JSON.parse(saved);
-                    document.getElementById('bizName').textContent = info.name || 'StockApp*';
-                    document.getElementById('bizEmail').textContent = info.email || 'Activate your license';
-                    document.getElementById('emailInput').value = info.email || '';
-                    if (info.logo_url || info.logoData) {
-                        document.getElementById('bizLogo').src = info.logo_url || info.logoData;
-                    }
-                } catch(e) {}
-            }
-
-            // Try Supabase
-            const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
-            if (data) {
-                document.getElementById('bizName').textContent = data.name || 'StockApp*';
-                document.getElementById('bizEmail').textContent = data.email || '';
-                if (!document.getElementById('emailInput').value) {
-                    document.getElementById('emailInput').value = data.email || '';
-                }
-                if (data.logo_url) {
-                    document.getElementById('bizLogo').src = data.logo_url;
-                }
-            }
-        }
-
-        // ============ VERIFY PAYMENT ============
-async function verifyPayment() {
-    const email = document.getElementById('emailInput').value.trim();
-    const selectedPlan = document.getElementById('planSelect').value;
-    const btn = document.querySelector('.btn-verify');
-    const resultDiv = document.getElementById('result');
-
-    if (!email || !email.includes('@')) {
-        showResult('error', '❌', 'Please enter a valid email address');
-        return;
+        return null;
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Checking Selar payment...';
-    resultDiv.style.display = 'none';
+    // ============ LOAD FROM URL PARAMS ============
+    function getUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            fullname: params.get('fullname') || '',
+            email: params.get('email') || ''
+        };
+    }
 
-    try {
-        // Call our Vercel API (avoids CORS)
-        const apiResponse = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
-        });
-
-        console.log('API response status:', apiResponse.status);
-
-        if (!apiResponse.ok) {
-            const errorText = await apiResponse.text();
-            console.error('API error:', errorText);
-            showResult('error', '❌', 'Server error. Please try again later.');
-            return;
-        }
-
-        const apiData = await apiResponse.json();
-        console.log('API data:', apiData);
-
-        if (!apiData.success) {
-            showResult('error', '❌', 
-                `<strong>No payment found</strong><br><br>
-                ${apiData.message || 'Could not verify payment'}<br><br>
-                <small>Make sure you completed payment on Selar with this email.</small><br><br>
-                <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
-            );
-            return;
-        }
-
-        const orders = apiData.orders;
-
-        if (!orders || orders.length === 0) {
-            showResult('error', '❌', 
-                `<strong>No payment found</strong><br><br>
-                Please make sure you completed payment on Selar<br>
-                and used this email: <strong>${email}</strong><br><br>
-                <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
-            );
-            return;
-        }
-
-        // Find completed order
-        const completedOrder = orders.find(o => 
-            o.status === 'completed' || 
-            o.status === 'success' || 
-            o.payment_status === 'paid' ||
-            o.payment_status === 'successful'
-        );
-
-        if (!completedOrder) {
-            showResult('info', '⏳', 
-                `<strong>Found ${orders.length} order(s)</strong><br><br>
-                But none are confirmed yet.<br>
-                Wait 2-3 minutes after payment and try again.`
-            );
-            return;
-        }
-
-        // Determine plan
-        let plan = selectedPlan;
-        if (!plan) {
-            const productId = completedOrder.product_id || completedOrder.product?.id || '';
-            if (productId.includes('1174a971wo')) plan = 'starter';
-            else if (productId.includes('4242672261')) plan = 'professional';
-            else if (productId.includes('55t6z0q76t')) plan = 'business';
-            else plan = 'starter';
-        }
-
-        // Activate license in Supabase
+    // ============ LOAD BUSINESS INFO ============
+    async function loadBusinessInfo() {
         const client = getSB();
-        if (!client) throw new Error('Database connection failed');
+        if (!client) return;
 
-        const { data: user } = await client
-            .from('users')
-            .select('id, username, business_id')
-            .eq('email', email)
-            .maybeSingle();
+        const { email, fullname } = getUrlParams();
 
-        const expiresAt = new Date();
-        if (plan === 'starter') expiresAt.setMonth(expiresAt.getMonth() + 1);
-        else expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        // Pre-fill from URL params
+        if (fullname) {
+            document.getElementById('bizName').textContent = decodeURIComponent(fullname);
+        }
+        if (email) {
+            document.getElementById('emailInput').value = decodeURIComponent(email);
+            document.getElementById('bizEmail').textContent = decodeURIComponent(email);
+        }
 
-        const licenseEntry = {
-            plan: plan,
-            status: 'active',
-            expires_at: expiresAt.toISOString(),
-            selar_transaction_id: completedOrder.transaction_id || completedOrder.id || '',
-            updated_at: new Date().toISOString()
-        };
+        // Try localStorage
+        const saved = localStorage.getItem('businessInfo');
+        if (saved) {
+            try {
+                const info = JSON.parse(saved);
+                if (!fullname) document.getElementById('bizName').textContent = info.name || 'StockApp*';
+                if (!email) {
+                    document.getElementById('emailInput').value = info.email || '';
+                    document.getElementById('bizEmail').textContent = info.email || 'Activate your license';
+                }
+                if (info.logo_url || info.logoData) {
+                    document.getElementById('bizLogo').src = info.logo_url || info.logoData;
+                }
+            } catch(e) {}
+        }
 
-        if (user) {
-            licenseEntry.user_id = user.id;
-            licenseEntry.business_id = user.business_id;
-
-            const { data: existing } = await client.from('licenses')
-                .select('id').eq('user_id', user.id).maybeSingle();
-
-            if (existing) {
-                await client.from('licenses').update(licenseEntry).eq('user_id', user.id);
-            } else {
-                await client.from('licenses').insert([{ ...licenseEntry, activated_at: new Date().toISOString() }]);
+        // Try Supabase business_info
+        const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
+        if (data) {
+            if (!fullname) document.getElementById('bizName').textContent = data.name || 'StockApp*';
+            if (!email && !document.getElementById('emailInput').value) {
+                document.getElementById('emailInput').value = data.email || '';
+            }
+            if (data.logo_url) {
+                document.getElementById('bizLogo').src = data.logo_url;
             }
         }
-
-        const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-        showResult('success', '🎉', 
-            `<strong>License Activated!</strong><br><br>
-            <strong>Plan:</strong> ${planNames[plan] || plan}<br>
-            <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
-            ${user ? `<strong>User:</strong> ${user.username}<br>` : ''}
-            <br>
-            <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
-        );
-
-    } catch (error) {
-        console.error('Error:', error);
-        showResult('error', '❌', 'Error: ' + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
     }
-}
-       
-function showResult(type, icon, message) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.className = 'result ' + type;
-            resultDiv.innerHTML = `<div class="result-icon">${icon}</div><div>${message}</div>`;
-            resultDiv.style.display = 'block';
+
+    // ============ VERIFY LICENSE (FROM SUPABASE, NOT SELAR) ============
+    async function verifyPayment() {
+        const email = document.getElementById('emailInput').value.trim();
+        const btn = document.querySelector('.btn-verify');
+        const resultDiv = document.getElementById('result');
+
+        if (!email || !email.includes('@')) {
+            showResult('error', '❌', 'Please enter a valid email address');
+            return;
         }
 
-        // ============ INIT ============
-        loadBusinessInfo();
-    </script>
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Checking license...';
+        resultDiv.style.display = 'none';
+
+        try {
+            const client = getSB();
+            if (!client) throw new Error('Database connection failed');
+
+            // Find user by email
+            const { data: user } = await client
+                .from('users')
+                .select('id, username, business_id')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (!user) {
+                showResult('error', '❌', 
+                    `<strong>No account found</strong><br><br>
+                    No user registered with: <strong>${email}</strong><br><br>
+                    <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
+                );
+                return;
+            }
+
+            // Check license
+            const { data: license } = await client
+                .from('licenses')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (!license || license.status !== 'active') {
+                showResult('error', '❌', 
+                    `<strong>No active license</strong><br><br>
+                    User: <strong>${user.username}</strong><br>
+                    Please complete payment on Selar first.<br><br>
+                    <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
+                );
+                return;
+            }
+
+            // Check if expired
+            const expiresAt = new Date(license.expires_at);
+            const now = new Date();
+            if (expiresAt < now) {
+                showResult('error', '⏰', 
+                    `<strong>License Expired</strong><br><br>
+                    Plan: <strong>${license.plan}</strong><br>
+                    Expired: ${expiresAt.toLocaleDateString()}<br><br>
+                    <a href="pricing.html" style="color:#3b82f6;">Renew License →</a>`
+                );
+                return;
+            }
+
+            // Success!
+            const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+            showResult('success', '🎉', 
+                `<strong>License Verified!</strong><br><br>
+                <strong>Plan:</strong> ${planNames[license.plan] || license.plan}<br>
+                <strong>User:</strong> ${user.username}<br>
+                <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                <strong>Status:</strong> Active ✅<br><br>
+                <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
+            );
+
+        } catch (error) {
+            console.error('Error:', error);
+            showResult('error', '❌', 'Error: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
+        }
+    }
+
+    function showResult(type, icon, message) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.className = 'result ' + type;
+        resultDiv.innerHTML = `<div class="result-icon">${icon}</div><div>${message}</div>`;
+        resultDiv.style.display = 'block';
+    }
+
+    // ============ INIT ============
+    loadBusinessInfo();
+
+    // Auto-verify if email is in URL
+    const { email } = getUrlParams();
+    if (email) {
+        setTimeout(() => verifyPayment(), 500);
+    }
+</script>
 </body>
 </html>
