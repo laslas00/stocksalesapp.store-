@@ -260,162 +260,163 @@
         }
 
         // ============ VERIFY PAYMENT ============
-        async function verifyPayment() {
-            const email = document.getElementById('emailInput').value.trim();
-            const selectedPlan = document.getElementById('planSelect').value;
-            const btn = document.querySelector('.btn-verify');
-            const resultDiv = document.getElementById('result');
+async function verifyPayment() {
+    const email = document.getElementById('emailInput').value.trim();
+    const selectedPlan = document.getElementById('planSelect').value;
+    const btn = document.querySelector('.btn-verify');
+    const resultDiv = document.getElementById('result');
 
-            if (!email || !email.includes('@')) {
-                showResult('error', '❌', 'Please enter a valid email address');
-                return;
-            }
+    if (!email || !email.includes('@')) {
+        showResult('error', '❌', 'Please enter a valid email address');
+        return;
+    }
 
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Checking Selar payment...';
-            resultDiv.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Checking Selar payment...';
+    resultDiv.style.display = 'none';
 
-            try {
-                // 1. Check Selar API for orders
-                const selarResponse = await fetch(`https://selar.co/api/v1/orders?email=${encodeURIComponent(email)}`, {
-                    headers: {
-                        'Authorization': `Bearer ${SELAR_API_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+    try {
+        // ========== CALL OUR OWN API (avoids CORS) ==========
+        const apiResponse = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
 
-                if (!selarResponse.ok) {
-                    throw new Error('Could not connect to Selar. Try again.');
-                }
+        const apiData = await apiResponse.json();
 
-                const selarData = await selarResponse.json();
-                const orders = selarData.orders || selarData.data || [];
-
-                console.log('Selar orders found:', orders.length);
-
-                if (orders.length === 0) {
-                    showResult('error', '❌', 
-                        `<strong>No payment found</strong><br><br>
-                        Please make sure:<br>
-                        • You completed payment on Selar<br>
-                        • You're using the same email<br>
-                        • Payment has been confirmed<br><br>
-                        <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
-                    );
-                    return;
-                }
-
-                // 2. Find completed order
-                const completedOrder = orders.find(o => 
-                    o.status === 'completed' || 
-                    o.status === 'success' || 
-                    o.payment_status === 'paid' ||
-                    o.payment_status === 'successful'
-                );
-
-                if (!completedOrder) {
-                    showResult('info', '⏳', 
-                        `<strong>Found ${orders.length} order(s)</strong><br><br>
-                        But none are marked as "completed" yet.<br>
-                        This can take a few minutes after payment.<br><br>
-                        <small>If you just paid, wait 2-3 minutes and try again.</small>`
-                    );
-                    return;
-                }
-
-                // 3. Determine plan
-                let plan = selectedPlan;
-                if (!plan) {
-                    // Auto-detect from product ID
-                    const productId = completedOrder.product_id || completedOrder.product?.id || '';
-                    for (const [key, value] of Object.entries(SELAR_PRODUCT_MAP)) {
-                        if (productId.includes(key)) {
-                            plan = value;
-                            break;
-                        }
-                    }
-                    if (!plan) plan = 'starter'; // Default
-                }
-
-                // 4. Find user in Supabase
-                const client = getSB();
-                if (!client) throw new Error('Database connection failed');
-
-                const { data: user } = await client
-                    .from('users')
-                    .select('id, username, business_id')
-                    .eq('email', email)
-                    .maybeSingle();
-
-                // 5. Calculate expiry
-                const expiresAt = new Date();
-                if (plan === 'starter') {
-                    expiresAt.setMonth(expiresAt.getMonth() + 1);
-                } else {
-                    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-                }
-
-                // 6. Save license
-                const licenseData = {
-                    plan: plan,
-                    status: 'active',
-                    expires_at: expiresAt.toISOString(),
-                    selar_transaction_id: completedOrder.transaction_id || completedOrder.id || completedOrder.reference,
-                    activated_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-
-                if (user) {
-                    licenseData.user_id = user.id;
-                    licenseData.business_id = user.business_id;
-                } else {
-                    licenseData.email = email;
-                }
-
-                const { data: existingLicense } = await client
-                    .from('licenses')
-                    .select('id')
-                    .eq('user_id', user?.id || '00000000-0000-0000-0000-000000000000')
-                    .maybeSingle();
-
-                if (existingLicense && user) {
-                    await client.from('licenses').update(licenseData).eq('user_id', user.id);
-                } else {
-                    await client.from('licenses').insert([licenseData]);
-                }
-
-                // 7. Save payment history
-                await client.from('payment_history').insert([{
-                    user_id: user?.id || null,
-                    email: email,
-                    transaction_id: completedOrder.transaction_id || completedOrder.id,
-                    amount: completedOrder.amount,
-                    plan: plan,
-                    status: 'completed',
-                    payment_data: completedOrder,
-                    created_at: new Date().toISOString()
-                }]);
-
-                // 8. Success!
-                const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-                showResult('success', '🎉', 
-                    `<strong>License Activated!</strong><br><br>
-                    <strong>Plan:</strong> ${planNames[plan] || plan}<br>
-                    <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
-                    ${user ? `<strong>User:</strong> ${user.username}<br>` : ''}
-                    <br>
-                    <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
-                );
-
-            } catch (error) {
-                console.error('Verification error:', error);
-                showResult('error', '❌', 'Verification failed: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
-            }
+        if (!apiData.success) {
+            showResult('error', '❌', 
+                `<strong>Could not verify payment</strong><br><br>${apiData.message}<br><br>
+                <small>Make sure you completed payment on Selar with this email.</small>`
+            );
+            return;
         }
 
+        const orders = apiData.orders;
+
+        if (orders.length === 0) {
+            showResult('error', '❌', 
+                `<strong>No payment found</strong><br><br>
+                Please make sure:<br>
+                • You completed payment on Selar<br>
+                • You're using the same email<br>
+                • Payment has been confirmed<br><br>
+                <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
+            );
+            return;
+        }
+
+        // Find completed order
+        const completedOrder = orders.find(o => 
+            o.status === 'completed' || 
+            o.status === 'success' || 
+            o.payment_status === 'paid' ||
+            o.payment_status === 'successful'
+        );
+
+        if (!completedOrder) {
+            showResult('info', '⏳', 
+                `<strong>Found ${orders.length} order(s)</strong><br><br>
+                But none are marked as "completed" yet.<br>
+                This can take a few minutes after payment.<br><br>
+                <small>If you just paid, wait 2-3 minutes and try again.</small>`
+            );
+            return;
+        }
+
+        // Determine plan
+        let plan = selectedPlan;
+        if (!plan) {
+            const productId = completedOrder.product_id || completedOrder.product?.id || '';
+            for (const [key, value] of Object.entries(SELAR_PRODUCT_MAP)) {
+                if (productId.includes(key)) {
+                    plan = value;
+                    break;
+                }
+            }
+            if (!plan) plan = 'starter';
+        }
+
+        // Find user in Supabase
+        const client = getSB();
+        if (!client) throw new Error('Database connection failed');
+
+        const { data: user } = await client
+            .from('users')
+            .select('id, username, business_id')
+            .eq('email', email)
+            .maybeSingle();
+
+        // Calculate expiry
+        const expiresAt = new Date();
+        if (plan === 'starter') {
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+        } else {
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        }
+
+        // Save license
+        const licenseData = {
+            plan: plan,
+            status: 'active',
+            expires_at: expiresAt.toISOString(),
+            selar_transaction_id: completedOrder.transaction_id || completedOrder.id || completedOrder.reference,
+            activated_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        if (user) {
+            licenseData.user_id = user.id;
+            licenseData.business_id = user.business_id;
+        } else {
+            licenseData.email = email;
+        }
+
+        // Check if license exists
+        const { data: existingLicense } = await client
+            .from('licenses')
+            .select('id')
+            .eq('user_id', user?.id || '00000000-0000-0000-0000-000000000000')
+            .maybeSingle();
+
+        if (existingLicense && user) {
+            await client.from('licenses').update(licenseData).eq('user_id', user.id);
+        } else {
+            await client.from('licenses').insert([licenseData]);
+        }
+
+        // Save payment history
+        await client.from('payment_history').insert([{
+            user_id: user?.id || null,
+            email: email,
+            transaction_id: completedOrder.transaction_id || completedOrder.id,
+            amount: completedOrder.amount,
+            plan: plan,
+            status: 'completed',
+            payment_data: completedOrder,
+            created_at: new Date().toISOString()
+        }]);
+
+        // Success!
+        const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+        showResult('success', '🎉', 
+            `<strong>License Activated!</strong><br><br>
+            <strong>Plan:</strong> ${planNames[plan] || plan}<br>
+            <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+            ${user ? `<strong>User:</strong> ${user.username}<br>` : ''}
+            <br>
+            <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
+        );
+
+    } catch (error) {
+        console.error('Verification error:', error);
+        showResult('error', '❌', 'Verification failed: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
+    }
+}
         function showResult(type, icon, message) {
             const resultDiv = document.getElementById('result');
             resultDiv.className = 'result ' + type;
