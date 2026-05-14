@@ -1715,54 +1715,50 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 async function checkSetupStatus() {
     try {
-        const localSetup = localStorage.getItem('StockApp_setup');
-        const setupCompleted = localStorage.getItem('setup_completed');
-
-        // Check if setup is already marked as done in localStorage
-        const isSetupDone = (localSetup && JSON.parse(localSetup).isFirstTime === false) || 
-                          (setupCompleted === 'true');
-
-        if (isSetupDone) {
-            // Only redirect if we aren't already on main.html to avoid loops
-            if (!window.location.pathname.includes('main.html')) {
-                window.location.href = 'main.html';
-            }
-            return true;
-        }
+        // ========== FIX: Check if user is logged in ==========
+        const userSession = localStorage.getItem('userSession');
+        const rememberedUser = localStorage.getItem('rememberedUser');
+        const currentUsername = localStorage.getItem('currentUsername');
         
+        const isLoggedIn = !!(userSession || rememberedUser || currentUsername);
+
+        // ========== Check Supabase for ANY business ==========
         const client = getSetupDB();
-        if (!client) {
-            if (!window.location.pathname.includes('setup.html')) {
-                window.location.href = 'setup.html';
+        let hasBusinessInDB = false;
+        
+        if (client) {
+            const { data, error } = await client
+                .from('business_info')
+                .select('name')
+                .limit(1);
+            
+            if (!error && data && data.length > 0 && data[0].name) {
+                hasBusinessInDB = true;
             }
-            return false;
         }
 
-        const { data, error } = await client
-            .from('business_info')
-            .select('name')
-            .limit(1);
-
-        // If database check confirms setup
-        if (!error && data && data.length > 0 && data[0].name) {
-            localStorage.setItem('setup_completed', 'true');
-            if (!window.location.pathname.includes('main.html')) {
-                window.location.href = 'main.html';
+        if (isLoggedIn) {
+            console.log('✅ User is logged in');
+            if (window.location.pathname.includes('setup.html')) {
+                window.location.href = 'shop.html';
             }
             return true;
         }
-
-        // If no setup found, send to setup page
+        if (hasBusinessInDB) {
+            console.log('🏢 Business exists, user needs to login');
+            if (window.location.pathname.includes('setup.html')) {
+                window.location.href = 'shop.html';
+            }
+            return true;
+        }
+        console.log('🆕 No business found - setup needed');
         if (!window.location.pathname.includes('setup.html')) {
             window.location.href = 'setup.html';
         }
         return false;
 
     } catch (error) {
-        console.error('Error checking setup:', error);
-        if (!window.location.pathname.includes('setup.html')) {
-            window.location.href = 'setup.html';
-        }
+        console.error('Setup check error:', error);
         return false;
     }
 }
