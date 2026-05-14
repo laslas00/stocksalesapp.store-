@@ -214,6 +214,11 @@ function safeFixImagePath(path) {
                         localStorage.removeItem('userSession');
                         localStorage.removeItem('currentRole');
                         localStorage.removeItem('currentUsername');
+                            localStorage.removeItem('userSession');
+                        localStorage.removeItem('rememberedUser');
+                        localStorage.removeItem('currentUsername');
+                        localStorage.removeItem('currentRole');
+                        localStorage.removeItem('currentUserId');
                         window.location.reload();
                     }
                 }, 1000);
