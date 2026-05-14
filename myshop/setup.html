@@ -1114,7 +1114,7 @@
 // SUPABASE CONFIGURATION - YOUR PROJECT
 // ============================================
 const MYSUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://zexxdoxuzvkovszfqcio.supabase.co';
-const MY_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
+const MY_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
 
 // Create a dedicated Supabase client for setup (YOUR project, not track.js)
 let setupDB = null;
@@ -1730,7 +1730,7 @@ async function checkSetupStatus() {
             return true;
         }
         
-        const client = getSupabase();
+        const client = getSetupDB();
         if (!client) {
             if (!window.location.pathname.includes('setup.html')) {
                 window.location.href = 'setup.html';
