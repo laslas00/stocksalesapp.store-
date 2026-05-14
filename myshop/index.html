@@ -459,8 +459,15 @@
         localStorage.removeItem('StockApp_setup');
         localStorage.removeItem('cameFromLogin');
         localStorage.removeItem('userChoseLogin');
-        localStorage.clear();
-         sessionStorage.clear();
+        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('currentUsername');
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('currentUsername');
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('currentUserId');
       };
 
       // Update for returning users
