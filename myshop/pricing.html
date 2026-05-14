@@ -6,7 +6,6 @@
   <title>Stock Sales Pro · Upgrade Plan</title>
   <link rel="icon" type="image/png" href="image/icon.ico">
   <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
-  <script src="js/env.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +16,6 @@
       min-height: 100vh;
     }
     
-    /* Business header */
     .biz-header {
       background: white;
       border-bottom: 1px solid #e2e8f0;
@@ -28,75 +26,44 @@
       max-width: 1100px;
       margin: 0 auto;
     }
-    .biz-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .biz-info { display: flex; align-items: center; gap: 12px; }
     .biz-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      object-fit: cover;
-      background: #e2e8f0;
+      width: 40px; height: 40px; border-radius: 8px;
+      object-fit: cover; background: #e2e8f0;
     }
-    .biz-name {
-      font-weight: 600;
-      font-size: 1rem;
-    }
-    .biz-email {
-      font-size: 0.8rem;
-      color: #64748b;
-    }
+    .biz-name { font-weight: 600; font-size: 1rem; }
+    .biz-email { font-size: 0.8rem; color: #64748b; }
     .current-plan {
-      background: #eff6ff;
-      color: #3b82f6;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      background: #eff6ff; color: #3b82f6;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 600;
     }
+    .login-prompt {
+      background: #fef3c7; color: #92400e;
+      padding: 10px 20px; border-radius: 10px;
+      text-align: center; max-width: 600px;
+      margin: 16px auto; font-size: 0.9rem;
+    }
+    .login-prompt a { color: #3b82f6; font-weight: 600; cursor: pointer; }
 
-    .pricing-header {
-      text-align: center;
-      padding: 40px 20px 20px;
-    }
+    .pricing-header { text-align: center; padding: 40px 20px 20px; }
     .pricing-header h1 { font-size: 2rem; font-weight: 700; }
     .pricing-header p { color: #64748b; margin-top: 8px; }
     
     .plans {
-      display: flex;
-      justify-content: center;
-      gap: 24px;
-      flex-wrap: wrap;
-      padding: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
+      display: flex; justify-content: center; gap: 24px;
+      flex-wrap: wrap; padding: 20px; max-width: 1100px; margin: 0 auto;
     }
     .plan-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 32px;
-      width: 320px;
-      transition: 0.2s;
+      background: white; border: 1px solid #e2e8f0;
+      border-radius: 16px; padding: 32px; width: 320px; transition: 0.2s;
     }
     .plan-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
-    .plan-card.popular {
-      border: 2px solid #3b82f6;
-      position: relative;
-    }
+    .plan-card.popular { border: 2px solid #3b82f6; position: relative; }
     .popular-badge {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #3b82f6;
-      color: white;
-      padding: 4px 16px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: #3b82f6; color: white; padding: 4px 16px;
+      border-radius: 20px; font-size: 0.8rem; font-weight: 600;
     }
     .plan-name { font-size: 1rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 1px; }
     .plan-price { font-size: 2.5rem; font-weight: 800; margin: 16px 0 4px; }
@@ -107,17 +74,9 @@
     .plan-features li i { color: #10b981; margin-right: 8px; }
     
     .btn {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      text-align: center;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 1rem;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: 0.2s;
+      display: block; width: 100%; padding: 14px; text-align: center;
+      border-radius: 10px; font-weight: 600; font-size: 1rem;
+      text-decoration: none; cursor: pointer; border: none; transition: 0.2s;
     }
     .btn-primary { background: #3b82f6; color: white; }
     .btn-primary:hover { background: #2563eb; }
@@ -125,67 +84,50 @@
     .btn-outline:hover { background: #eff6ff; }
     
     .info-box {
-      text-align: center;
-      margin: 30px auto;
-      padding: 20px;
-      max-width: 600px;
-      background: #eff6ff;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      color: #1e40af;
-      line-height: 1.6;
+      text-align: center; margin: 30px auto; padding: 20px; max-width: 600px;
+      background: #eff6ff; border-radius: 12px; font-size: 0.9rem;
+      color: #1e40af; line-height: 1.6;
     }
-    .info-box i { margin-right: 6px; }
-    
     .back-link { text-align: center; margin: 20px 0 40px; }
     .back-link a { color: #3b82f6; text-decoration: none; margin: 0 12px; }
 
-    /* Modal */
+    /* Modals */
     .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px); display: none;
+      align-items: center; justify-content: center; z-index: 999;
     }
     .modal.show { display: flex; }
     .modal-box {
-      background: white;
-      border-radius: 16px;
-      padding: 32px;
-      max-width: 420px;
-      width: 90%;
-      text-align: center;
+      background: white; border-radius: 16px; padding: 32px;
+      max-width: 400px; width: 90%; text-align: center;
     }
-    .modal-box h3 { margin-bottom: 4px; }
+    .modal-box h3 { margin-bottom: 8px; color: #0f172a; }
     .modal-box p { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
-    .modal-box input {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 1rem;
-      margin-bottom: 12px;
-      text-align: center;
+    .modal-box input, .modal-box select {
+      width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+      border-radius: 10px; font-size: 1rem; margin-bottom: 10px;
       background: #f8fafc;
     }
-    .modal-box input:focus { outline: none; border-color: #3b82f6; }
+    .modal-box input:focus, .modal-box select:focus { outline: none; border-color: #3b82f6; }
     .btn-success { background: #10b981; color: white; margin-bottom: 8px; }
+    .btn-success:hover { background: #059669; }
     .btn-ghost { background: #f1f5f9; color: #64748b; }
-
-    .currency-selector {
-      text-align: center;
-      margin-top: 12px;
-    }
+    .btn-ghost:hover { background: #e2e8f0; }
+    .error-msg { color: #ef4444; font-size: 0.85rem; margin-bottom: 8px; display: none; }
+    .currency-selector { text-align: center; margin-top: 12px; }
     .currency-selector select {
-      padding: 6px 12px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      cursor: pointer;
+      padding: 6px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; font-size: 0.9rem; cursor: pointer;
     }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -193,13 +135,19 @@
 <!-- Business Header -->
 <div class="biz-header" id="bizHeader">
   <div class="biz-info">
-    <img id="bizLogo" class="biz-logo" src="image/logo.jpg" alt="Logo">
+    <img id="bizLogo" class="biz-logo" src="image/logo.jpg" alt="Logo" onerror="this.src='image/logo.jpg'">
     <div>
-      <div class="biz-name" id="bizName">Loading...</div>
+      <div class="biz-name" id="bizName">StockApp*</div>
       <div class="biz-email" id="bizEmail"></div>
     </div>
   </div>
   <div class="current-plan" id="currentPlanBadge">Free Trial</div>
+</div>
+
+<!-- Login Prompt (hidden when logged in) -->
+<div class="login-prompt" id="loginPrompt" style="display:none;">
+  <i class="fas fa-info-circle"></i>
+  Please <a onclick="openLoginModal()">login to your account</a> to subscribe and manage your license.
 </div>
 
 <!-- Pricing -->
@@ -232,9 +180,7 @@
       <li><i class="fas fa-check"></i> 1 Device</li>
       <li><i class="fas fa-check"></i> Email Support</li>
     </ul>
-    <button class="btn btn-outline" onclick="startPayment('starter')">
-      Subscribe
-    </button>
+    <button class="btn btn-outline" onclick="startPayment('starter')">Subscribe</button>
   </div>
 
   <!-- Pro -->
@@ -250,9 +196,7 @@
       <li><i class="fas fa-check"></i> Priority Support</li>
       <li><i class="fas fa-check"></i> Custom Receipts</li>
     </ul>
-    <button class="btn btn-primary" onclick="startPayment('professional')">
-      Subscribe
-    </button>
+    <button class="btn btn-primary" onclick="startPayment('professional')">Subscribe</button>
   </div>
 
   <!-- Business -->
@@ -267,19 +211,18 @@
       <li><i class="fas fa-check"></i> White Label</li>
       <li><i class="fas fa-check"></i> Dedicated Support</li>
     </ul>
-    <button class="btn btn-outline" onclick="startPayment('business')">
-      Subscribe
-    </button>
+    <button class="btn btn-outline" onclick="startPayment('business')">Subscribe</button>
   </div>
 </div>
 
 <div class="info-box">
   <i class="fas fa-info-circle"></i>
-  <strong>How it works:</strong> Pay on Selar → Come back here → Click <strong>"I've Paid"</strong> → License auto-activated with your business email
+  <strong>How it works:</strong> Login → Subscribe on Selar → Come back → Verify License → Activated!
 </div>
 
 <div class="back-link">
-  <a href="shop.html">← Back to Shop</a>
+  <a href="shop.html">Login to Shop</a>
+  <a href="verify-license.html">Already Paid? Verify</a>
   <a href="index.html">Home</a>
 </div>
 
@@ -293,8 +236,28 @@
       <i class="fas fa-lock"></i> Pay on Selar
     </button>
     <button class="btn btn-ghost" onclick="closePaymentModal()">Cancel</button>
-    <p style="font-size:0.8rem;color:#64748b;margin-top:12px;">
-      After payment, come back and click <strong>"I've Paid - Verify"</strong>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" id="loginModal">
+  <div class="modal-box">
+    <h3><i class="fas fa-sign-in-alt"></i> Login Required</h3>
+    <p>Login to your account to subscribe</p>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <select id="loginRole">
+      <option value="administrator">Administrator</option>
+      <option value="manager">Manager</option>
+      <option value="sales">Sales Associate</option>
+    </select>
+    <div class="error-msg" id="loginError">Invalid credentials</div>
+    <button class="btn btn-primary" onclick="handleLogin()">
+      <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+    <button class="btn btn-ghost" onclick="closeLoginModal()">Cancel</button>
+    <p style="margin-top:12px;font-size:0.85rem;">
+      Don't have an account? <a href="setup.html" style="color:#3b82f6;">Setup your shop</a>
     </p>
   </div>
 </div>
@@ -305,11 +268,13 @@ const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
 
 const SELAR_LINKS = {
-    starter: 'https://selar.com/70x7757547',
+    starter: 'https://selar.com/1174a971wo',
     professional: 'https://selar.com/4242672261',
     business: 'https://selar.com/55t6z0q76t'
 };
+
 let selectedPlan = 'starter';
+let isLoggedIn = false;
 
 function getSB() {
     if (window._sb) return window._sb;
@@ -320,12 +285,108 @@ function getSB() {
     return null;
 }
 
-// ============ LOAD USER'S BUSINESS INFO ============
+// ============ CHECK LOGIN STATUS ============
+function checkLoginStatus() {
+    const userSession = localStorage.getItem('userSession');
+    const rememberedUser = localStorage.getItem('rememberedUser');
+    const currentUsername = localStorage.getItem('currentUsername');
+
+    if (userSession || rememberedUser || currentUsername) {
+        isLoggedIn = true;
+        document.getElementById('loginPrompt').style.display = 'none';
+        loadBusinessInfo();
+    } else {
+        isLoggedIn = false;
+        document.getElementById('loginPrompt').style.display = 'block';
+        document.getElementById('bizName').textContent = 'StockApp*';
+        document.getElementById('bizEmail').textContent = 'Login to see your info';
+        document.getElementById('currentPlanBadge').textContent = 'Not logged in';
+    }
+}
+
+// ============ LOGIN MODAL ============
+function openLoginModal() {
+    document.getElementById('loginModal').classList.add('show');
+    document.getElementById('loginError').style.display = 'none';
+}
+
+function closeLoginModal() {
+    document.getElementById('loginModal').classList.remove('show');
+}
+
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const role = document.getElementById('loginRole').value;
+    const btn = document.querySelector('#loginModal .btn-primary');
+    const errorEl = document.getElementById('loginError');
+
+    if (!username || !password) {
+        errorEl.textContent = 'Please enter username and password';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Logging in...';
+    errorEl.style.display = 'none';
+
+    try {
+        const client = getSB();
+        if (!client) throw new Error('No connection');
+
+        const { data: users, error } = await client
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .eq('role', role);
+
+        if (error || !users || users.length === 0) {
+            errorEl.textContent = 'Invalid username or role';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        const user = users[0];
+        if (user.password !== password) {
+            errorEl.textContent = 'Incorrect password';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Login success
+        localStorage.setItem('currentUsername', username);
+        localStorage.setItem('currentRole', role);
+        localStorage.setItem('currentUserId', user.id);
+        localStorage.setItem('userSession', JSON.stringify({
+            username: username, role: role,
+            userId: user.id, business_id: user.business_id,
+            loginTime: new Date().toISOString()
+        }));
+        if (user.business_id) localStorage.setItem('businessId', user.business_id);
+
+        closeLoginModal();
+        checkLoginStatus();
+        
+        // Show success briefly
+        alert('Login successful! You can now subscribe.');
+
+    } catch (e) {
+        errorEl.textContent = 'Login failed. Try again.';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+    }
+}
+
+// ============ LOAD BUSINESS INFO ============
 async function loadBusinessInfo() {
+    if (!isLoggedIn) return;
+    
     const client = getSB();
     if (!client) return;
 
-    // Try to get from localStorage first
     const saved = localStorage.getItem('businessInfo');
     if (saved) {
         try {
@@ -339,35 +400,33 @@ async function loadBusinessInfo() {
         } catch(e) {}
     }
 
-    // Try to load from Supabase
     const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
     if (data) {
         document.getElementById('bizName').textContent = data.name || 'Your Business';
         document.getElementById('bizEmail').textContent = data.email || '';
         document.getElementById('paymentEmail').value = data.email || '';
-        if (data.logo_url) {
-            document.getElementById('bizLogo').src = data.logo_url;
-        }
+        if (data.logo_url) document.getElementById('bizLogo').src = data.logo_url;
     }
 
-    // Check current license
     const userId = localStorage.getItem('currentUserId');
     if (userId) {
         const { data: license } = await client.from('licenses')
-            .select('plan, status')
-            .eq('user_id', userId)
-            .maybeSingle();
+            .select('plan, status').eq('user_id', userId).maybeSingle();
         if (license && license.status === 'active') {
-            document.getElementById('currentPlanBadge').textContent = 
-                license.plan.charAt(0).toUpperCase() + license.plan.slice(1) + ' Active';
-            document.getElementById('currentPlanBadge').style.background = '#f0fdf4';
-            document.getElementById('currentPlanBadge').style.color = '#166534';
+            const badge = document.getElementById('currentPlanBadge');
+            badge.textContent = license.plan.charAt(0).toUpperCase() + license.plan.slice(1) + ' Active';
+            badge.style.background = '#f0fdf4';
+            badge.style.color = '#166534';
         }
     }
 }
 
 // ============ PAYMENT FLOW ============
 function startPayment(plan) {
+    if (!isLoggedIn) {
+        openLoginModal();
+        return;
+    }
     selectedPlan = plan;
     const titles = { starter: 'Starter', professional: 'Professional', business: 'Business' };
     document.getElementById('modalTitle').textContent = 'Subscribe to ' + titles[plan];
@@ -380,30 +439,19 @@ function closePaymentModal() {
 
 function goToSelar() {
     const link = SELAR_LINKS[selectedPlan];
-    // Save pending order
     const email = document.getElementById('paymentEmail').value;
     localStorage.setItem('pendingPayment', JSON.stringify({
-        plan: selectedPlan,
-        email: email,
-        timestamp: new Date().toISOString()
+        plan: selectedPlan, email: email, timestamp: new Date().toISOString()
     }));
-    
-    // Open Selar
     window.open(link, '_blank');
     closePaymentModal();
-    
-    // Show reminder
-    alert('After completing payment on Selar, come back and verify your license.');
 }
 
 // ============ CURRENCY ============
 const currencyData = {
-    CI: { symbol: 'CFA', rate: 1 },
-    NG: { symbol: '₦', rate: 0.59 },
-    GH: { symbol: '₵', rate: 0.098 },
-    KE: { symbol: 'KSh', rate: 0.0078 },
-    US: { symbol: '$', rate: 0.0016 },
-    GB: { symbol: '£', rate: 0.0013 },
+    CI: { symbol: 'CFA', rate: 1 }, NG: { symbol: '₦', rate: 0.59 },
+    GH: { symbol: '₵', rate: 0.098 }, KE: { symbol: 'KSh', rate: 0.0078 },
+    US: { symbol: '$', rate: 0.0016 }, GB: { symbol: '£', rate: 0.0013 },
     FR: { symbol: '€', rate: 0.0015 }
 };
 
@@ -422,8 +470,15 @@ function changeCurrency() {
 }
 
 // ============ INIT ============
-loadBusinessInfo();
+checkLoginStatus();
 changeCurrency();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) { this.classList.remove('show'); }
+    });
+});
 </script>
 </body>
 </html>
