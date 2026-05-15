@@ -1749,57 +1749,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-async function checkSetupStatus() {
-    try {
-        // ========== FIX: Check if user is logged in ==========
-        const userSession = localStorage.getItem('userSession');
-        const rememberedUser = localStorage.getItem('rememberedUser');
-        const currentUsername = localStorage.getItem('currentUsername');
-        
-        const isLoggedIn = !!(userSession || rememberedUser || currentUsername);
 
-        // ========== Check Supabase for ANY business ==========
-        const client = getSetupDB();
-        let hasBusinessInDB = false;
-        
-        if (client) {
-            const { data, error } = await client
-                .from('business_info')
-                .select('name')
-                .limit(1);
-            
-            if (!error && data && data.length > 0 && data[0].name) {
-                hasBusinessInDB = true;
-            }
-        }
-
-        if (isLoggedIn) {
-            console.log('✅ User is logged in');
-            if (window.location.pathname.includes('setup.html')) {
-                window.location.href = 'shop.html';
-            }
-            return true;
-        }
-        if (hasBusinessInDB) {
-            console.log('🏢 Business exists, user needs to login');
-            if (window.location.pathname.includes('setup.html')) {
-                window.location.href = 'shop.html';
-            }
-            return true;
-        }
-        console.log('🆕 No business found - setup needed');
-        if (!window.location.pathname.includes('setup.html')) {
-            window.location.href = 'setup.html';
-        }
-        return false;
-
-    } catch (error) {
-        console.error('Setup check error:', error);
-        return false;
-    }
-}
-
-checkSetupStatus();
 console.log('📡 Setup page ready - using Supabase project:', MYSUPABASE_URL);
 </script>
 </body>
