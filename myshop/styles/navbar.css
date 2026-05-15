@@ -1,0 +1,614 @@
+/* Sidebar Component Styles */
+
+/* ============================================
+   BASE SIDEBAR CONTAINER & LAYOUT
+   ============================================ */
+.sidebar-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.sidebar-main {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 9998;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: transform 0.3s ease, width 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9997;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* ============================================
+   SIDEBAR HEADER / BRANDING
+   ============================================ */
+.sidebar-header {
+    flex-shrink: 0;
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.sidebar-brand:hover {
+    color: #60a5fa;
+}
+
+.sidebar-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.sidebar-brand:hover .sidebar-logo {
+    border-color: #60a5fa;
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+}
+
+.sidebar-app-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+.sidebar-nav {
+    flex: 1 1 auto;
+    padding: 1rem 0;
+    margin: 0;
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    color: #e5e7eb;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-link i {
+    font-size: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    width: 24px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nav-label {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-link:hover {
+    background: rgba(96, 165, 250, 0.1);
+    color: #60a5fa;
+    border-left: 3px solid #60a5fa;
+    padding-left: calc(1rem - 3px);
+}
+
+.nav-link:active {
+    background: rgba(96, 165, 250, 0.2);
+    color: #3b82f6;
+}
+
+/* ============================================
+   SIDEBAR FOOTER / USER & LOGOUT
+   ============================================ */
+.sidebar-footer {
+    flex-shrink: 0;
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: white;
+    font-size: 1.1rem;
+}
+
+.user-info {
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.2rem;
+}
+
+.sidebar-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.sidebar-logout-btn i {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.logout-label {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   SIDEBAR COLLAPSE BUTTON (Desktop)
+   ============================================ */
+.sidebar-collapse-btn {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    color: #60a5fa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.sidebar-collapse-btn:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: #60a5fa;
+    transform: translateX(-50%) scale(1.1);
+}
+
+/* Hide on small screens */
+@media (max-width: 768px) {
+    .sidebar-collapse-btn {
+        display: none;
+    }
+}
+
+/* ============================================
+   SIDEBAR TOGGLE BUTTON (Mobile)
+   ============================================ */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 9999;
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-toggle:hover {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+.sidebar-toggle.active {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+/* Show on mobile */
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE (≤768px)
+   ============================================ */
+@media (max-width: 768px) {
+    .sidebar-main {
+        width: 240px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-main.active {
+        transform: translateX(0);
+    }
+
+    body {
+        padding-left: 0 !important;
+    }
+}
+
+/* ============================================
+   TABLET/DESKTOP VARIATIONS
+   ============================================ */
+@media (max-width: 1024px) {
+    .sidebar-main {
+        width: 240px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .sidebar-main {
+        width: 280px;
+    }
+}
+
+/* ============================================
+   SIDEBAR COLLAPSED STATE (Desktop)
+   ============================================ */
+.sidebar-main.collapsed {
+    width: 80px;
+}
+
+.sidebar-main.collapsed .sidebar-header {
+    padding: 1rem 0.5rem;
+}
+
+.sidebar-main.collapsed .sidebar-brand {
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sidebar-main.collapsed .sidebar-app-name {
+    font-size: 0.65rem;
+    text-align: center;
+    line-height: 1;
+}
+
+.sidebar-main.collapsed .nav-link {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+}
+
+.sidebar-main.collapsed .nav-label,
+.sidebar-main.collapsed .logout-label {
+    display: none;
+}
+
+.sidebar-main.collapsed .sidebar-footer {
+    padding: 0.75rem 0.5rem;
+}
+
+.sidebar-main.collapsed .user-section {
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.sidebar-main.collapsed .user-info {
+    display: none;
+}
+
+/* Update body padding when sidebar is collapsed */
+.sidebar-main.collapsed ~ body {
+    padding-left: 80px;
+}
+
+/* Very small screens */
+@media (max-width: 375px) {
+    .sidebar-main {
+        width: 200px;
+    }
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+.sidebar-main::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-main::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-main::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.sidebar-main::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.sidebar-wrapper {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ============================================
+   PRINT STYLES - Hide sidebar when printing
+   ============================================ */
+@media print {
+    .sidebar-wrapper {
+        display: none;
+    }
+
+    body {
+        padding-left: 0 !important;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.sidebar-toggle:focus,
+.sidebar-logout-btn:focus,
+.nav-link:focus,
+.sidebar-brand:focus,
+.sidebar-collapse-btn:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+.sidebar-toggle:focus {
+    outline-offset: -2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+.nav-link .notification-dot {
+    display: inline-block;
+    margin-left: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: red;
+    border-radius: 50%;
+    /* no absolute positioning */
+}
+
+
+
+
+
+
+/* The "Flying" Blue Background Logic */
+.background-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.blob {
+    position: absolute;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    filter: blur(80px);
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: flying 20s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+    width: min(500px, 80vw);
+    height: min(500px, 80vw);
+    top: -10%;
+    left: -10%;
+    animation-duration: 15s;
+}
+
+.blob-2 {
+    width: min(400px, 70vw);
+    height: min(400px, 70vw);
+    bottom: -5%;
+    right: -5%;
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    animation-duration: 22s;
+    animation-delay: -5s;
+}
+
+@keyframes flying {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(10vw, 20vh) scale(1.2) rotate(120deg); }
+    66% { transform: translate(-5vw, 35vh) scale(0.8) rotate(240deg); }
+    100% { transform: translate(15vw, -10vh) scale(1.1) rotate(360deg); }
+}
+
+/* The Looping Text Animation */
+.stock-app-text {
+    font-size: clamp(2.5rem, 8vw, 8rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: whitesmoke;
+    letter-spacing: -0.03em;
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+    
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+
+    
+    @keyframes appearHideMobile {
+        0%, 15% {
+            opacity: 0;
+            transform: scale(0.95) translateY(15px);
+            filter: blur(5px);
+        }
+        35%, 65% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            filter: blur(0px);
+        }
+        85%, 100% {
+            opacity: 0;
+            transform: scale(1.03) translateY(-15px);
+            filter: blur(5px);
+        }
+    }
+}
