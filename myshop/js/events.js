@@ -1875,15 +1875,19 @@ function logoutAndRedirect(event) {
         currentUser = null;
     }
     
-    // Clear all session data securely
-    const keysToRemove = [
-        'rememberedUser', 
-        'userSession', 
-        'currentRole', 
-        'currentUsername', 
-        'currentUserId'
-    ];
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+        localStorage.removeItem('setup_completed');
+        localStorage.removeItem('StockApp_setup');
+        localStorage.removeItem('cameFromLogin');
+        localStorage.removeItem('userChoseLogin');
+        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('currentUsername');
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('currentUsername');
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('currentUserId');
     
     // Safely redirect to target page
     window.location.href = event.currentTarget.getAttribute('href');
