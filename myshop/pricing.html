@@ -7,7 +7,9 @@
   <link rel="icon" type="image/png" href="image/icon.ico">
   <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
   <script src="js/env.js"></script>
+  <script src="translations.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+       <script src="js/hideme.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -16,7 +18,48 @@
       color: #0f172a;
       min-height: 100vh;
     }
-    
+
+    .spinner-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    /* Changed from white to a dark, semi-transparent black overlay */
+    background-color: rgba(0, 0, 0, 0.7); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    }
+
+/* Class to make it visible */
+.spinner-container.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The animated circle */
+.spinner {
+  width: 50px;
+  height: 50px;
+  /* Changed base border color to dark gray so it blends into the dark overlay */
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Rotation animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
     /* Business header */
     .biz-header {
       background: white;
@@ -186,10 +229,55 @@
       font-size: 0.9rem;
       cursor: pointer;
     }
+
+    /* Auth required overlay */
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-card h2 { font-size: 1.75rem; margin-bottom: 12px; }
+    .auth-card p { color: #64748b; margin-bottom: 24px; }
+    .auth-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .auth-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: 0.2s;
+    }
+    .auth-btn-primary { background: #3b82f6; color: white; }
+    .auth-btn-primary:hover { background: #2563eb; }
+    .auth-btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .auth-btn-secondary:hover { background: #cbd5e1; }
   </style>
 </head>
 <body>
-
+<div id="loading-screen" class="spinner-container">
+  <div class="spinner"></div>
+</div>
 <!-- Business Header -->
 <div class="biz-header" id="bizHeader">
   <div class="biz-info">
@@ -204,17 +292,17 @@
 
 <!-- Pricing -->
 <div class="pricing-header">
-  <h1>Stock Sales Pro</h1>
-  <p>Choose the plan that fits your business</p>
+  <h1 data-translate="pricing_title">Stock Sales Pro</h1>
+  <p data-translate="pricing_subtitle">Choose the plan that fits your business</p>
   <div class="currency-selector">
     <select id="currencySelect" onchange="changeCurrency()">
-      <option value="CI">XOF (CFA) - West Africa</option>
-      <option value="NG">₦ NGN - Nigeria</option>
-      <option value="GH">₵ GHS - Ghana</option>
-      <option value="KE">KSh KES - Kenya</option>
-      <option value="US">$ USD</option>
-      <option value="GB">£ GBP</option>
-      <option value="FR">€ EUR</option>
+      <option value="CI" data-translate="currency_xof">XOF (CFA) - West Africa</option>
+      <option value="NG" data-translate="currency_ngn">₦ NGN - Nigeria</option>
+      <option value="GH" data-translate="currency_ghs">₵ GHS - Ghana</option>
+      <option value="KE" data-translate="currency_kes">KSh KES - Kenya</option>
+      <option value="US" data-translate="currency_usd">$ USD</option>
+      <option value="GB" data-translate="currency_gbp">£ GBP</option>
+      <option value="FR" data-translate="currency_eur">€ EUR</option>
     </select>
   </div>
 </div>
@@ -222,151 +310,454 @@
 <div class="plans">
   <!-- Starter -->
   <div class="plan-card">
-    <div class="plan-name">Starter</div>
-    <div class="plan-price" id="starterPrice">3,500 CFA<span>/month</span></div>
-    <div class="plan-period">Billed monthly</div>
+    <div class="plan-name" data-translate="plan_starter_name">Starter</div>
+    <div class="plan-price" id="starterPrice">3,500 CFA<span data-translate="per_month">/month</span></div>
+    <div class="plan-period" data-translate="plan_starter_period">Billed monthly</div>
     <ul class="plan-features">
-      <li><i class="fas fa-check"></i> Inventory Management</li>
-      <li><i class="fas fa-check"></i> Sales Recording</li>
-      <li><i class="fas fa-check"></i> Dashboard & Reports</li>
-      <li><i class="fas fa-check"></i> 1 Device</li>
-      <li><i class="fas fa-check"></i> Email Support</li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_inventory">Inventory Management</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_sales">Sales Recording</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_dashboard">Dashboard & Reports</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_1_device">1 Device</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_email_support">Email Support</span></li>
     </ul>
     <button class="btn btn-outline" onclick="startPayment('starter')">
-      Subscribe
+      <span data-translate="subscribe_btn">Subscribe</span>
     </button>
   </div>
 
   <!-- Pro -->
   <div class="plan-card popular">
-    <div class="popular-badge">Most Popular</div>
-    <div class="plan-name">Professional</div>
-    <div class="plan-price" id="proPrice">40,000 CFA<span>/year</span></div>
-    <div class="plan-period">Save 5% with annual billing</div>
+    <div class="popular-badge" data-translate="popular_badge">Most Popular</div>
+    <div class="plan-name" data-translate="plan_pro_name">Professional</div>
+    <div class="plan-price" id="proPrice">40,000 CFA<span data-translate="per_year">/year</span></div>
+    <div class="plan-period" data-translate="plan_pro_period">Save 5% with annual billing</div>
     <ul class="plan-features">
-      <li><i class="fas fa-check"></i> Everything in Starter</li>
-      <li><i class="fas fa-check"></i> Up to 3 Devices</li>
-      <li><i class="fas fa-check"></i> Advanced Analytics</li>
-      <li><i class="fas fa-check"></i> Priority Support</li>
-      <li><i class="fas fa-check"></i> Custom Receipts</li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_everything_starter">Everything in Starter</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_3_devices">Up to 3 Devices</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_analytics">Advanced Analytics</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_priority_support">Priority Support</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_custom_receipts">Custom Receipts</span></li>
     </ul>
     <button class="btn btn-primary" onclick="startPayment('professional')">
-      Subscribe
+      <span data-translate="subscribe_btn">Subscribe</span>
     </button>
   </div>
 
   <!-- Business -->
   <div class="plan-card">
-    <div class="plan-name">Business</div>
-    <div class="plan-price" id="bizPrice">85,000 CFA<span>/year</span></div>
-    <div class="plan-period">Billed annually</div>
+    <div class="plan-name" data-translate="plan_business_name">Business</div>
+    <div class="plan-price" id="bizPrice">85,000 CFA<span data-translate="per_year">/year</span></div>
+    <div class="plan-period" data-translate="plan_business_period">Billed annually</div>
     <ul class="plan-features">
-      <li><i class="fas fa-check"></i> Everything in Pro</li>
-      <li><i class="fas fa-check"></i> Unlimited Devices</li>
-      <li><i class="fas fa-check"></i> API Access</li>
-      <li><i class="fas fa-check"></i> White Label</li>
-      <li><i class="fas fa-check"></i> Dedicated Support</li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_everything_pro">Everything in Pro</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_unlimited_devices">Unlimited Devices</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_api_access">API Access</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_white_label">White Label</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_dedicated_support">Dedicated Support</span></li>
     </ul>
     <button class="btn btn-outline" onclick="startPayment('business')">
-      Subscribe
+      <span data-translate="subscribe_btn">Subscribe</span>
     </button>
   </div>
 </div>
 
 <div class="info-box">
   <i class="fas fa-info-circle"></i>
-  <strong>How it works:</strong> Pay on Selar → Come back → Click <strong>"Verify & Activate"</strong> → License auto-activated for your business
+  <span data-translate="how_it_works_text"><strong>How it works:</strong> Pay on Selar → Come back → Click <strong>"Verify & Activate"</strong> → License auto-activated for your business</span>
 </div>
 
 <div class="back-link">
-  <a href="shop.html">← Back to Shop</a>
-  <a href="verify-license.html">Verify & Activate License</a>
+  <a href="shop.html" data-translate="back_to_shop">← Back to Shop</a>
+  <a href="verify-license.html" data-translate="verify_activate_link">Verify & Activate License</a>
 </div>
 
 <!-- Payment Modal -->
 <div class="modal" id="paymentModal">
   <div class="modal-box">
-    <h3 id="modalTitle">Subscribe to Starter</h3>
-    <p>Your business email is pre-filled</p>
+    <h3 id="modalTitle" data-translate="subscribe_to_plan">Subscribe to Starter</h3>
+    <p data-translate="email_prefilled">Your business email is pre-filled</p>
     <input type="email" id="paymentEmail" readonly>
     <button class="btn btn-success" onclick="goToSelar()">
-      <i class="fas fa-lock"></i> Pay on Selar Securely
+      <i class="fas fa-lock"></i> <span data-translate="pay_selar_btn">Pay on Selar Securely</span>
     </button>
-    <button class="btn btn-ghost" onclick="closePaymentModal()">Cancel</button>
+    <button class="btn btn-ghost" onclick="closePaymentModal()">
+      <span data-translate="cancel_btn">Cancel</span>
+    </button>
     <p style="font-size:0.8rem;color:#64748b;margin-top:12px;">
-      After payment, go to <strong>"Verify & Activate License"</strong> to activate
+      <span data-translate="after_payment_instruction">After payment, go to <strong>"Verify & Activate License"</strong> to activate</span>
     </p>
   </div>
 </div>
 
 <script>
+
 // ============ CONFIG ============
 const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
 
-// CORRECTED Selar product links
 const SELAR_LINKS = {
     starter: 'https://selar.com/1174a971wo',
     professional: 'https://selar.com/4242672261',
     business: 'https://selar.com/55t6z0q76t'
 };
 let selectedPlan = 'starter';
-
+let currentBusinessId = null;
+let currentUser = null;
+function translate(key) {
+    
+    
+    if (!translations) {
+        console.error("Translations object is undefined!");
+        return key;
+    }
+    
+ 
+    
+    // Handle nested keys
+    const keys = key.split('.');
+    let translationObj = translations[currentLanguage];
+    
+    for (let i = 0; i < keys.length; i++) {
+       
+        if (translationObj && translationObj[keys[i]] !== undefined) {
+            translationObj = translationObj[keys[i]];
+        } else {
+            console.warn(`Key part "${keys[i]}" not found for key "${key}"`);
+            return key;
+        }
+    }
+    
+    return translationObj;
+}
 function getSB() {
     if (window._sb) return window._sb;
     if (window.supabase?.createClient) {
-        window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { persistSession: true }
+        });
         return window._sb;
     }
     return null;
 }
 
-// ============ LOAD BUSINESS INFO & LICENSE ============
-async function loadBusinessInfo() {
+// ============ CHECK AUTHENTICATION ============
+async function checkAuthentication() {
     const client = getSB();
-    if (!client) return;
+    if (!client) {
+        showAuthRequired(translate('cannot_connect_db') || 'Cannot connect to database. Please check your connection.');
+        return false;
+    }
 
-    // Try localStorage first
-    const saved = localStorage.getItem('businessInfo');
-    let businessId = localStorage.getItem('businessId');
+    // Check for existing session
+    const { data: { session }, error: sessionError } = await client.auth.getSession();
     
-    if (saved) {
+    if (session?.user) {
+        console.log('✅ User authenticated via Supabase Auth:', session.user.email);
+        await loadUserBusiness(session.user);
+        return true;
+    }
+
+    // Check localStorage for user session (from login in events.js)
+    const userSession = localStorage.getItem('userSession');
+    if (userSession) {
         try {
-            const info = JSON.parse(saved);
-            document.getElementById('bizName').textContent = info.name || 'Your Business';
-            document.getElementById('bizEmail').textContent = info.email || '';
-            document.getElementById('paymentEmail').value = info.email || '';
-            if (info.logo_url || info.logoData) {
-                document.getElementById('bizLogo').src = info.logo_url || info.logoData;
+            const sessionData = JSON.parse(userSession);
+            const businessId = localStorage.getItem('businessId');
+            
+            if (sessionData.username && businessId) {
+                console.log('✅ Found user session in localStorage:', sessionData.username);
+                currentUser = sessionData;
+                currentBusinessId = businessId;
+                await loadBusinessInfo(currentBusinessId);
+                return true;
             }
-        } catch(e) {}
-    }
-
-    // Load from Supabase
-    const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
-    if (data) {
-        document.getElementById('bizName').textContent = data.name || 'Your Business';
-        document.getElementById('bizEmail').textContent = data.email || '';
-        document.getElementById('paymentEmail').value = data.email || '';
-        if (data.logo_url) {
-            document.getElementById('bizLogo').src = data.logo_url;
+        } catch(e) {
+            console.warn('Failed to parse userSession:', e);
         }
-        businessId = data.id;
-        
-        // Update localStorage
-        localStorage.setItem('businessId', businessId);
-        localStorage.setItem('businessInfo', JSON.stringify(data));
     }
 
-    // Check license by BUSINESS_ID
-    if (businessId) {
-        await updateLicenseBadge(client, businessId);
+    // No authentication found
+    showAuthRequired(null);
+    return false;
+}
+
+async function loadUserBusiness(user) {
+    const client = getSB();
+    if (!client) return false;
+
+    // Find user in users table
+    const { data: userData, error: userError } = await client
+        .from('users')
+        .select('*, business_id')
+        .eq('email', user.email)
+        .maybeSingle();
+
+    if (userError || !userData) {
+        console.warn('User not found in users table');
+        showAuthRequired(translate('please_login_pricing') || 'Please log in to access pricing.');
+        return false;
+    }
+
+    currentUser = userData;
+    currentBusinessId = userData.business_id;
+
+    if (currentBusinessId) {
+        localStorage.setItem('businessId', currentBusinessId);
+        localStorage.setItem('currentUsername', userData.username);
+        localStorage.setItem('currentRole', userData.role);
+        
+        const sessionData = {
+            username: userData.username,
+            role: userData.role,
+            userId: userData.id,
+            business_id: currentBusinessId,
+            email: userData.email
+        };
+        localStorage.setItem('userSession', JSON.stringify(sessionData));
+        
+        await loadBusinessInfo(currentBusinessId);
+        return true;
     } else {
-        // Check localStorage fallback
-        updateBadgeFromLocalStorage();
+        // User has no business - redirect to setup
+        window.location.href = 'setup.html';
+        return false;
     }
 }
 
+function showAuthRequired(message) {
+    // Hide main content
+    document.querySelector('.pricing-header').style.opacity = '0.5';
+    document.querySelector('.plans').style.opacity = '0.5';
+    document.querySelector('.info-box').style.opacity = '0.5';
+    document.querySelector('.back-link').style.opacity = '0.5';
+    document.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
+    
+    // Show overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'auth-overlay';
+    overlay.innerHTML = `
+        <div class="auth-card">
+            <i class="fas fa-lock" style="font-size: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+            <h2>${translate('auth_required_title') || 'Authentication Required'}</h2>
+            <p>${message || (translate('auth_required_message') || 'Please log in to view pricing plans and manage your subscription.')}</p>
+            <div class="auth-buttons">
+                <a href="index.html" class="auth-btn auth-btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> ${translate('login_btn') || 'Login'}
+                </a>
+                <a href="setup.html" class="auth-btn auth-btn-secondary">
+                    <i class="fas fa-store"></i> ${translate('setup_business_btn') || 'Setup Business'}
+                </a>
+            </div>
+            <p style="margin-top: 20px; font-size: 0.8rem; color: #94a3b8;">
+                ${translate('no_account_prompt') || "Don't have an account? Set up your business first."}
+            </p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+// ============ LOAD BUSINESS INFO BY ID ============
+// ============ LOAD BUSINESS INFO BY ID ============
+async function loadBusinessInfo(businessId = null) {
+    const client = getSB();
+    if (!client) return;
+
+    const idToUse = businessId || localStorage.getItem('businessId');
+    
+    if (!idToUse) {
+        console.warn('No business ID found');
+        showAuthRequired(translate('setup_business_first') || 'Please set up your business first.');
+        return;
+    }
+
+    // Load from Supabase with business_id filter
+    const { data, error } = await client
+        .from('business_info')
+        .select('*')
+        .eq('id', idToUse)
+        .maybeSingle();
+
+    if (error || !data) {
+        console.error('Failed to load business info:', error);
+        // Try to get business without filter as fallback (should not happen)
+        const { data: fallback } = await client.from('business_info').select('*').limit(1).maybeSingle();
+        if (fallback) {
+            displayBusinessInfo(fallback);
+            await updateLicenseBadge(client, fallback.id);
+        } else {
+            showAuthRequired(translate('no_business_found') || 'No business found. Please complete setup first.');
+        }
+        return;
+    }
+
+    // Get language from the loaded business data
+    let backendLanguage = data.language || null;
+    
+    // Also check if there's a separate language field we need to query
+    if (!backendLanguage) {
+        // Try to get language from a separate query if needed
+        const { data: langData } = await client
+            .from('business_info')
+            .select('language')
+            .eq('id', idToUse)
+            .maybeSingle();
+        
+        if (langData && langData.language) {
+            backendLanguage = langData.language;
+        }
+    }
+
+    // Fallback: try localStorage businessInfo
+    if (!backendLanguage) {
+        const savedBiz = localStorage.getItem('businessInfo');
+        if (savedBiz) {
+            try {
+                const biz = JSON.parse(savedBiz);
+                backendLanguage = biz.language || biz.currentLanguage || null;
+            } catch (e) {
+                // ignore parse error
+            }
+        }
+    }
+
+    // Read existing values
+    const userLanguage = localStorage.getItem('language');
+    const systemLanguage = localStorage.getItem('systemLanguage');
+
+    // Set current language with priority: Database > localStorage > default
+    currentLanguage = backendLanguage || userLanguage || systemLanguage || 'en';
+
+    console.log('🌐 Language from DB:', backendLanguage);
+    console.log('🌐 User language from localStorage:', userLanguage);
+    console.log('🌐 Final resolved language:', currentLanguage);
+
+    // Persist to localStorage
+    localStorage.setItem('language', currentLanguage);
+    
+    // Also store the business info with language
+    localStorage.setItem('businessInfo', JSON.stringify(data));
+
+    // Update selector if it exists
+    const languageSelector = document.getElementById('languageSelector');
+    if (languageSelector) {
+        languageSelector.value = currentLanguage;
+    }
+
+    // Display business info first (before translation)
+    displayBusinessInfo(data);
+    
+    // Now translate UI with the correct language
+    if (typeof translateUI === 'function') {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            translateUI();
+            console.log('✅ UI translated to:', currentLanguage);
+        }, 100);
+    }
+
+    // Update license badge
+    await updateLicenseBadge(client, data.id);
+}
+function displayBusinessInfo(data) {
+    document.getElementById('bizName').textContent = data.name || translate('your_business_label') || 'Your Business';
+    document.getElementById('bizEmail').textContent = data.email || '';
+    document.getElementById('paymentEmail').value = data.email || '';
+    if (data.logo_url) {
+        document.getElementById('bizLogo').src = data.logo_url;
+    }
+    
+    // Update localStorage
+    localStorage.setItem('businessId', data.id);
+    localStorage.setItem('businessInfo', JSON.stringify(data));
+}
+const systemLanguage =
+  localStorage.getItem("systemLanguage") ||
+  localStorage.getItem("language") ||
+  "en";
+
+let currentLanguage = systemLanguage;
+localStorage.setItem("language", currentLanguage);
+
+
+function translateUI() {
+    // Check if translations are loaded
+    if (!translations || !translations[currentLanguage]) {
+        console.error("Translations not loaded for language:", currentLanguage);
+        return;
+    }
+
+    // Translate regular text content
+    document.querySelectorAll("[data-translate]").forEach(el => {
+        const key = el.getAttribute("data-translate");
+        const translatedText = translate(key);
+        
+        if (translatedText && translatedText !== key) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.value = translatedText;
+            } else if (el.tagName === 'OPTION') {
+                el.textContent = translatedText;
+            } else {
+                el.textContent = translatedText;
+            }
+        }
+    });
+
+    // Translate placeholder text
+    document.querySelectorAll("[data-translate-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-translate-placeholder");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.setAttribute("placeholder", translatedText);
+        }
+    });
+
+    // Translate title attributes
+    document.querySelectorAll("[data-translate-title]").forEach(el => {
+        const key = el.getAttribute("data-translate-title");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.setAttribute("title", translatedText);
+        }
+    });
+
+    // Translate alt attributes
+    document.querySelectorAll("[data-translate-alt]").forEach(el => {
+        const key = el.getAttribute("data-translate-alt");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.setAttribute("alt", translatedText);
+        }
+    });
+
+    // Translate aria-label attributes
+    document.querySelectorAll("[data-translate-aria-label]").forEach(el => {
+        const key = el.getAttribute("data-translate-aria-label");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.setAttribute("aria-label", translatedText);
+        }
+    });
+
+    // Handle data-translate-rating for dynamic values
+    document.querySelectorAll("[data-translate-rating]").forEach(el => {
+        const key = el.getAttribute("data-translate");
+        const rating = el.getAttribute("data-translate-rating");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.textContent = translatedText.replace("{rating}", rating);
+        }
+    });
+
+    // Handle data-translate-value for numeric values
+    document.querySelectorAll("[data-translate-value]").forEach(el => {
+        const key = el.getAttribute("data-translate");
+        const value = el.getAttribute("data-translate-value");
+        const translatedText = translate(key);
+        if (translatedText && translatedText !== key) {
+            el.textContent = translatedText.replace("{value}", value);
+        }
+    });
+}
 // ============ UPDATE LICENSE BADGE ============
 async function updateLicenseBadge(client, businessId) {
     const badge = document.getElementById('currentPlanBadge');
@@ -386,16 +777,16 @@ async function updateLicenseBadge(client, businessId) {
         const expiresAt = new Date(license.expires_at);
         const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
         
-        const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+        const planNames = { starter: translate('plan_starter_name_short') || 'Starter', professional: translate('plan_pro_name_short') || 'Professional', business: translate('plan_business_name_short') || 'Business' };
         const planName = planNames[license.plan] || license.plan;
         
         if (license.status === 'trial') {
-            badge.textContent = `🕐 Trial · ${daysLeft}d left`;
+            badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
             badge.style.background = '#fef3c7';
             badge.style.color = '#92400e';
             badge.style.border = '1px solid #f59e0b';
         } else if (license.status === 'active') {
-            badge.textContent = `✅ ${planName} Active`;
+            badge.textContent = `✅ ${planName} ${translate('active_label') || 'Active'}`;
             badge.style.background = '#f0fdf4';
             badge.style.color = '#166534';
             badge.style.border = '1px solid #22c55e';
@@ -420,50 +811,34 @@ async function updateLicenseBadge(client, businessId) {
             const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
             
             if (biz.license_status === 'trial') {
-                badge.textContent = `🕐 Trial · ${daysLeft}d left`;
+                badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
                 badge.style.background = '#fef3c7';
                 badge.style.color = '#92400e';
             } else {
-                const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-                badge.textContent = `✅ ${planNames[biz.license_plan] || 'Active'}`;
+                const planNames = { starter: translate('plan_starter_name_short') || 'Starter', professional: translate('plan_pro_name_short') || 'Professional', business: translate('plan_business_name_short') || 'Business' };
+                badge.textContent = `✅ ${planNames[biz.license_plan] || translate('active_label') || 'Active'}`;
                 badge.style.background = '#f0fdf4';
                 badge.style.color = '#166534';
             }
         } else {
-            badge.textContent = '🔒 No License';
+            badge.textContent = `🔒 ${translate('no_license_label') || 'No License'}`;
             badge.style.background = '#fee2e2';
             badge.style.color = '#991b1b';
         }
     }
 }
 
-function updateBadgeFromLocalStorage() {
-    const badge = document.getElementById('currentPlanBadge');
-    const plan = localStorage.getItem('licensePlan');
-    const status = localStorage.getItem('licenseStatus');
-    const daysLeft = localStorage.getItem('licenseDaysLeft');
-    
-    if (status === 'trial') {
-        badge.textContent = `🕐 Trial · ${daysLeft || '?'}d left`;
-        badge.style.background = '#fef3c7';
-        badge.style.color = '#92400e';
-    } else if (status === 'active' && plan) {
-        const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-        badge.textContent = `✅ ${planNames[plan] || plan} Active`;
-        badge.style.background = '#f0fdf4';
-        badge.style.color = '#166534';
-    } else {
-        badge.textContent = '🔒 No License';
-        badge.style.background = '#fee2e2';
-        badge.style.color = '#991b1b';
-    }
-}
-
 // ============ PAYMENT FLOW ============
 function startPayment(plan) {
+    // Double-check authentication before proceeding
+    if (!currentBusinessId && !localStorage.getItem('businessId')) {
+        showAuthRequired(translate('please_login_subscribe') || 'Please log in to subscribe to a plan.');
+        return;
+    }
+    
     selectedPlan = plan;
-    const titles = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-    document.getElementById('modalTitle').textContent = 'Subscribe to ' + titles[plan];
+    const titles = { starter: translate('plan_starter_name') || 'Starter', professional: translate('plan_pro_name') || 'Professional', business: translate('plan_business_name') || 'Business' };
+    document.getElementById('modalTitle').textContent = (translate('subscribe_to') || 'Subscribe to') + ' ' + titles[plan];
     document.getElementById('paymentModal').classList.add('show');
 }
 
@@ -474,11 +849,13 @@ function closePaymentModal() {
 function goToSelar() {
     const link = SELAR_LINKS[selectedPlan];
     const email = document.getElementById('paymentEmail').value;
+    const businessId = currentBusinessId || localStorage.getItem('businessId');
     
-    // Save pending order
+    // Save pending order with business ID
     localStorage.setItem('pendingPayment', JSON.stringify({
         plan: selectedPlan,
         email: email,
+        business_id: businessId,
         timestamp: new Date().toISOString()
     }));
     
@@ -488,38 +865,110 @@ function goToSelar() {
     
     // Show instructions
     setTimeout(() => {
-        alert('✅ Payment window opened!\n\nAfter completing payment on Selar:\n1. Close the Selar tab\n2. Click "Verify & Activate License" below\n3. Enter your email to activate');
+        alert(translate('payment_window_opened') || '✅ Payment window opened!\n\nAfter completing payment on Selar:\n1. Close the Selar tab\n2. Click "Verify & Activate License" below\n3. Enter your email to activate');
     }, 500);
 }
 
 // ============ CURRENCY ============
 const currencyData = {
     CI: { symbol: 'CFA', rate: 1 },
-    NG: { symbol: '₦', rate: 0.59 },
-    GH: { symbol: '₵', rate: 0.098 },
-    KE: { symbol: 'KSh', rate: 0.0078 },
-    US: { symbol: '$', rate: 0.0016 },
-    GB: { symbol: '£', rate: 0.0013 },
-    FR: { symbol: '€', rate: 0.0015 }
+    NG: { symbol: '₦', rate: 0.0024 },  // Live 1 XOF to NGN proxy
+    GH: { symbol: '₵', rate: 0.020 },   // Live 1 XOF to GHS proxy
+    KE: { symbol: 'KSh', rate: 0.23 },   // Live 1 XOF to KES proxy
+    US: { symbol: '$', rate: 0.0018 },   // Live 1 XOF to USD proxy
+    GB: { symbol: '£', rate: 0.0014 },   // Live 1 XOF to GBP proxy
+    FR: { symbol: '€', rate: 0.0015 }    // Live 1 XOF to EUR proxy
 };
+
+// Fetch real-time rates from a free API
+async function fetchLiveRates() {
+    try {
+        // Using a free, no-auth exchange rate API with XOF as the base currency
+        const response = await fetch('https://er-api.com');
+        if (!response.ok) throw new Error('Network response error');
+        
+        const data = await response.json();
+        const rates = data.rates;
+
+        // Map the live API rates over to your target currency configuration keys
+        currencyData.NG.rate = rates.NGN || currencyData.NG.rate;
+        currencyData.GH.rate = rates.GHS || currencyData.GH.rate;
+        currencyData.KE.rate = rates.KES || currencyData.KE.rate;
+        currencyData.US.rate = rates.USD || currencyData.US.rate;
+        currencyData.GB.rate = rates.GBP || currencyData.GB.rate;
+        currencyData.FR.rate = rates.EUR || currencyData.FR.rate;
+
+        console.log("Live exchange rates loaded successfully!");
+        
+        // Refresh the prices on the page using the newly updated live rates
+        refreshPrices();
+    } catch (error) {
+        console.error("Failed to fetch live currency rates, using defaults:", error);
+        // Page will cleanly default back to hardcoded metrics safely
+        refreshPrices();
+    }
+}
 
 function formatPrice(xof, country) {
     const r = currencyData[country] || currencyData.CI;
     const converted = Math.round(xof * r.rate);
-    return r.symbol === 'CFA' ? converted.toLocaleString() + ' ' + r.symbol : r.symbol + converted.toLocaleString();
+    return r.symbol === '$' ? converted.toLocaleString() + ' ' + r.symbol : r.symbol + converted.toLocaleString();
+}
+
+function refreshPrices() {
+    // Falls back to locally stored selection or defaults cleanly to 'CI'
+    const c = localStorage.getItem('preferredCurrency') || 'CI';
+    
+    // Ensure the selector reflects the active choice if element exists
+    const selector = document.getElementById('currencySelect');
+    if (selector) selector.value = c;
+
+    document.getElementById('starterPrice').innerHTML = formatPrice(3500, c) + '<span data-translate="per_month">/month</span>';
+    document.getElementById('proPrice').innerHTML = formatPrice(40000, c) + '<span data-translate="per_year">/year</span>';
+    document.getElementById('bizPrice').innerHTML = formatPrice(85000, c) + '<span data-translate="per_year">/year</span>';
 }
 
 function changeCurrency() {
     const c = document.getElementById('currencySelect').value;
     localStorage.setItem('preferredCurrency', c);
-    document.getElementById('starterPrice').innerHTML = formatPrice(3500, c) + '<span>/month</span>';
-    document.getElementById('proPrice').innerHTML = formatPrice(40000, c) + '<span>/year</span>';
-    document.getElementById('bizPrice').innerHTML = formatPrice(85000, c) + '<span>/year</span>';
+    refreshPrices();
+}
+
+// Automatically trigger live loading when the script mounts to the DOM
+window.addEventListener('DOMContentLoaded', fetchLiveRates);
+
+const loader = document.getElementById('loading-screen');
+
+// Function to show the spinner
+function showLoading() {
+  loader.classList.add('visible');
+}
+
+// Function to hide the spinner
+function hideLoading() {
+  loader.classList.remove('visible');
 }
 
 // ============ INIT ============
-loadBusinessInfo();
-changeCurrency();
+async function init() {
+    const authenticated = await checkAuthentication();
+    
+    if (authenticated !== false) {
+        // Show main content
+        document.querySelector('.pricing-header').style.opacity = '1';
+        document.querySelector('.plans').style.opacity = '1';
+        document.querySelector('.info-box').style.opacity = '1';
+        document.querySelector('.back-link').style.opacity = '1';
+        document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
+    }
+    
+    changeCurrency();
+    hideLoading();
+}
+showLoading();
+init();
+
 </script>
+
 </body>
 </html>

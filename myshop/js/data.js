@@ -58,7 +58,7 @@ let notificationActive = false;
     const lowStockDot = document.getElementById('lowStockDot'); // NEW: Red dot element
     const mainContentContainer = document.getElementById('mainContentContainer');
     const stockTypeFilter = document.getElementById('stockTypeFilter');
-    const cancelLoadingBtn = document.getElementById('cancelLoadingBtn');
+
 
 
 
@@ -501,7 +501,7 @@ async function saveEmailSettings() {
     }
 }
   
-    document.addEventListener('click', cancelLoadingBtn, hideLoading);
+  
 
 // Add this once at the top
 function fixImagePath(path) {

@@ -4357,3 +4357,573 @@ textarea {
 #filterPanel > .p-4.border-t {
   flex-shrink: 0;
 }
+
+/* Base Modal Styles */
+#adminProfileModal {
+    transition: all 0.3s ease;
+}
+
+#adminProfileModal .max-w-4xl {
+    transition: all 0.3s ease;
+}
+
+/* Profile Image Responsive */
+#adminDisplaySection .w-24 {
+    transition: all 0.3s ease;
+}
+
+/* Admin Info Grid Responsive */
+#adminDisplaySection .grid {
+    transition: all 0.3s ease;
+}
+
+/* ============================================ */
+/* TABLET STYLES (768px - 1024px) */
+/* ============================================ */
+@media (max-width: 1024px) and (min-width: 768px) {
+    #adminProfileModal .max-w-4xl {
+        max-width: 95vw;
+        border-radius: 1.5rem;
+    }
+    
+    #adminProfileModal .p-6 {
+        padding: 1.25rem;
+    }
+    
+    #adminDisplaySection .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    #adminDisplaySection .w-24 {
+        width: 5rem;
+        height: 5rem;
+    }
+    
+    #adminDisplaySection h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Info cards */
+    #adminDisplaySection .p-4 {
+        padding: 0.875rem;
+    }
+    
+    /* Buttons */
+    #goToEditBtn,
+    #saveAdminProfileBtn,
+    #cancelEditBtn {
+        padding: 0.875rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ============================================ */
+/* SMALL TABLET & LARGE MOBILE (480px - 768px) */
+/* ============================================ */
+@media (max-width: 768px) {
+    #adminProfileModal {
+        padding: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    #adminProfileModal .max-w-4xl {
+        max-width: 100%;
+        border-radius: 1.25rem;
+        max-height: 90vh;
+    }
+    
+    #adminProfileModal .p-6 {
+        padding: 1rem;
+    }
+    
+    /* Header */
+    #adminProfileModal .border-b {
+        padding: 1rem;
+    }
+    
+    #profileModalTitle {
+        font-size: 1.25rem;
+    }
+    
+    /* Profile Image */
+    #adminDisplaySection .w-24 {
+        width: 4.5rem;
+        height: 4.5rem;
+        border-width: 3px;
+    }
+    
+    #adminDisplaySection .absolute.-bottom-2 {
+        width: 2.25rem;
+        height: 2.25rem;
+        bottom: -0.25rem;
+        right: 0.25rem;
+    }
+    
+    #adminDisplaySection h2 {
+        font-size: 1.35rem;
+        margin-top: 1rem;
+    }
+    
+    /* Grid - Switch to single column */
+    #adminDisplaySection .grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    /* Info cards */
+    #adminDisplaySection .p-4 {
+        padding: 0.75rem;
+    }
+    
+    #adminDisplaySection .p-3 {
+        padding: 0.625rem;
+    }
+    
+    #adminDisplaySection .w-6 {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    /* Text sizes */
+    #displayAdminPhone,
+    #displayAdminEmail,
+    #displayAdminAddress {
+        font-size: 0.95rem;
+    }
+    
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    
+    /* Buttons */
+    #goToEditBtn,
+    #saveAdminProfileBtn,
+    #cancelEditBtn {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 0.75rem;
+    }
+    
+    #goToEditBtn svg,
+    #saveAdminProfileBtn svg {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    /* Edit Section */
+    #adminEditSection .grid {
+        gap: 0.75rem;
+    }
+    
+    #adminEditSection input,
+    #adminEditSection textarea {
+        padding: 0.625rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Edit profile image */
+    #adminEditSection .w-24 {
+        width: 4rem;
+        height: 4rem;
+    }
+    
+    /* Flex gap for buttons */
+    .flex.gap-3 {
+        gap: 0.5rem;
+    }
+}
+
+/* ============================================ */
+/* MOBILE STYLES (320px - 480px) */
+/* ============================================ */
+@media (max-width: 480px) {
+    #adminProfileModal {
+        padding: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    #adminProfileModal .max-w-4xl {
+        max-width: 100%;
+        border-radius: 1rem;
+        max-height: 92vh;
+    }
+    
+    #adminProfileModal .p-6 {
+        padding: 0.75rem;
+    }
+    
+    #adminProfileModal .space-y-4 {
+        gap: 0.75rem;
+    }
+    
+    #adminProfileModal .overflow-y-auto {
+        max-height: 78vh;
+    }
+    
+    /* Header */
+    #adminProfileModal .border-b {
+        padding: 0.75rem;
+        flex-direction: row;
+    }
+    
+    #profileModalTitle {
+        font-size: 1.1rem;
+    }
+    
+    #closeAdminProfileModalBtn {
+        font-size: 1.75rem;
+    }
+    
+    /* Profile Section */
+    #adminDisplaySection .space-y-8 {
+        gap: 1.25rem;
+    }
+    
+    /* Profile Image */
+    #adminDisplaySection .w-24 {
+        width: 3.75rem;
+        height: 3.75rem;
+        border-width: 3px;
+    }
+    
+    #adminDisplaySection .absolute.-bottom-2 {
+        width: 2rem;
+        height: 2rem;
+        bottom: -0.25rem;
+        right: 0.125rem;
+        border-width: 2px;
+    }
+    
+    #adminDisplaySection .absolute.-bottom-2 svg {
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+    
+    #adminDisplaySection h2 {
+        font-size: 1.2rem;
+        margin-top: 0.875rem;
+    }
+    
+    /* Badge */
+    #adminDisplaySection span.px-4 {
+        padding: 0.375rem 1rem;
+        font-size: 0.65rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Grid - Single column with reduced spacing */
+    #adminDisplaySection .grid {
+        grid-template-columns: 1fr;
+        gap: 0.625rem;
+    }
+    
+    #adminDisplaySection .border-t {
+        padding-top: 1rem;
+    }
+    
+    /* Info cards */
+    #adminDisplaySection .p-4 {
+        padding: 0.625rem;
+        border-radius: 0.75rem;
+    }
+    
+    #adminDisplaySection .p-3 {
+        padding: 0.5rem;
+        border-radius: 0.625rem;
+    }
+    
+    #adminDisplaySection .w-6 {
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+    
+    /* Hide icons on very small screens to save space */
+    #adminDisplaySection .space-x-4 {
+        gap: 0.625rem;
+    }
+    
+    /* Text sizes */
+    #displayAdminPhone,
+    #displayAdminEmail,
+    #displayAdminAddress {
+        font-size: 0.85rem;
+    }
+    
+    .text-xs {
+        font-size: 0.65rem;
+    }
+    
+    /* Password dots */
+    #displayAdminPass .w-3 {
+        width: 0.625rem;
+        height: 0.625rem;
+    }
+    
+    /* Buttons */
+    #goToEditBtn,
+    #saveAdminProfileBtn,
+    #cancelEditBtn {
+        padding: 0.625rem;
+        font-size: 0.8rem;
+        border-radius: 0.625rem;
+        font-weight: 600;
+    }
+    
+    #goToEditBtn svg,
+    #saveAdminProfileBtn svg {
+        width: 0.875rem;
+        height: 0.875rem;
+        margin-right: 0.25rem;
+    }
+    
+    /* Edit Section */
+    #adminEditSection .mb-4 {
+        margin-bottom: 0.75rem;
+    }
+    
+    #adminEditSection .grid {
+        gap: 0.625rem;
+    }
+    
+    #adminEditSection label {
+        font-size: 0.65rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    #adminEditSection input,
+    #adminEditSection textarea {
+        padding: 0.5rem 0.625rem;
+        font-size: 0.8rem;
+        border-radius: 0.5rem;
+    }
+    
+    #adminEditSection textarea {
+        min-height: 3.5rem;
+    }
+    
+    /* Edit profile image */
+    #adminEditSection .w-24 {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-width: 3px;
+    }
+    
+    #adminEditSection label[for="editAdminPhoto"] {
+        padding: 0.375rem;
+    }
+    
+    #adminEditSection label[for="editAdminPhoto"] svg {
+        width: 0.625rem;
+        height: 0.625rem;
+    }
+    
+    /* Button group */
+    .flex.gap-3 {
+        gap: 0.5rem;
+        flex-direction: column;
+    }
+    
+    #cancelEditBtn,
+    #saveAdminProfileBtn {
+        width: 100%;
+    }
+}
+
+/* ============================================ */
+/* VERY SMALL SCREENS (Under 320px) */
+/* ============================================ */
+@media (max-width: 320px) {
+    #adminProfileModal {
+        padding: 0.25rem;
+    }
+    
+    #adminProfileModal .max-w-4xl {
+        border-radius: 0.75rem;
+    }
+    
+    #adminProfileModal .p-6 {
+        padding: 0.5rem;
+    }
+    
+    #profileModalTitle {
+        font-size: 1rem;
+    }
+    
+    #adminDisplaySection .w-24 {
+        width: 3rem;
+        height: 3rem;
+        border-width: 2px;
+    }
+    
+    #adminDisplaySection .absolute.-bottom-2 {
+        width: 1.5rem;
+        height: 1.5rem;
+        right: 0;
+    }
+    
+    #adminDisplaySection .absolute.-bottom-2 svg {
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+    
+    #adminDisplaySection h2 {
+        font-size: 1.1rem;
+        margin-top: 0.625rem;
+    }
+    
+    /* Info cards - minimal padding */
+    #adminDisplaySection .p-4 {
+        padding: 0.5rem;
+    }
+    
+    #adminDisplaySection .p-3 {
+        padding: 0.375rem;
+    }
+    
+    #adminDisplaySection .w-6 {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    #displayAdminPhone,
+    #displayAdminEmail,
+    #displayAdminAddress {
+        font-size: 0.75rem;
+    }
+    
+    .text-xs {
+        font-size: 0.6rem;
+    }
+    
+    /* Buttons */
+    #goToEditBtn,
+    #saveAdminProfileBtn,
+    #cancelEditBtn {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 0.5rem;
+    }
+    
+    /* Edit inputs */
+    #adminEditSection input,
+    #adminEditSection textarea {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ============================================ */
+/* LANDSCAPE MODE OPTIMIZATION */
+/* ============================================ */
+@media (max-height: 600px) and (orientation: landscape) {
+    #adminProfileModal {
+        align-items: flex-start;
+        padding-top: 0.5rem;
+    }
+    
+    #adminProfileModal .max-w-4xl {
+        max-height: 95vh;
+    }
+    
+    #adminProfileModal .overflow-y-auto {
+        max-height: 65vh;
+    }
+    
+    #adminDisplaySection .space-y-8 {
+        gap: 0.75rem;
+    }
+    
+    #adminDisplaySection .w-24 {
+        width: 3.25rem;
+        height: 3.25rem;
+    }
+    
+    #adminDisplaySection h2 {
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Make grid 2 columns in landscape */
+    #adminDisplaySection .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.625rem;
+    }
+    
+    #adminDisplaySection .p-4 {
+        padding: 0.5rem;
+    }
+    
+    .flex.gap-3 {
+        flex-direction: row;
+    }
+}
+
+/* ============================================ */
+/* DARK MODE SUPPORT (if needed) */
+/* ============================================ */
+@media (prefers-color-scheme: dark) {
+    #adminProfileModal .bg-white {
+        background-color: rgb(15 23 42);
+    }
+    
+    #adminDisplaySection .text-gray-900 {
+        color: rgb(243 244 246);
+    }
+    
+    #adminDisplaySection .border-gray-100 {
+        border-color: rgb(51 65 85);
+    }
+    
+    #adminDisplaySection .bg-white {
+        background-color: rgb(30 41 59);
+    }
+}
+
+/* ============================================ */
+/* ANIMATIONS & TRANSITIONS */
+/* ============================================ */
+#adminProfileModal .hover\:shadow-md:hover {
+    transform: translateY(-1px);
+}
+
+#adminProfileModal button:active {
+    transform: scale(0.98);
+}
+
+/* Smooth scrollbar for webkit browsers */
+#adminProfileModal .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+#adminProfileModal .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#adminProfileModal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+
+#adminProfileModal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Focus states for accessibility */
+#adminProfileModal input:focus,
+#adminProfileModal textarea:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -1px;
+}
+
+/* Print styles */
+@media print {
+    #adminProfileModal {
+        position: static;
+        background: white;
+    }
+    
+    #adminProfileModal .shadow-2xl {
+        box-shadow: none;
+    }
+}

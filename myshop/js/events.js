@@ -450,10 +450,14 @@ document.getElementById('loginBtn').onclick = async function() {
             Notification.requestPermission();
         }
 
-        // Track login event
-        if (typeof trackAppEvent === 'function') {
-            trackAppEvent('login', { licensePlan: license?.plan, licenseStatus: license?.status }, username);
-        }
+                    // Track login event
+            // Track login event - FIXED: license variable scope
+            if (typeof trackAppEvent === 'function') {
+                // Get license info from localStorage instead
+                const licensePlan = localStorage.getItem('licensePlan') || 'starter';
+                const licenseStatus = localStorage.getItem('licenseStatus') || 'active';
+                trackAppEvent('login', { licensePlan: licensePlan, licenseStatus: licenseStatus }, username);
+            }
 
         // Role-specific setup
         if (user.role === 'administrator') {

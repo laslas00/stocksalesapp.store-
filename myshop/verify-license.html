@@ -4,360 +4,818 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activate License - StockApp*</title>
-    <link rel="icon" type="image/png" href="image/icon.ico">
-    <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
-    <script src="js/env.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="translations.js"></script>
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px 32px;
-            max-width: 460px;
-            width: 100%;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-            text-align: center;
+        #result {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Business Info Header */
+        /* Business Header */
         .biz-header {
-            margin-bottom: 28px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            border-radius: 20px 20px 0 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .biz-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         .biz-logo {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
             object-fit: cover;
-            background: #f1f5f9;
-            margin-bottom: 12px;
-            border: 3px solid #e2e8f0;
+            background: #e2e8f0;
         }
         .biz-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 1rem;
         }
         .biz-email {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #64748b;
         }
+        .current-plan {
+            background: #eff6ff;
+            color: #3b82f6;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
 
-        .icon-circle {
-            width: 72px;
-            height: 72px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top: 3px solid #3b82f6;
             border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .step-item:hover .step-number {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Auth overlay styles */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 32px;
-            color: white;
-            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+            z-index: 10000;
         }
-
-        h1 { font-size: 1.4rem; color: #0f172a; margin-bottom: 4px; }
-        .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
-
-        .steps {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            text-align: left;
-            font-size: 0.85rem;
-            color: #475569;
-            line-height: 1.8;
+        
+        .auth-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
         }
-        .steps i { color: #3b82f6; margin-right: 8px; width: 16px; }
-
-        .form-group { margin-bottom: 16px; }
-        label {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 6px;
-            text-align: left;
-            font-size: 0.9rem;
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        input, select {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus { outline: none; border-color: #3b82f6; }
-        select { cursor: pointer; background: white; }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
+        
+        .auth-card h2 { font-size: 1.75rem; margin-bottom: 12px; }
+        .auth-card p { color: #64748b; margin-bottom: 24px; }
+        .auth-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .auth-btn {
+            padding: 12px 24px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
-        .btn-verify {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        .btn-verify:hover { transform: translateY(-1px); }
-        .btn-verify:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .result {
-            margin-top: 16px;
-            padding: 16px;
-            border-radius: 12px;
-            display: none;
-            text-align: left;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        .result.success { display: block; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-        .result.error { display: block; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-        .result.info { display: block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-        .result-icon { font-size: 2rem; margin-bottom: 8px; }
-
-        .back-link { margin-top: 24px; }
-        .back-link a { color: #3b82f6; text-decoration: none; font-size: 0.9rem; margin: 0 8px; }
-        .back-link a:hover { text-decoration: underline; }
-
-        .spinner {
+            text-decoration: none;
             display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
+            transition: 0.2s;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .auth-btn-primary { background: #3b82f6; color: white; }
+        .auth-btn-primary:hover { background: #2563eb; }
+        .auth-btn-secondary { background: #e2e8f0; color: #1e293b; }
+        .auth-btn-secondary:hover { background: #cbd5e1; }
+
+        /* Main content container with top padding for fixed header */
+        .main-container {
+            margin-top: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Business Info -->
-        <div class="biz-header">
-            <img id="bizLogo" class="biz-logo" src="image/logo.jpg" alt="Logo" onerror="this.src='image/logo.jpg'">
-            <div class="biz-name" id="bizName">StockApp*</div>
-            <div class="biz-email" id="bizEmail">Activate your license</div>
+
+    <!-- Business Header -->
+    <div class="biz-header" id="bizHeader">
+        <div class="biz-info">
+            <img id="bizLogo" class="biz-logo" src="https://placehold.co/40x40/f1f5f9/64748b?text=Logo" alt="Logo">
+            <div>
+                <div class="biz-name" id="bizName" data-translate="app_name">StockApp*</div>
+                <div class="biz-email" id="bizEmail" data-translate="license_portal">License Portal</div>
+            </div>
         </div>
+        <div class="current-plan" id="currentPlanBadge" data-translate="license_check">License Check</div>
+    </div>
 
-        <div class="icon-circle">
-            <i class="fas fa-crown"></i>
-        </div>
+    <div id="loaderOverlay" class="loader-overlay">
+        <div class="spinner mb-4"></div>
+        <p class="text-blue-400 font-medium tracking-widest uppercase text-sm animate-pulse" >...........</p>
+    </div>
+    
+    <div class="main-container">
+        <div class="max-w-md w-full glass-card rounded-3xl p-8 md:p-10 transition-all duration-500 opacity-0 translate-y-4" id="mainContent">
+            <!-- Icon & Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200">
+                    <i class="fas fa-crown text-white text-2xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-900" data-translate="unlock_premium_title">Unlock Premium</h1>
+                <p class="text-slate-500 text-sm mt-1" data-translate="unlock_premium_subtitle">Activate your professional features in seconds</p>
+            </div>
 
-        <h1>Activate Your License</h1>
-        <p class="subtitle">Verify your Selar payment to unlock premium features</p>
+            <div class="space-y-3 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div class="flex items-start gap-3 step-item transition-all">
+                    <span class="step-number w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 transition-colors">1</span>
+                    <p class="text-xs text-slate-600 leading-relaxed" data-translate="step1_text">Pay via <strong>Selar</strong> using your business email.</p>
+                </div>
+                <div class="flex items-start gap-3 step-item transition-all">
+                    <span class="step-number w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 transition-colors">2</span>
+                    <p class="text-xs text-slate-600 leading-relaxed" data-translate="step2_text">Enter that <strong>exact email</strong> in the field below.</p>
+                </div>
+                <div class="flex items-start gap-3 step-item transition-all">
+                    <span class="step-number w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 transition-colors">3</span>
+                    <p class="text-xs text-slate-600 leading-relaxed" data-translate="step3_text">System will <strong>auto-detect</strong> and activate your plan.</p>
+                </div>
+            </div>
 
-        <div class="steps">
-            <div><i class="fas fa-1"></i> <strong>Step 1:</strong> Pay on Selar using your business email</div>
-            <div><i class="fas fa-2"></i> <strong>Step 2:</strong> Enter the same email below</div>
-            <div><i class="fas fa-3"></i> <strong>Step 3:</strong> Select your plan & click Verify</div>
-            <div><i class="fas fa-4"></i> <strong>Step 4:</strong> License auto-activated!</div>
-        </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 ml-1" data-translate="payment_email_label">Payment Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="email" id="emailInput" 
+                               class="w-full pl-11 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder:text-slate-400"
+                               placeholder="name@business.com">
+                    </div>
+                </div>
 
-        <div class="form-group">
-            <label>Email used for payment</label>
-            <input type="email" id="emailInput" placeholder="you@example.com">
-        </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 ml-1" data-translate="purchase_type_label">Select Purchase Type</label>
+                    <div class="relative">
+                        <i class="fas fa-gem absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <select id="planSelect" class="w-full pl-11 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white transition-all text-slate-800 appearance-none cursor-pointer">
+                            <option value="" data-translate="auto_detect_option">Auto-Detect Purchase</option>
+                            <option value="starter" data-translate="starter_option">Starter - 3,500 CFA / Mo</option>
+                            <option value="professional" data-translate="professional_option">Professional - 40,000 CFA / Yr</option>
+                            <option value="business" data-translate="business_option">Business - 85,000 CFA / Yr</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                    </div>
+                </div>
 
-        <div class="form-group">
-            <label>Plan you purchased</label>
-            <select id="planSelect">
-                <option value="">Auto-detect from payment</option>
-                <option value="starter">Starter - 3,500 CFA/month</option>
-                <option value="professional">Professional - 40,000 CFA/year</option>
-                <option value="business">Business - 85,000 CFA/year</option>
-            </select>
-        </div>
+                <button onclick="verifyPayment()" id="verifyBtn"
+                        class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-slate-200 active:scale-[0.98] flex items-center justify-center gap-2 group">
+                    <i class="fas fa-shield-check group-hover:animate-bounce"></i>
+                    <span data-translate="verify_activate_btn">Verify & Activate License</span>
+                </button>
+            </div>
 
-        <button class="btn btn-verify" onclick="verifyPayment()">
-            <i class="fas fa-check-circle"></i> Verify & Activate License
-        </button>
-
-        <div class="result" id="result"></div>
-
-        <div class="back-link">
-            <a href="pricing.html">← See Plans</a>
-            <a href="shop.html">Login to Shop</a>
-            <a href="index.html">Home</a>
+            <!-- Navigation Links -->
+            <div class="mt-8 pt-6 border-t border-slate-100 flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <a href="pricing.html" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors" data-translate="pricing_plans_link">Pricing Plans</a>
+                <a href="shop.html" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors" data-translate="vendor_login_link">Vendor Login</a>
+                <a href="index.html" class="text-xs font-medium text-slate-400 hover:text-blue-500 transition-colors" data-translate="main_home_link">Main Home</a>
+            </div>
         </div>
     </div>
 
+    <!-- Result Box -->
+    <div id="result" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[500px] p-5 rounded-2xl shadow-xl hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <!-- Dynamic Content -->
+    </div>
+
 <script>
-    // ============ CONFIG ============
-    const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
+        const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUzMzQ1MSwiZXhwIjoyMDkyMTA5NDUxfQ.yLhpe7k3bxu73az7qqKssN33JGB358hhWqZIUC490Pk';
 
-    function getSB() {
-        if (window._sb) return window._sb;
-        if (window.supabase?.createClient) {
-            window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            return window._sb;
-        }
-        return null;
-    }
+        let sb = null;
+        let currentBusinessId = null;
+        let currentUser = null;
+        let redirectTimeout = null;
+        let currentLanguage = localStorage.getItem("language") || "en";
 
-    function getUrlParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            fullname: params.get('fullname') || '',
-            email: params.get('email') || ''
-        };
-    }
-
-    async function loadBusinessInfo() {
-        const client = getSB();
-        if (!client) return;
-        const { email, fullname } = getUrlParams();
-        if (fullname) document.getElementById('bizName').textContent = decodeURIComponent(fullname);
-        if (email) {
-            document.getElementById('emailInput').value = decodeURIComponent(email);
-            document.getElementById('bizEmail').textContent = decodeURIComponent(email);
-        }
-        const saved = localStorage.getItem('businessInfo');
-        if (saved) {
-            try {
-                const info = JSON.parse(saved);
-                if (!fullname) document.getElementById('bizName').textContent = info.name || 'StockApp*';
-                if (!email) {
-                    document.getElementById('emailInput').value = info.email || '';
-                    document.getElementById('bizEmail').textContent = info.email || 'Activate your license';
+        function translate(key) {
+            if (!translations) {
+                console.error("Translations object is undefined!");
+                return key;
+            }
+            
+            const keys = key.split('.');
+            let translationObj = translations[currentLanguage];
+            
+            for (let i = 0; i < keys.length; i++) {
+                if (translationObj && translationObj[keys[i]] !== undefined) {
+                    translationObj = translationObj[keys[i]];
+                } else {
+                    console.warn(`Key part "${keys[i]}" not found for key "${key}"`);
+                    return key;
                 }
-                if (info.logo_url || info.logoData) document.getElementById('bizLogo').src = info.logo_url || info.logoData;
-            } catch(e) {}
-        }
-        const { data } = await client.from('business_info').select('*').limit(1).maybeSingle();
-        if (data) {
-            if (!fullname) document.getElementById('bizName').textContent = data.name || 'StockApp*';
-            if (!email && !document.getElementById('emailInput').value) document.getElementById('emailInput').value = data.email || '';
-            if (data.logo_url) document.getElementById('bizLogo').src = data.logo_url;
-        }
-    }
-
-    async function verifyPayment() {
-        const email = document.getElementById('emailInput').value.trim();
-        const btn = document.querySelector('.btn-verify');
-        const resultDiv = document.getElementById('result');
-
-        if (!email || !email.includes('@')) {
-            showResult('error', '❌', 'Please enter a valid email address');
-            return;
+            }
+            
+            return translationObj;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Checking license...';
-        resultDiv.style.display = 'none';
+        function getSB() {
+            if (sb) return sb;
+            if (window.supabase?.createClient) {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: { persistSession: true }
+                });
+                return sb;
+            }
+            return null;
+        }
 
-        try {
+        // ============ CHECK AUTHENTICATION ============
+        async function checkAuthentication() {
             const client = getSB();
-            if (!client) throw new Error('Database connection failed');
-
-            // Find user by email to get their business_id
-            const { data: user } = await client
-                .from('users')
-                .select('id, username, business_id')
-                .eq('email', email)
-                .maybeSingle();
-
-            if (!user || !user.business_id) {
-                showResult('error', '❌', 
-                    `<strong>No account found</strong><br><br>
-                    No user registered with: <strong>${email}</strong><br><br>
-                    <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
-                );
-                return;
+            if (!client) {
+                showAuthRequired(translate('cannot_connect_db') || 'Cannot connect to database. Please check your connection.');
+                return false;
             }
 
-            // CHECK LICENSE BY BUSINESS_ID (shared license)
+            const { data: { session } } = await client.auth.getSession();
+            
+            if (session?.user) {
+                console.log('✅ User authenticated via Supabase Auth:', session.user.email);
+                await loadUserBusiness(session.user);
+                return true;
+            }
+
+            const userSession = localStorage.getItem('userSession');
+            if (userSession) {
+                try {
+                    const sessionData = JSON.parse(userSession);
+                    const businessId = localStorage.getItem('businessId');
+                    
+                    if (sessionData.username && businessId) {
+                        console.log('✅ Found user session in localStorage:', sessionData.username);
+                        currentUser = sessionData;
+                        currentBusinessId = businessId;
+                        await loadBusinessInfo(currentBusinessId);
+                        await checkExistingLicense();
+                        return true;
+                    }
+                } catch(e) {
+                    console.warn('Failed to parse userSession:', e);
+                }
+            }
+
+            showAuthRequired(null);
+            return false;
+        }
+
+        async function loadUserBusiness(user) {
+            const client = getSB();
+            if (!client) return false;
+
+            const { data: userData, error: userError } = await client
+                .from('users')
+                .select('*, business_id')
+                .eq('email', user.email)
+                .maybeSingle();
+
+            if (userError || !userData) {
+                console.warn('User not found in users table');
+                showAuthRequired(translate('please_login_activate') || 'Please log in to access license activation.');
+                return false;
+            }
+
+            currentUser = userData;
+            currentBusinessId = userData.business_id;
+
+            if (currentBusinessId) {
+                localStorage.setItem('businessId', currentBusinessId);
+                localStorage.setItem('currentUsername', userData.username);
+                localStorage.setItem('currentRole', userData.role);
+                
+                const sessionData = {
+                    username: userData.username,
+                    role: userData.role,
+                    userId: userData.id,
+                    business_id: currentBusinessId,
+                    email: userData.email
+                };
+                localStorage.setItem('userSession', JSON.stringify(sessionData));
+                
+                await loadBusinessInfo(currentBusinessId);
+                await checkExistingLicense();
+                return true;
+            } else {
+                window.location.href = 'setup.html';
+                return false;
+            }
+        }
+
+        function showAuthRequired(message) {
+            const main = document.getElementById('mainContent');
+            if (main) {
+                main.style.opacity = '0.5';
+                main.style.pointerEvents = 'none';
+            }
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'auth-overlay';
+            overlay.innerHTML = `
+                <div class="auth-card">
+                    <i class="fas fa-lock" style="font-size: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+                    <h2>${translate('auth_required_title') || 'Authentication Required'}</h2>
+                    <p>${message || (translate('auth_required_message_activate') || 'Please log in to activate your license.')}</p>
+                    <div class="auth-buttons">
+                        <a href="index.html" class="auth-btn auth-btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> ${translate('login_btn') || 'Login'}
+                        </a>
+                        <a href="setup.html" class="auth-btn auth-btn-secondary">
+                            <i class="fas fa-store"></i> ${translate('setup_business_btn') || 'Setup Business'}
+                        </a>
+                    </div>
+                    <p style="margin-top: 20px; font-size: 0.8rem; color: #94a3b8;">
+                        ${translate('no_account_prompt') || "Don't have an account? Set up your business first."}
+                    </p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // ============ CHECK EXISTING LICENSE WITH DELAYED REDIRECT ============
+        async function checkExistingLicense() {
+            if (!currentBusinessId) return false;
+
+            const client = getSB();
+            if (!client) return false;
+
             const { data: license } = await client
                 .from('licenses')
                 .select('*')
-                .eq('business_id', user.business_id)
-                .eq('status', 'active')
+                .eq('business_id', currentBusinessId)
+                .or('status.eq.active,status.eq.trial')
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
 
-            if (!license) {
-                showResult('error', '❌', 
-                    `<strong>No active license</strong><br><br>
-                    User: <strong>${user.username}</strong><br>
-                    Business: <strong>${user.business_id}</strong><br>
-                    Please complete payment on Selar first.<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;">Go to Pricing →</a>`
-                );
-                return;
+            if (license) {
+                const now = new Date();
+                const expiresAt = new Date(license.expires_at);
+                
+                if (expiresAt > now && (license.status === 'active' || license.status === 'trial')) {
+                    console.log('✅ Valid license found! Updating badge...');
+                    
+                    // Update the badge first
+                    await updateLicenseBadge(client, currentBusinessId);
+                    
+                    // Show success message before redirect
+                    const planMap = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+                    showResult('success', 'fa-circle-check', 
+                        `<div class="text-center">
+                            <h4 class="font-bold text-emerald-800 text-lg">${translate('license_already_active') || 'License Already Active!'}</h4>
+                            <div class="my-3 py-3 border-y border-emerald-100 flex flex-col gap-1 text-sm text-emerald-700">
+                                <p>${translate('plan_label') || 'Plan'}: <strong>${planMap[license.plan] || license.plan}</strong></p>
+                                <p>${translate('expires_label') || 'Expires'}: <strong>${expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+                            </div>
+                            <p class="text-emerald-600 text-sm">${translate('redirecting_to_shop') || 'Redirecting to shop...'}</p>
+                        </div>`);
+                    
+                    // Clear any existing timeout
+                    if (redirectTimeout) clearTimeout(redirectTimeout);
+                    
+                    // Redirect after 2.5 seconds so user can see the badge
+                    redirectTimeout = setTimeout(() => {
+                        window.location.href = 'shop.html';
+                    }, 5500);
+                    return true;
+                }
             }
-
-            const expiresAt = new Date(license.expires_at);
-            const now = new Date();
-            if (expiresAt < now) {
-                showResult('error', '⏰', 
-                    `<strong>License Expired</strong><br><br>
-                    Plan: <strong>${license.plan}</strong><br>
-                    Expired: ${expiresAt.toLocaleDateString()}<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;">Renew License →</a>`
-                );
-                return;
-            }
-
-            // Get all users in this business
-            const { data: businessUsers } = await client
-                .from('users')
-                .select('username')
-                .eq('business_id', user.business_id);
-            const userList = businessUsers ? businessUsers.map(u => u.username).join(', ') : user.username;
-
-            const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-            showResult('success', '🎉', 
-                `<strong>License Verified!</strong><br><br>
-                <strong>Plan:</strong> ${planNames[license.plan] || license.plan}<br>
-                <strong>Business Users:</strong> ${userList}<br>
-                <strong>Expires:</strong> ${expiresAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
-                <strong>Status:</strong> Active ✅<br><br>
-                <a href="shop.html" style="color:#3b82f6;font-weight:600;">Go to Login →</a>`
-            );
-
-        } catch (error) {
-            console.error('Error:', error);
-            showResult('error', '❌', 'Error: ' + error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Activate License';
+            return false;
         }
-    }
 
-    function showResult(type, icon, message) {
-        const resultDiv = document.getElementById('result');
-        resultDiv.className = 'result ' + type;
-        resultDiv.innerHTML = `<div class="result-icon">${icon}</div><div>${message}</div>`;
-        resultDiv.style.display = 'block';
-    }
+        // ============ LOAD BUSINESS INFO ============
+        async function loadBusinessInfo(businessId = null) {
+            const client = getSB();
+            if (!client) return;
 
-    loadBusinessInfo();
-    const { email } = getUrlParams();
-    if (email) setTimeout(() => verifyPayment(), 500);
-</script>
+            const idToUse = businessId || localStorage.getItem('businessId');
+            
+            if (!idToUse) return;
+
+            const { data, error } = await client
+                .from('business_info')
+                .select('*')
+                .eq('id', idToUse)
+                .maybeSingle();
+
+            if (error || !data) {
+                const { data: fallback } = await client.from('business_info').select('*').limit(1).maybeSingle();
+                if (fallback) {
+                    displayBusinessInfo(fallback);
+                }
+                return;
+            }
+
+            displayBusinessInfo(data);
+            await updateLicenseBadge(client, data.id);
+            
+            // Language handling
+            let backendLanguage = data.language || null;
+            
+            if (!backendLanguage) {
+                const { data: langData } = await client
+                    .from('business_info')
+                    .select('language')
+                    .eq('id', idToUse)
+                    .maybeSingle();
+                
+                if (langData && langData.language) {
+                    backendLanguage = langData.language;
+                }
+            }
+            
+            if (!backendLanguage) {
+                const savedBiz = localStorage.getItem('businessInfo');
+                if (savedBiz) {
+                    try {
+                        const biz = JSON.parse(savedBiz);
+                        backendLanguage = biz.language || biz.currentLanguage || null;
+                    } catch (e) {}
+                }
+            }
+            
+            const userLanguage = localStorage.getItem('language');
+            const systemLanguage = localStorage.getItem('systemLanguage');
+            currentLanguage = backendLanguage || userLanguage || systemLanguage || 'en';
+            
+            console.log('🌐 Final resolved language:', currentLanguage);
+            localStorage.setItem('language', currentLanguage);
+            localStorage.setItem('businessInfo', JSON.stringify(data));
+            
+            const languageSelector = document.getElementById('languageSelector');
+            if (languageSelector) {
+                languageSelector.value = currentLanguage;
+            }
+            
+            if (typeof translateUI === 'function') {
+                setTimeout(() => {
+                    translateUI();
+                    console.log('✅ UI translated to:', currentLanguage);
+                }, 100);
+            }
+        }
+
+        function displayBusinessInfo(data) {
+            const bizName = document.getElementById('bizName');
+            const bizEmail = document.getElementById('bizEmail');
+            const bizLogo = document.getElementById('bizLogo');
+            
+            if (bizName) bizName.textContent = data.name || translate('app_name') || 'StockApp*';
+            if (bizEmail) bizEmail.textContent = data.email || translate('license_portal') || 'License Portal';
+            if (bizLogo && data.logo_url) bizLogo.src = data.logo_url;
+            
+            localStorage.setItem('businessId', data.id);
+            localStorage.setItem('businessInfo', JSON.stringify(data));
+        }
+
+        // ============ UPDATE LICENSE BADGE ============
+        async function updateLicenseBadge(client, businessId) {
+            const badge = document.getElementById('currentPlanBadge');
+            if (!badge) return;
+            
+            console.log('🔄 Updating license badge for business:', businessId);
+            
+            const { data: license } = await client
+                .from('licenses')
+                .select('*')
+                .eq('business_id', businessId)
+                .or('status.eq.active,status.eq.trial')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (license) {
+                const now = new Date();
+                const expiresAt = new Date(license.expires_at);
+                const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                
+                const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+                const planName = planNames[license.plan] || license.plan;
+                
+                if (license.status === 'trial') {
+                    badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
+                    badge.style.background = '#fef3c7';
+                    badge.style.color = '#92400e';
+                    badge.style.border = '1px solid #f59e0b';
+                } else if (license.status === 'active') {
+                    badge.textContent = `✅ ${planName} ${translate('active_label') || 'Active'}`;
+                    badge.style.background = '#f0fdf4';
+                    badge.style.color = '#166534';
+                    badge.style.border = '1px solid #22c55e';
+                }
+                
+                localStorage.setItem('licensePlan', license.plan);
+                localStorage.setItem('licenseStatus', license.status);
+                localStorage.setItem('licenseExpires', license.expires_at);
+                localStorage.setItem('licenseDaysLeft', daysLeft);
+                
+                console.log('✅ Badge updated to:', badge.textContent);
+            } else {
+                const { data: biz } = await client
+                    .from('business_info')
+                    .select('license_plan, license_status, license_expires_at')
+                    .eq('id', businessId)
+                    .maybeSingle();
+                    
+                if (biz && (biz.license_status === 'active' || biz.license_status === 'trial')) {
+                    const now = new Date();
+                    const expiresAt = new Date(biz.license_expires_at);
+                    const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                    
+                    const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+                    const planName = planNames[biz.license_plan] || biz.license_plan;
+                    
+                    if (biz.license_status === 'trial') {
+                        badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
+                        badge.style.background = '#fef3c7';
+                        badge.style.color = '#92400e';
+                    } else {
+                        badge.textContent = `✅ ${planName} ${translate('active_label') || 'Active'}`;
+                        badge.style.background = '#f0fdf4';
+                        badge.style.color = '#166534';
+                    }
+                } else {
+                    badge.textContent = `🔒 ${translate('no_license_label') || 'No License'}`;
+                    badge.style.background = '#fee2e2';
+                    badge.style.color = '#991b1b';
+                }
+            }
+        }
+
+        // ============ VERIFY PAYMENT ============
+        async function verifyPayment() {
+            const email = document.getElementById('emailInput').value.trim();
+            const btn = document.getElementById('verifyBtn');
+            const resultDiv = document.getElementById('result');
+
+            if (!email || !email.includes('@')) {
+                showResult('error', 'fa-circle-exclamation', translate('valid_email_required') || 'Please enter a valid business email');
+                return;
+            }
+
+            btn.disabled = true;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ${translate('validating_text') || 'Validating...'}`;
+            resultDiv.classList.add('hidden');
+
+            try {
+                const client = getSB();
+                if (!client) throw new Error(translate('db_connection_error') || 'Could not connect to database.');
+
+                const { data: user, error: userError } = await client
+                    .from('users')
+                    .select('id, username, business_id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (userError) throw userError;
+
+                if (!user || !user.business_id) {
+                    showResult('error', 'fa-user-xmark', 
+                        `<h4 class="font-bold text-red-800">${translate('account_not_found_title') || 'Account Not Found'}</h4>
+                         <p class="text-sm text-red-700 mt-1">${(translate('account_not_found_message') || 'No registration found for <strong>{email}</strong>.').replace('{email}', email)} <a href="setup.html" class="underline font-semibold">${translate('setup_business_btn') || 'Setup business'}</a></p>`);
+                    return;
+                }
+
+                const { data: license, error: licError } = await client
+                    .from('licenses')
+                    .select('*')
+                    .eq('business_id', user.business_id)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (licError) throw licError;
+
+                if (!license) {
+                    showResult('error', 'fa-credit-card', 
+                        `<h4 class="font-bold text-red-800">${translate('no_active_payment_title') || 'No Active Payment'}</h4>
+                         <p class="text-sm text-red-700 mt-1">${translate('no_active_payment_message') || 'Payment verification failed. Please complete your purchase on Selar first.'}</p>
+                         <a href="pricing.html" class="inline-block mt-3 text-sm font-semibold text-blue-600 underline">${translate('view_pricing_plans') || 'View Pricing Plans →'}</a>`);
+                    return;
+                }
+
+                const expiresAt = new Date(license.expires_at);
+                const now = new Date();
+                
+                if (expiresAt < now) {
+                    showResult('warning', 'fa-clock-rotate-left', 
+                        `<h4 class="font-bold text-amber-800">${translate('license_expired_title') || 'License Expired'}</h4>
+                         <p class="text-sm text-amber-700 mt-1">${(translate('license_expired_message') || 'Your <strong>{plan}</strong> plan expired on {date}').replace('{plan}', license.plan).replace('{date}', expiresAt.toLocaleDateString())}</p>
+                         <a href="pricing.html" class="inline-block mt-3 text-sm font-semibold text-amber-700 underline">${translate('renew_now') || 'Renew Now →'}</a>`);
+                    return;
+                }
+
+                // SUCCESS
+                const planMap = { starter: translate('starter_plan') || 'Starter', professional: translate('professional_plan') || 'Professional', business: translate('business_plan') || 'Business' };
+                localStorage.setItem('licensePlan', license.plan);
+                localStorage.setItem('licenseStatus', license.status);
+                localStorage.setItem('licenseExpires', license.expires_at);
+
+                if (client && currentBusinessId) {
+                    await updateLicenseBadge(client, currentBusinessId);
+                }
+
+                showResult('success', 'fa-circle-check', 
+                    `<div class="text-center">
+                        <h4 class="font-bold text-emerald-800 text-lg">${translate('activation_successful_title') || 'Activation Successful!'}</h4>
+                        <div class="my-3 py-3 border-y border-emerald-100 flex flex-col gap-1 text-sm text-emerald-700">
+                            <p>${translate('plan_label') || 'Plan'}: <strong>${planMap[license.plan] || license.plan}</strong></p>
+                            <p>${translate('expires_label') || 'Expires'}: <strong>${expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+                        </div>
+                        <p class="text-emerald-600 text-sm">${translate('redirecting_to_shop') || 'Redirecting to shop...'}</p>
+                    </div>`);
+
+                if (redirectTimeout) clearTimeout(redirectTimeout);
+                redirectTimeout = setTimeout(() => {
+                    window.location.href = 'shop.html';
+                }, 2500);
+
+            } catch (err) {
+                console.error(err);
+                showResult('error', 'fa-triangle-exclamation', `${translate('system_error') || 'System Error'}: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+
+        function showResult(type, icon, html) {
+            const div = document.getElementById('result');
+            div.classList.remove('hidden', 'bg-emerald-50', 'bg-red-50', 'bg-amber-50', 'border-emerald-200', 'border-red-200', 'border-amber-200');
+            
+            const styles = {
+                success: 'bg-emerald-50 border border-emerald-200 text-emerald-900',
+                error: 'bg-red-50 border border-red-200 text-red-900',
+                warning: 'bg-amber-50 border border-amber-200 text-amber-900'
+            };
+
+            div.className = `mt-6 p-5 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-300 ${styles[type]}`;
+            div.innerHTML = `
+                <div class="flex gap-4">
+                    <i class="fas ${icon} text-2xl mt-0.5 opacity-80"></i>
+                    <div class="flex-1">${html}</div>
+                </div>
+            `;
+            div.classList.remove('hidden');
+            
+            // Scroll to result
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ============ TRANSLATION UI ============
+        function translateUI() {
+            if (!translations || !translations[currentLanguage]) {
+                console.error("Translations not loaded for language:", currentLanguage);
+                return;
+            }
+
+            document.querySelectorAll("[data-translate]").forEach(el => {
+                const key = el.getAttribute("data-translate");
+                const translatedText = translate(key);
+                
+                if (translatedText && translatedText !== key) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.value = translatedText;
+                    } else if (el.tagName === 'OPTION') {
+                        el.textContent = translatedText;
+                    } else {
+                        el.textContent = translatedText;
+                    }
+                }
+            });
+
+            document.querySelectorAll("[data-translate-placeholder]").forEach(el => {
+                const key = el.getAttribute("data-translate-placeholder");
+                const translatedText = translate(key);
+                if (translatedText && translatedText !== key) {
+                    el.setAttribute("placeholder", translatedText);
+                }
+            });
+        }
+
+        // ============ INIT ============
+        async function initPage() {
+            const loader = document.getElementById('loaderOverlay');
+            const main = document.getElementById('mainContent');
+            const { email } = getUrlParams();
+            
+            await checkAuthentication();
+            
+            setTimeout(() => {
+                if (loader) {
+                    loader.style.opacity = '0';
+                    loader.style.visibility = 'hidden';
+                }
+                
+                if (main) {
+                    main.classList.remove('opacity-0', 'translate-y-4');
+                    main.classList.add('opacity-100', 'translate-y-0');
+                    main.style.opacity = '1';
+                    main.style.pointerEvents = 'auto';
+                }
+
+                if (email) {
+                    const emailInput = document.getElementById('emailInput');
+                    if (emailInput) {
+                        emailInput.value = decodeURIComponent(email);
+                        setTimeout(() => verifyPayment(), 800);
+                    }
+                }
+            }, 1200);
+        }
+
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                fullname: params.get('fullname') || '',
+                email: params.get('email') || ''
+            };
+        }
+
+        window.onload = initPage;
+    </script>
 </body>
 </html>
