@@ -386,7 +386,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         // ============================================
         // GLOBAL VARIABLES & INITIALIZATION
         // ============================================
@@ -399,6 +399,7 @@
         let businessInfo = null;
         let currentUser = null;
         let currentLanguage = 'en';
+        let currentBusinessId = null;
         
         // ============================================
         // UTILITY FUNCTIONS
@@ -413,8 +414,11 @@
             return null;
         }
         
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA';
+        function formatCurrency(amount, currency = 'XAF') {
+            if (currency === 'XAF' || currency === 'CFA' || currency === 'FCFA') {
+                return new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA';
+            }
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(amount || 0);
         }
         
         function safeSetText(elementId, text) {
@@ -427,22 +431,7 @@
             return false;
         }
         
-        function getCurrentUser() {
-            if (currentUser) return currentUser;
-            const saved = localStorage.getItem('currentUser');
-            if (saved) {
-                try {
-                    currentUser = JSON.parse(saved);
-                    return currentUser;
-                } catch (e) {
-                    console.warn('Error parsing currentUser from localStorage');
-                }
-            }
-            return null;
-        }
-        
         function translate(key) {
-            // Simple translation function - extend as needed
             const translations = {
                 'receiptInvoice': 'RECEIPT • INVOICE',
                 'scanToVerify': 'Scan to verify',
@@ -459,8 +448,8 @@
                 'tax': 'Tax:',
                 'total': 'Total:',
                 'thankYou': 'Thank you for your business!',
-                'pleaseComeAgain': ' Please Come Again',
-                'computerGenerated': ' This is a computer-generated document.',
+                'pleaseComeAgain': 'Please Come Again',
+                'computerGenerated': 'This is a computer-generated document.',
                 'doneEditing': 'Done Editing',
                 'saveChanges': 'Save Changes',
                 'printReceipt': 'Print Receipt',
@@ -504,24 +493,17 @@
             return paymentTypes[type] || type;
         }
         
-        function formatDateWithDay(dateObj) {
-            if (!dateObj || isNaN(dateObj.getTime())) return '';
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            return dateObj.toLocaleDateString('en-US', options);
-        }
-        
         function showMessageModal(message) {
-            alert(message); // Replace with your actual modal implementation
+            alert(message);
         }
         
-        function closeReceiptModal() {
+           function closeReceiptModal() {
             const modal = document.getElementById('receiptModal');
             if (modal) modal.classList.add('hidden');
               window.location.href = 'https://www.stocksalesapp.store/myshop/';
         }
         
         function setupReceiptModal() {
-            // Add event listeners for modal buttons if needed
             const printBtn = document.getElementById('printReceiptBtn');
             if (printBtn) {
                 printBtn.onclick = function() {
@@ -532,115 +514,176 @@
             const downloadPdfBtn = document.getElementById('downloadPdfBtn');
             if (downloadPdfBtn) {
                 downloadPdfBtn.onclick = function() {
-                    // PDF download logic here
                     alert('PDF download functionality to be implemented');
                 };
             }
         }
         
-        function closeCalculator() {
-            // Placeholder for calculator closing logic
-        }
+        function closeCalculator() {}
         
-        function loadBusinessInfo() {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    // Try to get from localStorage first
-                    const savedBusinessInfo = localStorage.getItem('businessInfo');
-                    if (savedBusinessInfo) {
-                        try {
-                            businessInfo = JSON.parse(savedBusinessInfo);
-                            if (businessInfo.id) {
-                                localStorage.setItem('businessId', businessInfo.id);
-                                resolve(businessInfo);
-                                return;
-                            }
-                        } catch (parseError) {
-                            console.warn('Error parsing saved business info');
-                        }
-                    }
-                    
-                    // Try to fetch from Supabase
-                    const client = getSB();
-                    if (client) {
-                        const businessId = localStorage.getItem('businessId') || null;
-                        let query = client.from('business_info').select('*');
-                        if (businessId) {
-                            query = query.eq('id', businessId);
-                        }
-                        
-                        const { data, error } = await query.limit(1).maybeSingle();
-                        
-                        if (!error && data) {
-                            businessInfo = {
-                                id: data.id,
-                                name: data.name || '',
-                                address: data.address || '',
-                                shopNumber: data.shop_number || data.phone || '',
-                                phoneNumberTwo: data.phone_number_two || '',
-                                email: data.email || '',
-                                Website: data.website || '',
-                                socialMediaHandles: data.social_media_handles || '',
-                                details: data.details || '',
-                                logoData: data.logo_url || '',
-                                logo_url: data.logo_url || '',
-                                warrantyDuration: data.warranty_duration || 0,
-                                warrantyUnit: data.warranty_unit || 'days',
-                                warrantyText: data.warranty_text || '',
-                                currency: data.currency || 'XAF',
-                                fontStyle: data.font_style || 'default',
-                                currentLanguage: data.language || 'en',
-                                festiveBadgeEnabled: data.festive_badge_enabled || false,
-                                currentBadgeIndex: data.current_badge_index || 0,
-                                ownerName: data.owner_name || '',
-                                setup_completed: data.setup_completed,
-                                created_at: data.created_at,
-                                updated_at: data.updated_at
-                            };
-                            
-                            localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
-                            if (businessInfo.id) localStorage.setItem('businessId', businessInfo.id);
-                            resolve(businessInfo);
-                            return;
-                        }
-                    }
-                    
-                    // Set default business info
-                    businessInfo = {
-                        name: '', address: '', shopNumber: '', phoneNumberTwo: '',
-                        email: '', Website: '', socialMediaHandles: '', details: '',
-                        logoData: '', warrantyDuration: 0, warrantyUnit: 'none',
-                        warrantyText: '', currency: 'XAF', fontStyle: '',
-                        currentLanguage: 'en', festiveBadgeEnabled: false, currentBadgeIndex: 0
-                    };
-                    localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
-                    resolve(businessInfo);
-                    
-                } catch (error) {
-                    console.error('Error loading business info:', error);
-                    businessInfo = {
-                        name: '', address: '', shopNumber: '', phoneNumberTwo: '',
-                        email: '', Website: '', socialMediaHandles: '', details: '',
-                        logoData: '', warrantyDuration: 0, warrantyUnit: 'none',
-                        warrantyText: '', currency: 'XAF', fontStyle: '',
-                        currentLanguage: 'en', festiveBadgeEnabled: false, currentBadgeIndex: 0
-                    };
-                    localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
-                    resolve(businessInfo);
-                }
-            });
-        }
+        // ============================================
+        // LOAD BUSINESS INFO BY BUSINESS ID
+        // ============================================
         
-        async function ensureBusinessInfoLoaded() {
-            try {
-                if (!businessInfo || !businessInfo.name) {
-                    await loadBusinessInfo();
-                }
-                return true;
-            } catch (error) {
-                console.error('Failed to load business info:', error);
-                return false;
+        async function loadBusinessInfoById(businessId) {
+            if (!businessId) {
+                console.warn('No business ID provided');
+                return null;
             }
+            
+            try {
+                const client = getSB();
+                if (!client) return null;
+                
+                console.log('🔍 Loading business info for ID:', businessId);
+                
+                const { data, error } = await client
+                    .from('business_info')
+                    .select('*')
+                    .eq('id', businessId)
+                    .maybeSingle();
+                
+                if (error) {
+                    console.error('Error loading business info:', error);
+                    return null;
+                }
+                
+                if (data) {
+                    businessInfo = {
+                        id: data.id,
+                        name: data.name || '',
+                        address: data.address || '',
+                        shopNumber: data.shop_number || data.phone || '',
+                        phoneNumberTwo: data.phone_number_two || '',
+                        email: data.email || '',
+                        Website: data.website || '',
+                        socialMediaHandles: data.social_media_handles || '',
+                        details: data.details || '',
+                        logoData: data.logo_url || '',
+                        logo_url: data.logo_url || '',
+                        warrantyDuration: data.warranty_duration || 0,
+                        warrantyUnit: data.warranty_unit || 'days',
+                        warrantyText: data.warranty_text || '',
+                        currency: data.currency || 'XAF',
+                        fontStyle: data.font_style || 'default',
+                        currentLanguage: data.language || 'en',
+                        festiveBadgeEnabled: data.festive_badge_enabled || false,
+                        currentBadgeIndex: data.current_badge_index || 0,
+                        ownerName: data.owner_name || '',
+                        setup_completed: data.setup_completed,
+                        created_at: data.created_at,
+                        updated_at: data.updated_at
+                    };
+                    
+                    currentBusinessId = businessId;
+                    localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
+                    localStorage.setItem('businessId', businessId);
+                    
+                    console.log('✅ Business info loaded:', businessInfo.name);
+                    return businessInfo;
+                }
+                
+                return null;
+                
+            } catch (error) {
+                console.error('Error in loadBusinessInfoById:', error);
+                return null;
+            }
+        }
+        
+        // ============================================
+        // LOAD RECEIPT FROM SALES/CUSTOMER_RECEIPTS
+        // ============================================
+        
+        async function loadReceiptFromSale(sale) {
+            // Extract business_id from the sale record
+            const businessId = sale.business_id;
+            
+            if (businessId) {
+                await loadBusinessInfoById(businessId);
+            } else {
+                // Fallback to default or localStorage
+                const savedBusinessInfo = localStorage.getItem('businessInfo');
+                if (savedBusinessInfo) {
+                    try {
+                        businessInfo = JSON.parse(savedBusinessInfo);
+                    } catch(e) {}
+                }
+            }
+            
+            // Parse items - handle different possible formats
+            let items = [];
+            if (sale.items && typeof sale.items === 'object') {
+                items = Array.isArray(sale.items) ? sale.items : [sale.items];
+            } else {
+                // Single item sale
+                items = [{
+                    name: sale.product_name || sale.productname || sale.name || 'Product',
+                    type: sale.type || 'product',
+                    quantity: sale.quantity || 1,
+                    price: sale.total_amount || sale.totalamount || sale.price || sale.unit_price || 0,
+                    taxRate: sale.tax_rate || 0,
+                    taxAmount: sale.tax_amount || 0,
+                    paymentType: sale.payment_type || sale.paymenttype || 'Cash'
+                }];
+            }
+            
+            const receiptData = {
+                receiptId: sale.receipt_id || sale.id,
+                id: sale.id,
+                date: sale.date_sold || sale.datesold || sale.created_at,
+                customerName: sale.customer_name || sale.customername || sale.customerName || '',
+                customerPhoneNumber: sale.customer_phone || '',
+                cashier: sale.username || sale.sold_by || '',
+                paymentTypeDisplay: sale.payment_type || sale.paymenttype || 'Cash',
+                items: items,
+                amountPaid: sale.amount_paid || sale.total_amount || sale.totalamount || 0,
+                balanceDue: sale.balance_due || 0,
+                advancePaymentAmount: sale.advance_payment || 0,
+                advancePaymentDate: sale.advance_payment_date || '',
+                business_id: businessId,
+                source: 'sales'
+            };
+            
+            await showReceiptFromData(receiptData);
+        }
+        
+        async function loadReceiptFromCustomerReceipt(receipt) {
+            // Extract business_id from the receipt record
+            const businessId = receipt.business_id;
+            
+            if (businessId) {
+                await loadBusinessInfoById(businessId);
+            }
+            
+            // Parse items JSON if needed
+            let items = receipt.items;
+            if (typeof items === 'string') {
+                try {
+                    items = JSON.parse(items);
+                } catch(e) {
+                    items = [];
+                }
+            }
+            
+            const receiptData = {
+                receiptId: receipt.receipt_id,
+                id: receipt.id,
+                date: receipt.date,
+                customerName: receipt.customer_name,
+                customerPhoneNumber: receipt.customer_phone,
+                cashier: receipt.cashier,
+                paymentTypeDisplay: receipt.payment_type_display,
+                items: items,
+                amountPaid: receipt.amount_paid,
+                balanceDue: receipt.balance_due,
+                advancePaymentAmount: receipt.advance_payment_amount,
+                advancePaymentDate: receipt.advance_payment_date,
+                business_id: businessId,
+                source: 'customer_receipts'
+            };
+            
+            await showReceiptFromData(receiptData);
         }
         
         // ============================================
@@ -651,17 +694,14 @@
             try {
                 console.log('showReceiptFromData called with data:', data);
                 
-                await ensureBusinessInfoLoaded();
                 setupReceiptModal();
                 closeCalculator();
                 
-                // Hide edit buttons initially
                 const saveBtn = document.getElementById('saveReceiptModificationsBtn');
                 const doneBtn = document.getElementById('doneEditingBtn');
                 if (saveBtn) saveBtn.classList.add('hidden');
                 if (doneBtn) doneBtn.classList.add('hidden');
                 
-                // Show modal
                 const receiptModal = document.getElementById('receiptModal');
                 if (!receiptModal) {
                     console.error('Receipt modal element not found');
@@ -670,20 +710,10 @@
                 }
                 receiptModal.classList.remove('hidden');
                 
-                // Handle customer phone number
+                // Customer phone number
                 const receiptCustomerPhoneNumber = document.getElementById('receiptCustomerPhoneNumber');
                 if (receiptCustomerPhoneNumber) {
-                    let phoneNumber = data.customerPhoneNumber || '';
-                    
-                    if (!phoneNumber && data.items && Array.isArray(data.items)) {
-                        for (const item of data.items) {
-                            if (item.customerPhoneNumber && item.customerPhoneNumber.trim()) {
-                                phoneNumber = item.customerPhoneNumber;
-                                break;
-                            }
-                        }
-                    }
-                    
+                    const phoneNumber = data.customerPhoneNumber || '';
                     if (phoneNumber) {
                         receiptCustomerPhoneNumber.textContent = `Customer Phone: ${phoneNumber}`;
                         receiptCustomerPhoneNumber.classList.remove('hidden');
@@ -692,16 +722,14 @@
                     }
                 }
                 
-                // Show footer sections
                 const receiptfooter = document.getElementById('receiptfooter');
                 const receiptfooter2 = document.getElementById('receiptfooter2');
                 if (receiptfooter) receiptfooter.classList.remove('hidden');
                 if (receiptfooter2) receiptfooter2.classList.remove('hidden');
                 
-                // Hide edit inputs
                 document.querySelectorAll('.receiptEditInput').forEach(el => el.classList.add('hidden'));
                 
-                // Set business info
+                // Business info
                 const receiptBusinessLogo = document.getElementById('receiptBusinessLogo');
                 if (receiptBusinessLogo) {
                     const logoUrl = businessInfo?.logo_url || businessInfo?.logoData || '';
@@ -713,28 +741,21 @@
                     }
                 }
                 
-                safeSetText('receiptBusinessName', businessInfo.name || translate('yourBusinessName'));
-                safeSetText('receiptBusinessAddress', businessInfo.address || '');
+                safeSetText('receiptBusinessName', businessInfo?.name || translate('yourBusinessName'));
+                safeSetText('receiptBusinessAddress', businessInfo?.address || '');
+                safeSetText('receiptCashierName', data.cashier || translate('theCashier'));
                 
-                // Set cashier
-                const cashierName = data.cashier || getCurrentUser()?.displayName || getCurrentUser()?.username || translate('theCashier');
-                safeSetText('receiptCashierName', cashierName);
-                
-                // Set contact info
                 let contactInfo = [];
-                if (businessInfo.shopNumber) contactInfo.push(`${translate('tel')}: ${businessInfo.shopNumber}`);
-                if (businessInfo.phoneNumberTwo) contactInfo.push(`${translate('tel2')}: ${businessInfo.phoneNumberTwo}`);
-                if (businessInfo.email) contactInfo.push(businessInfo.email);
-                if (businessInfo.Website) contactInfo.push(businessInfo.Website);
+                if (businessInfo?.shopNumber) contactInfo.push(`${translate('tel')}: ${businessInfo.shopNumber}`);
+                if (businessInfo?.phoneNumberTwo) contactInfo.push(`${translate('tel2')}: ${businessInfo.phoneNumberTwo}`);
+                if (businessInfo?.email) contactInfo.push(businessInfo.email);
+                if (businessInfo?.Website) contactInfo.push(businessInfo.Website);
                 safeSetText('receiptBusinessContact', contactInfo.join(' | '));
-                safeSetText('receiptBusinessSocial', businessInfo.socialMediaHandles || '');
-                safeSetText('receiptBusinessDetails', businessInfo.details || '');
-                
-                // Set receipt details
+                safeSetText('receiptBusinessSocial', businessInfo?.socialMediaHandles || '');
+                safeSetText('receiptBusinessDetails', businessInfo?.details || '');
                 safeSetText('receiptSaleId', data.receiptId || data.id || `receipt-${Date.now()}`);
                 
-                // Format date
-                let displayDate = data.date || data.dateSold;
+                let displayDate = data.date;
                 try {
                     if (displayDate) {
                         const dateObj = new Date(displayDate);
@@ -742,12 +763,10 @@
                             displayDate = dateObj.toLocaleDateString();
                         }
                     }
-                } catch (e) {
-                    console.warn('Error formatting date:', e);
-                }
+                } catch (e) {}
                 safeSetText('receiptDate', displayDate);
                 
-                // Set watermark
+                // Watermark
                 let watermarkElement = document.getElementById('receiptWatermark');
                 const printArea = document.getElementById('receiptPrintArea');
                 
@@ -774,12 +793,12 @@
                 // Build items table
                 let calculatedSubtotal = 0;
                 let calculatedTaxTotal = 0;
+                const currency = businessInfo?.currency || 'XAF';
                 
                 const receiptItemsTableBody = document.getElementById('receiptItemsTableBody');
                 if (receiptItemsTableBody) {
                     receiptItemsTableBody.innerHTML = '';
                     
-                    // Update table header
                     const tableHeader = document.querySelector('.receipt-table thead tr:first-child');
                     if (tableHeader) {
                         tableHeader.innerHTML = `
@@ -791,7 +810,6 @@
                         `;
                     }
                     
-                    // Add items
                     if (data.items && Array.isArray(data.items)) {
                         data.items.forEach((item, index) => {
                             const displayTotal = parseFloat(item.price) || parseFloat(item.total) || parseFloat(item.amount) || 0;
@@ -806,19 +824,17 @@
                             
                             const itemRow = document.createElement('tr');
                             itemRow.className = 'receipt-item-row';
-                            itemRow.dataset.taxRate = itemTaxRate;
                             itemRow.innerHTML = `
                                 <td class="px-4 py-2 text-sm" style="color: black;">${item.name || item.productName || 'Unknown Item'}</td>
                                 <td class="px-4 py-2 text-sm" style="color: black;">${item.type === 'service' ? translate('service') : translate('product')}</td>
                                 <td class="px-4 py-2 text-sm text-right" style="color: black;">${quantity}</td>
-                                <td class="px-4 py-2 text-sm text-right" style="color: black;">${formatCurrency(unitPrice)}</td>
-                                <td class="px-4 py-2 text-sm font-semibold text-right" style="color: black;">${formatCurrency(displayTotal)}</td>
+                                <td class="px-4 py-2 text-sm text-right" style="color: black;">${formatCurrency(unitPrice, currency)}</td>
+                                <td class="px-4 py-2 text-sm font-semibold text-right" style="color: black;">${formatCurrency(displayTotal, currency)}</td>
                             `;
                             receiptItemsTableBody.appendChild(itemRow);
                         });
                     }
                     
-                    // Add filler rows (total 13 rows)
                     const itemCount = data.items ? data.items.length : 0;
                     const remainingRows = Math.max(0, 13 - itemCount);
                     for (let i = 0; i < remainingRows; i++) {
@@ -833,40 +849,26 @@
                         receiptItemsTableBody.appendChild(tr);
                     }
                     
-                    // Set totals
                     const calculatedTotalAmount = calculatedSubtotal + calculatedTaxTotal;
-                    safeSetText('receiptSubtotal', formatCurrency(calculatedSubtotal));
-                    safeSetText('receiptTax', formatCurrency(calculatedTaxTotal));
-                    safeSetText('receiptTotalAmount', formatCurrency(calculatedTotalAmount));
+                    safeSetText('receiptSubtotal', formatCurrency(calculatedSubtotal, currency));
+                    safeSetText('receiptTax', formatCurrency(calculatedTaxTotal, currency));
+                    safeSetText('receiptTotalAmount', formatCurrency(calculatedTotalAmount, currency));
                 }
                 
-                // Set payment type
-                let paymentTypeDisplay = translatePaymentType('Cash');
-                if (data.items && data.items.length > 0) {
-                    const firstPaymentType = data.items[0]?.paymentType;
-                    const allSameType = data.items.every(item => item.paymentType === firstPaymentType);
-                    
-                    if (allSameType && firstPaymentType) {
-                        paymentTypeDisplay = translatePaymentType(firstPaymentType);
-                    } else if (data.items.length > 1) {
-                        paymentTypeDisplay = translate('mixedPayment');
-                    }
-                }
-                
+                // Payment type display
+                let paymentTypeDisplay = translatePaymentType(data.paymentTypeDisplay || 'Cash');
                 const paymentTypeDisplayElement = document.getElementById('receiptPaymentTypeDisplay');
                 if (paymentTypeDisplayElement) {
                     paymentTypeDisplayElement.textContent = paymentTypeDisplay;
                     paymentTypeDisplayElement.classList.remove('hidden');
                 }
                 
-                // Hide payment type input
                 const paymentTypeInput = document.getElementById('receiptPaymentTypeInput');
                 if (paymentTypeInput) {
                     paymentTypeInput.value = paymentTypeDisplay;
                     paymentTypeInput.classList.add('hidden');
                 }
                 
-                // Payment breakdown
                 const getSafeNumber = (value) => {
                     if (value === null || value === undefined || value === '' || isNaN(value)) return 0;
                     return parseFloat(value);
@@ -881,11 +883,10 @@
                     balanceDue = calculatedTotalAmount - amountPaid;
                 }
                 
-                safeSetText('receiptAdvanceValue', formatCurrency(advancePayment));
-                safeSetText('receiptAmountPaidValue', formatCurrency(amountPaid));
-                safeSetText('receiptBalanceValue', formatCurrency(balanceDue));
+                safeSetText('receiptAdvanceValue', formatCurrency(advancePayment, currency));
+                safeSetText('receiptAmountPaidValue', formatCurrency(amountPaid, currency));
+                safeSetText('receiptBalanceValue', formatCurrency(balanceDue, currency));
                 
-                // Show/hide payment sections
                 const receiptAdvancePayment = document.getElementById('receiptAdvancePayment');
                 const receiptAmountPaid = document.getElementById('receiptAmountPaid');
                 const receiptBalanceDue = document.getElementById('receiptBalanceDue');
@@ -896,13 +897,13 @@
                 if (receiptBalanceDue) receiptBalanceDue.classList.remove('hidden');
                 if (receiptAdvancePaymentDateElement) receiptAdvancePaymentDateElement.classList.add('hidden');
                 
-                // QR Code generation
+                // QR Code
                 try {
                     if (typeof QRious !== 'undefined') {
                         const qrImg = document.getElementById('receiptQRCode');
                         if (qrImg) {
                             const receiptId = data.receiptId || data.id || 'NEW-RCPT';
-                            const businessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'unknown';
+                            const businessId = data.business_id || currentBusinessId || 'unknown';
                             const baseUrl = window.location.origin + window.location.pathname;
                             const viewUrl = `${baseUrl}?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
                             
@@ -940,11 +941,9 @@
                     }
                 }
                 
-                // Hide customer input
                 const customerInput = document.getElementById('receiptCustomerNameInput');
                 if (customerInput) customerInput.classList.add('hidden');
                 
-                // Hide serial number input
                 const serialInput = document.getElementById('receiptSerialNumberInput');
                 if (serialInput) serialInput.classList.add('hidden');
                 
@@ -962,12 +961,10 @@
                         
                         let saleDate = new Date();
                         try {
-                            if (data.date || data.dateSold) {
-                                saleDate = new Date(data.date || data.dateSold);
+                            if (data.date) {
+                                saleDate = new Date(data.date);
                             }
-                        } catch (e) {
-                            console.warn('Error parsing receipt date for warranty:', e);
-                        }
+                        } catch (e) {}
                         
                         let expires = new Date(saleDate);
                         const duration = businessInfo.warrantyDuration;
@@ -1014,14 +1011,21 @@
                 const client = getSB();
                 if (!client) throw new Error('No database connection');
                 
+                // Store businessId from URL if provided
+                if (businessId) {
+                    currentBusinessId = businessId;
+                }
+                
                 // Search customer_receipts first
                 let query = client.from('customer_receipts').select('*').eq('receipt_id', receiptId);
                 if (businessId) query = query.eq('business_id', businessId);
                 
-                const { data: customReceipt } = await query.maybeSingle();
+                const { data: customReceipt, error: receiptError } = await query.maybeSingle();
                 
                 if (customReceipt) {
-                    await showReceiptFromData(customReceipt);
+                    await loadReceiptFromCustomerReceipt(customReceipt);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
                     return;
                 }
                 
@@ -1029,48 +1033,28 @@
                 let salesQuery = client.from('sales').select('*').eq('receipt_id', receiptId);
                 if (businessId) salesQuery = salesQuery.eq('business_id', businessId);
                 
-                const { data: salesData } = await salesQuery.order('created_at', { ascending: true });
+                const { data: salesData, error: salesError } = await salesQuery.order('created_at', { ascending: true });
                 
                 if (salesData && salesData.length > 0) {
-                    const data = {
-                        receipt_id: receiptId,
-                        date: salesData[0].date_sold,
-                        customer_name: salesData[0].customer_name || '',
-                        cashier: salesData[0].username || '',
-                        payment_type_display: salesData[0].payment_type || 'Cash',
-                        items: salesData.map(s => ({
-                            name: s.product_name || '',
-                            type: s.type || 'product',
-                            quantity: s.quantity || 1,
-                            price: s.total_amount || s.price || 0
-                        })),
-                        amount_paid: salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0),
-                        source: 'sales'
-                    };
-                    await showReceiptFromData(data);
+                    // Group by business_id if multiple
+                    const firstSale = salesData[0];
+                    await loadReceiptFromSale(firstSale);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
                     return;
                 }
                 
-                // Search sales by UUID
-                const { data: singleSale } = await client.from('sales').select('*').eq('id', receiptId).maybeSingle();
+                // Search sales by ID (UUID)
+                const { data: singleSale, error: singleError } = await client
+                    .from('sales')
+                    .select('*')
+                    .eq('id', receiptId)
+                    .maybeSingle();
                 
                 if (singleSale) {
-                    const data = {
-                        receipt_id: singleSale.id,
-                        date: singleSale.date_sold,
-                        customer_name: singleSale.customer_name || '',
-                        cashier: singleSale.username || '',
-                        payment_type_display: singleSale.payment_type || 'Cash',
-                        items: [{
-                            name: singleSale.product_name || '',
-                            type: singleSale.type || 'product',
-                            quantity: singleSale.quantity || 1,
-                            price: singleSale.total_amount || singleSale.price || 0
-                        }],
-                        amount_paid: singleSale.total_amount || singleSale.price || 0,
-                        source: 'sales'
-                    };
-                    await showReceiptFromData(data);
+                    await loadReceiptFromSale(singleSale);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
                     return;
                 }
                 

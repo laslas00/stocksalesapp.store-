@@ -413,40 +413,51 @@
             document.body.appendChild(overlay);
         }
 
-        // ============ CHECK EXISTING LICENSE WITH DELAYED REDIRECT ============
+        // ============ CHECK EXISTING LICENSE FROM BUSINESS_INFO ============
         async function checkExistingLicense() {
             if (!currentBusinessId) return false;
 
             const client = getSB();
             if (!client) return false;
 
-            const { data: license } = await client
-                .from('licenses')
-                .select('*')
-                .eq('business_id', currentBusinessId)
-                .or('status.eq.active,status.eq.trial')
-                .order('created_at', { ascending: false })
-                .limit(1)
+            // Check business_info table for license (licenses table is DEPRECATED)
+            const { data: bizInfo, error } = await client
+                .from('business_info')
+                .select('license_plan, license_status, license_expires_at, license_activated_at')
+                .eq('id', currentBusinessId)
                 .maybeSingle();
 
-            if (license) {
+            if (error) {
+                console.error('Error checking business_info license:', error);
+                return false;
+            }
+
+            // Check if license exists and is active or trial
+            const hasValidStatus = bizInfo && (bizInfo.license_status === 'active' || bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing');
+            
+            if (bizInfo && bizInfo.license_plan && hasValidStatus) {
                 const now = new Date();
-                const expiresAt = new Date(license.expires_at);
+                const expiresAt = bizInfo.license_expires_at ? new Date(bizInfo.license_expires_at) : null;
                 
-                if (expiresAt > now && (license.status === 'active' || license.status === 'trial')) {
-                    console.log('✅ Valid license found! Updating badge...');
+                // If no expiry date, treat as valid
+                if (!expiresAt || expiresAt > now) {
+                    console.log('✅ Valid license found in business_info! Updating badge...');
                     
                     // Update the badge first
                     await updateLicenseBadge(client, currentBusinessId);
                     
                     // Show success message before redirect
                     const planMap = { starter: 'Starter', professional: 'Professional', business: 'Business' };
+                    const planName = planMap[bizInfo.license_plan] || bizInfo.license_plan;
+                    const expiryText = expiresAt ? expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Never';
+                    const statusText = bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing' ? 'Trial' : 'Active';
+                    
                     showResult('success', 'fa-circle-check', 
                         `<div class="text-center">
                             <h4 class="font-bold text-emerald-800 text-lg">${translate('license_already_active') || 'License Already Active!'}</h4>
                             <div class="my-3 py-3 border-y border-emerald-100 flex flex-col gap-1 text-sm text-emerald-700">
-                                <p>${translate('plan_label') || 'Plan'}: <strong>${planMap[license.plan] || license.plan}</strong></p>
-                                <p>${translate('expires_label') || 'Expires'}: <strong>${expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+                                <p>${translate('plan_label') || 'Plan'}: <strong>${planName} (${statusText})</strong></p>
+                                <p>${translate('expires_label') || 'Expires'}: <strong>${expiryText}</strong></p>
                             </div>
                             <p class="text-emerald-600 text-sm">${translate('redirecting_to_shop') || 'Redirecting to shop...'}</p>
                         </div>`);
@@ -454,11 +465,17 @@
                     // Clear any existing timeout
                     if (redirectTimeout) clearTimeout(redirectTimeout);
                     
-                    // Redirect after 2.5 seconds so user can see the badge
+                    // Redirect after 5.5 seconds so user can see the badge
                     redirectTimeout = setTimeout(() => {
                         window.location.href = 'shop.html';
                     }, 5500);
                     return true;
+                } else if (expiresAt && expiresAt < now) {
+                    console.log('⚠️ License expired in business_info');
+                    // Optionally update status to expired
+                    await client.from('business_info')
+                        .update({ license_status: 'expired' })
+                        .eq('id', currentBusinessId);
                 }
             }
             return false;
@@ -549,77 +566,82 @@
             localStorage.setItem('businessInfo', JSON.stringify(data));
         }
 
-        // ============ UPDATE LICENSE BADGE ============
+        // ============ UPDATE LICENSE BADGE FROM BUSINESS_INFO ============
         async function updateLicenseBadge(client, businessId) {
             const badge = document.getElementById('currentPlanBadge');
             if (!badge) return;
             
-            console.log('🔄 Updating license badge for business:', businessId);
+            console.log('🔄 Updating license badge from business_info for business:', businessId);
             
-            const { data: license } = await client
-                .from('licenses')
-                .select('*')
-                .eq('business_id', businessId)
-                .or('status.eq.active,status.eq.trial')
-                .order('created_at', { ascending: false })
-                .limit(1)
+            // Query business_info table directly (licenses table is DEPRECATED)
+            const { data: bizInfo, error } = await client
+                .from('business_info')
+                .select('license_plan, license_status, license_expires_at')
+                .eq('id', businessId)
                 .maybeSingle();
 
-            if (license) {
+            if (error) {
+                console.error('Error fetching license from business_info:', error);
+                badge.textContent = `🔒 ${translate('no_license_label') || 'No License'}`;
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+                badge.style.border = '1px solid #ef4444';
+                return;
+            }
+
+            if (bizInfo && bizInfo.license_plan && (bizInfo.license_status === 'active' || bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing')) {
                 const now = new Date();
-                const expiresAt = new Date(license.expires_at);
-                const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                const expiresAt = bizInfo.license_expires_at ? new Date(bizInfo.license_expires_at) : null;
+                let daysLeft = 0;
+                
+                if (expiresAt) {
+                    daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                    daysLeft = Math.max(0, daysLeft);
+                }
                 
                 const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-                const planName = planNames[license.plan] || license.plan;
+                const planName = planNames[bizInfo.license_plan] || bizInfo.license_plan;
+                const isTrial = bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing';
                 
-                if (license.status === 'trial') {
+                if (isTrial) {
                     badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
                     badge.style.background = '#fef3c7';
                     badge.style.color = '#92400e';
                     badge.style.border = '1px solid #f59e0b';
-                } else if (license.status === 'active') {
+                } else if (bizInfo.license_status === 'active') {
                     badge.textContent = `✅ ${planName} ${translate('active_label') || 'Active'}`;
+                    badge.style.background = '#f0fdf4';
+                    badge.style.color = '#166534';
+                    badge.style.border = '1px solid #22c55e';
+                } else {
+                    badge.textContent = `✅ ${planName}`;
                     badge.style.background = '#f0fdf4';
                     badge.style.color = '#166534';
                     badge.style.border = '1px solid #22c55e';
                 }
                 
-                localStorage.setItem('licensePlan', license.plan);
-                localStorage.setItem('licenseStatus', license.status);
-                localStorage.setItem('licenseExpires', license.expires_at);
+                // Store in localStorage
+                localStorage.setItem('licensePlan', bizInfo.license_plan);
+                localStorage.setItem('licenseStatus', bizInfo.license_status);
+                if (bizInfo.license_expires_at) localStorage.setItem('licenseExpires', bizInfo.license_expires_at);
                 localStorage.setItem('licenseDaysLeft', daysLeft);
                 
                 console.log('✅ Badge updated to:', badge.textContent);
+            } else if (bizInfo && bizInfo.license_status === 'expired') {
+                badge.textContent = `⚠️ ${translate('expired_label') || 'Expired'}`;
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+                badge.style.border = '1px solid #ef4444';
+            } else if (bizInfo && bizInfo.license_status === 'inactive') {
+                badge.textContent = `🔒 ${translate('inactive_label') || 'Inactive'}`;
+                badge.style.background = '#f1f5f9';
+                badge.style.color = '#475569';
+                badge.style.border = '1px solid #cbd5e1';
             } else {
-                const { data: biz } = await client
-                    .from('business_info')
-                    .select('license_plan, license_status, license_expires_at')
-                    .eq('id', businessId)
-                    .maybeSingle();
-                    
-                if (biz && (biz.license_status === 'active' || biz.license_status === 'trial')) {
-                    const now = new Date();
-                    const expiresAt = new Date(biz.license_expires_at);
-                    const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
-                    
-                    const planNames = { starter: 'Starter', professional: 'Professional', business: 'Business' };
-                    const planName = planNames[biz.license_plan] || biz.license_plan;
-                    
-                    if (biz.license_status === 'trial') {
-                        badge.textContent = `🕐 ${translate('trial_label') || 'Trial'} · ${daysLeft}d ${translate('left_label') || 'left'}`;
-                        badge.style.background = '#fef3c7';
-                        badge.style.color = '#92400e';
-                    } else {
-                        badge.textContent = `✅ ${planName} ${translate('active_label') || 'Active'}`;
-                        badge.style.background = '#f0fdf4';
-                        badge.style.color = '#166534';
-                    }
-                } else {
-                    badge.textContent = `🔒 ${translate('no_license_label') || 'No License'}`;
-                    badge.style.background = '#fee2e2';
-                    badge.style.color = '#991b1b';
-                }
+                badge.textContent = `🔒 ${translate('no_license_label') || 'No License'}`;
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+                badge.style.border = '1px solid #ef4444';
             }
         }
 
@@ -658,18 +680,18 @@
                     return;
                 }
 
-                const { data: license, error: licError } = await client
-                    .from('licenses')
-                    .select('*')
-                    .eq('business_id', user.business_id)
-                    .eq('status', 'active')
-                    .order('created_at', { ascending: false })
-                    .limit(1)
+                // Check business_info for active license (licenses table is DEPRECATED)
+                const { data: bizInfo, error: bizError } = await client
+                    .from('business_info')
+                    .select('license_plan, license_status, license_expires_at, license_activated_at')
+                    .eq('id', user.business_id)
                     .maybeSingle();
 
-                if (licError) throw licError;
+                if (bizError) throw bizError;
 
-                if (!license) {
+                const hasValidLicense = bizInfo && (bizInfo.license_status === 'active' || bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing');
+                
+                if (!bizInfo || !hasValidLicense) {
                     showResult('error', 'fa-credit-card', 
                         `<h4 class="font-bold text-red-800">${translate('no_active_payment_title') || 'No Active Payment'}</h4>
                          <p class="text-sm text-red-700 mt-1">${translate('no_active_payment_message') || 'Payment verification failed. Please complete your purchase on Selar first.'}</p>
@@ -677,22 +699,28 @@
                     return;
                 }
 
-                const expiresAt = new Date(license.expires_at);
-                const now = new Date();
-                
-                if (expiresAt < now) {
-                    showResult('warning', 'fa-clock-rotate-left', 
-                        `<h4 class="font-bold text-amber-800">${translate('license_expired_title') || 'License Expired'}</h4>
-                         <p class="text-sm text-amber-700 mt-1">${(translate('license_expired_message') || 'Your <strong>{plan}</strong> plan expired on {date}').replace('{plan}', license.plan).replace('{date}', expiresAt.toLocaleDateString())}</p>
-                         <a href="pricing.html" class="inline-block mt-3 text-sm font-semibold text-amber-700 underline">${translate('renew_now') || 'Renew Now →'}</a>`);
-                    return;
+                // Check if license is expired
+                if (bizInfo.license_expires_at) {
+                    const expiresAt = new Date(bizInfo.license_expires_at);
+                    const now = new Date();
+                    
+                    if (expiresAt < now) {
+                        showResult('warning', 'fa-clock-rotate-left', 
+                            `<h4 class="font-bold text-amber-800">${translate('license_expired_title') || 'License Expired'}</h4>
+                             <p class="text-sm text-amber-700 mt-1">${(translate('license_expired_message') || 'Your <strong>{plan}</strong> plan expired on {date}').replace('{plan}', bizInfo.license_plan).replace('{date}', expiresAt.toLocaleDateString())}</p>
+                             <a href="pricing.html" class="inline-block mt-3 text-sm font-semibold text-amber-700 underline">${translate('renew_now') || 'Renew Now →'}</a>`);
+                        return;
+                    }
                 }
 
                 // SUCCESS
                 const planMap = { starter: translate('starter_plan') || 'Starter', professional: translate('professional_plan') || 'Professional', business: translate('business_plan') || 'Business' };
-                localStorage.setItem('licensePlan', license.plan);
-                localStorage.setItem('licenseStatus', license.status);
-                localStorage.setItem('licenseExpires', license.expires_at);
+                const expiresAt = bizInfo.license_expires_at ? new Date(bizInfo.license_expires_at) : null;
+                const expiryText = expiresAt ? expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Never';
+                
+                localStorage.setItem('licensePlan', bizInfo.license_plan);
+                localStorage.setItem('licenseStatus', bizInfo.license_status);
+                if (bizInfo.license_expires_at) localStorage.setItem('licenseExpires', bizInfo.license_expires_at);
 
                 if (client && currentBusinessId) {
                     await updateLicenseBadge(client, currentBusinessId);
@@ -702,8 +730,8 @@
                     `<div class="text-center">
                         <h4 class="font-bold text-emerald-800 text-lg">${translate('activation_successful_title') || 'Activation Successful!'}</h4>
                         <div class="my-3 py-3 border-y border-emerald-100 flex flex-col gap-1 text-sm text-emerald-700">
-                            <p>${translate('plan_label') || 'Plan'}: <strong>${planMap[license.plan] || license.plan}</strong></p>
-                            <p>${translate('expires_label') || 'Expires'}: <strong>${expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+                            <p>${translate('plan_label') || 'Plan'}: <strong>${planMap[bizInfo.license_plan] || bizInfo.license_plan}</strong></p>
+                            <p>${translate('expires_label') || 'Expires'}: <strong>${expiryText}</strong></p>
                         </div>
                         <p class="text-emerald-600 text-sm">${translate('redirecting_to_shop') || 'Redirecting to shop...'}</p>
                     </div>`);

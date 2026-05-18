@@ -3,22 +3,22 @@
     'use strict';
 
     // Safe fixImagePath function that doesn't break if the original isn't available
-function safeFixImagePath(path) {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    if (path.startsWith('data:')) return path;
-    
-    // Supabase storage paths - convert to full URL
-    const SUPABASE_STORAGE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co/storage/v1/object/public';
-    
-    // If it's a Supabase storage path (logos/, photos/, images/, public/)
-    if (path.includes('logos/') || path.includes('photos/') || path.includes('images/') || path.includes('public/')) {
-        return `${SUPABASE_STORAGE_URL}/${path}`;
+    function safeFixImagePath(path) {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        if (path.startsWith('data:')) return path;
+        
+        // Supabase storage paths - convert to full URL
+        const SUPABASE_STORAGE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co/storage/v1/object/public';
+        
+        // If it's a Supabase storage path (logos/, photos/, images/, public/)
+        if (path.includes('logos/') || path.includes('photos/') || path.includes('images/') || path.includes('public/')) {
+            return `${SUPABASE_STORAGE_URL}/${path}`;
+        }
+        
+        // Local asset - return as-is
+        return path;
     }
-    
-    // Local asset - return as-is
-    return path;
-}
 
     // Sidebar configuration
     const sidebarConfig = {
@@ -81,7 +81,7 @@ function safeFixImagePath(path) {
                 </nav>
                 <a href="pricing.html" class="nav-link" id="plan-badge-link">
                     <i class="fas fa-crown"></i>
-                    <span id="current-plan-badge">Free Trial</span>
+                    <span id="current-plan-badge">Loading...</span>
                 </a>
                 <div class="sidebar-footer">
                     <div class="user-section" id="sidebar-user-section">
@@ -105,6 +105,116 @@ function safeFixImagePath(path) {
         `;
 
         return container;
+    }
+
+    /**
+     * Update plan badge from business_info (not licenses table)
+     */
+    async function updatePlanBadgeFromBusinessInfo() {
+        const planBadge = document.getElementById('current-plan-badge');
+        if (!planBadge) return;
+
+        // First check localStorage for cached license info
+        let licensePlan = localStorage.getItem('licensePlan');
+        let licenseStatus = localStorage.getItem('licenseStatus');
+        let licenseExpires = localStorage.getItem('licenseExpires');
+
+        // If we have cached data, use it immediately
+        if (licensePlan && licenseStatus) {
+            updateBadgeDisplay(planBadge, licensePlan, licenseStatus, licenseExpires);
+        }
+
+        // Then try to get fresh data from Supabase business_info
+        const client = getSB ? getSB() : null;
+        const businessId = localStorage.getItem('businessId');
+        
+        if (client && businessId) {
+            try {
+                // Query business_info table directly (licenses table is DEPRECATED)
+                const { data: bizInfo, error } = await client
+                    .from('business_info')
+                    .select('license_plan, license_status, license_expires_at')
+                    .eq('id', businessId)
+                    .maybeSingle();
+
+                if (!error && bizInfo) {
+                    // Update localStorage with fresh data
+                    localStorage.setItem('licensePlan', bizInfo.license_plan || 'trial');
+                    localStorage.setItem('licenseStatus', bizInfo.license_status || 'trial');
+                    if (bizInfo.license_expires_at) {
+                        localStorage.setItem('licenseExpires', bizInfo.license_expires_at);
+                    }
+                    
+                    // Update badge display
+                    updateBadgeDisplay(planBadge, bizInfo.license_plan, bizInfo.license_status, bizInfo.license_expires_at);
+                } else if (error) {
+                    console.warn('Error fetching license from business_info:', error);
+                    // Fallback to localStorage if already displayed
+                    if (!licensePlan) {
+                        planBadge.textContent = 'Free Trial';
+                        planBadge.style.color = '#f59e0b';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch business_info license:', err);
+            }
+        } else if (!licensePlan) {
+            // No license info available
+            planBadge.textContent = 'Free Trial';
+            planBadge.style.color = '#f59e0b';
+        }
+    }
+
+    /**
+     * Update badge display with plan and status
+     */
+    function updateBadgeDisplay(badgeElement, plan, status, expiresAt) {
+        if (!badgeElement) return;
+        
+        const planColors = {
+            starter: '#10b981',
+            professional: '#3b82f6',
+            business: '#8b5cf6',
+            trial: '#f59e0b'
+        };
+        
+        const planNames = {
+            starter: 'Starter',
+            professional: 'Pro',
+            business: 'Business',
+            trial: 'Trial'
+        };
+        
+        const displayPlan = planNames[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Trial');
+        const color = planColors[plan] || planColors.trial;
+        
+        if (status === 'trial' || status === 'trialing') {
+            let daysLeft = 7; // Default trial days
+            if (expiresAt) {
+                try {
+                    const expiryDate = new Date(expiresAt);
+                    const now = new Date();
+                    daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+                    daysLeft = Math.max(0, daysLeft);
+                } catch(e) {
+                    console.warn('Failed to parse expiry date:', e);
+                }
+            }
+            badgeElement.textContent = `Trial (${daysLeft}d left)`;
+            badgeElement.style.color = planColors.trial;
+        } else if (status === 'active') {
+            badgeElement.textContent = displayPlan;
+            badgeElement.style.color = color;
+        } else if (status === 'expired') {
+            badgeElement.textContent = 'Expired';
+            badgeElement.style.color = '#ef4444';
+        } else if (status === 'inactive') {
+            badgeElement.textContent = 'Inactive';
+            badgeElement.style.color = '#6b7280';
+        } else {
+            badgeElement.textContent = displayPlan;
+            badgeElement.style.color = color;
+        }
     }
 
     /**
@@ -174,7 +284,7 @@ function safeFixImagePath(path) {
             }
         });
 
-        // Setup logout button - FIXED: moved inside setupEventListeners
+        // Setup logout button
         const logoutBtn = document.getElementById('sidebar-logout-btn');
         if (logoutBtn) {
             logoutBtn.onclick = function(e) {
@@ -209,16 +319,16 @@ function safeFixImagePath(path) {
                         clearInterval(timerInterval);
                         // Perform the actual logout and reload
                         window.currentUser = null;
-                        currentUser = null;
+                        if (typeof currentUser !== 'undefined') window.currentUser = null;
                         localStorage.removeItem('rememberedUser');
                         localStorage.removeItem('userSession');
                         localStorage.removeItem('currentRole');
                         localStorage.removeItem('currentUsername');
-                            localStorage.removeItem('userSession');
-                        localStorage.removeItem('rememberedUser');
-                        localStorage.removeItem('currentUsername');
-                        localStorage.removeItem('currentRole');
                         localStorage.removeItem('currentUserId');
+                        localStorage.removeItem('licensePlan');
+                        localStorage.removeItem('licenseStatus');
+                        localStorage.removeItem('licenseExpires');
+                        localStorage.removeItem('licenseDaysLeft');
                         window.location.reload();
                     }
                 }, 1000);
@@ -227,6 +337,16 @@ function safeFixImagePath(path) {
 
         setupUserSectionClickHandler();
         updateUserDisplay();
+        
+        // Update plan badge from business_info
+        updatePlanBadgeFromBusinessInfo();
+        
+        // Also listen for visibility change to refresh badge when tab becomes active
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                updatePlanBadgeFromBusinessInfo();
+            }
+        });
     }
 
     // Helper function to create logout modal if it doesn't exist
@@ -355,29 +475,7 @@ function safeFixImagePath(path) {
         }
         
         userNameEl.textContent = userName;
-        // Update plan badge
-        const planBadge = document.getElementById('current-plan-badge');
-        if (planBadge) {
-            const plan = localStorage.getItem('licensePlan') || 'trial';
-            const status = localStorage.getItem('licenseStatus') || 'trial';
-            const expires = localStorage.getItem('licenseExpires');
-            
-            const planColors = {
-                starter: '#10b981',
-                professional: '#3b82f6',
-                business: '#8b5cf6',
-                trial: '#f59e0b'
-            };
-            
-            if (status === 'trial') {
-                const daysLeft = expires ? Math.ceil((new Date(expires) - new Date()) / (1000 * 60 * 60 * 24)) : 7;
-                planBadge.textContent = `Trial (${daysLeft}d left)`;
-                planBadge.style.color = planColors.trial;
-            } else {
-                planBadge.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-                planBadge.style.color = planColors[plan] || '#10b981';
-            }
-        }
+        
         const userRoleEl = document.getElementById('sidebar-user-role');
         if (userRoleEl && userRole) {
             const roleText = userRole === 'administrator' ? 'Admin' : (userRole === 'manager' ? 'Manager' : 'Sales Associate');
@@ -454,6 +552,7 @@ function safeFixImagePath(path) {
     window.setUserPhoto = setUserPhoto;
     window.updateCurrentUserInfo = updateCurrentUserInfo;
     window.updateSidebarUserDisplay = updateUserDisplay;
+    window.refreshPlanBadge = updatePlanBadgeFromBusinessInfo;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);

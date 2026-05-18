@@ -1,6 +1,12 @@
     const translations = {
 
     en: {
+                feature_weekly_report: "Weekly Sales Report",
+        feature_monthly_report: "Monthly Sales Report",
+        feature_welcome_email: "Welcome Email with Setup Guide",
+        feature_license_reminder: "License Renewal Reminders",
+        after_payment_instructions: "After completing payment on Selar, return to this page and click the verification button below to activate your license.",
+        thank_you_message: "Thank you for your purchase! Your license will be activated shortly.",
          business_email_website: "Business Email & Website",
         placeholder_website: "https://yourwebsite.com",
         email_taken_message: "This email is already registered. Please use a different email or login.",
@@ -4502,6 +4508,12 @@
 
     },
     fr: {
+         feature_weekly_report: "Rapport de ventes hebdomadaire",
+        feature_monthly_report: "Rapport de ventes mensuel",
+        feature_welcome_email: "Email de bienvenue avec guide d'installation",
+        feature_license_reminder: "Rappels de renouvellement de licence",
+        after_payment_instructions: "Après avoir effectué le paiement sur Selar, revenez sur cette page et cliquez sur le bouton de vérification ci-dessous pour activer votre licence.",
+        thank_you_message: "Merci pour votre achat ! Votre licence sera activée sous peu.",
         business_email_website: "Email professionnel et site web",
         placeholder_website: "https://votresiteweb.com",
         email_taken_message: "Cet email est déjà enregistré. Veuillez utiliser un email différent ou vous connecter.",
@@ -8947,6 +8959,12 @@
     }
     },
     ar: { 
+         feature_weekly_report: "تقرير المبيعات الأسبوعي",
+        feature_monthly_report: "تقرير المبيعات الشهري",
+        feature_welcome_email: "بريد ترحيبي مع دليل الإعداد",
+        feature_license_reminder: "تذكيرات تجديد الترخيص",
+        after_payment_instructions: "بعد إتمام الدفع على Selar، عد إلى هذه الصفحة وانقر على زر التحقق أدناه لتفعيل ترخيصك.",
+        thank_you_message: "شكراً لشرائك! سيتم تفعيل ترخيصك قريباً.",
          business_email_website: "البريد الإلكتروني التجاري والموقع الإلكتروني",
         placeholder_website: "https://mawqieks.com",
         email_taken_message: "هذا البريد الإلكتروني مسجل بالفعل. يرجى استخدام بريد إلكتروني مختلف أو تسجيل الدخول.",
@@ -13428,6 +13446,12 @@
 
     },
     es: {
+               feature_weekly_report: "Informe de ventas semanal",
+        feature_monthly_report: "Informe de ventas mensual",
+        feature_welcome_email: "Correo de bienvenida con guía de configuración",
+        feature_license_reminder: "Recordatorios de renovación de licencia",  
+        after_payment_instructions: "Después de completar el pago en Selar, regrese a esta página y haga clic en el botón de verificación a continuación para activar su licencia.",
+        thank_you_message: "¡Gracias por su compra! Su licencia se activará en breve.",
          business_email_website: "Correo electrónico y sitio web de la empresa",
         placeholder_website: "https://tusitioweb.com",
         email_taken_message: "Este correo electrónico ya está registrado. Por favor, use un correo diferente o inicie sesión.",
@@ -17237,6 +17261,12 @@ Website: "Sitio web",
 
     },
     zh: {
+        feature_weekly_report: "每周销售报告",
+        feature_monthly_report: "每月销售报告",
+        feature_welcome_email: "欢迎邮件及设置指南",
+        feature_license_reminder: "许可证续订提醒",
+        after_payment_instructions: "在Selar完成支付后，返回此页面并点击下方的验证按钮以激活您的许可证。",
+        thank_you_message: "感谢您的购买！您的许可证将很快激活。",
          business_email_website: "企业邮箱和网站",
         placeholder_website: "https://yourwebsite.com",
         email_taken_message: "此邮箱已注册。请使用其他邮箱或登录。",
@@ -21986,6 +22016,12 @@ Website: "Sitio web",
     exchanged: "已换货"
     },  
     sw :{
+         feature_weekly_report: "Ripoti ya Mauzo ya Wiki",
+        feature_monthly_report: "Ripoti ya Mauzo ya Mwezi",
+        feature_welcome_email: "Barua Pepe ya Karibu na Mwongozo wa Usanidi",
+        feature_license_reminder: "Vikumbusho vya Upyaji wa Leseni",
+        after_payment_instructions: "Baada ya kukamilisha malipo kwenye Selar, rudi kwenye ukurasa huu na ubonyeze kitufe cha uthibitishaji hapa chini kuwezesha leseni yako.",
+        thank_you_message: "Asante kwa ununuzi wako! Leseni yako itawezeshwa hivi karibuni.",
          business_email_website: "Barua Pepe ya Biashara na Tovuti",
         placeholder_website: "https://tovutiyako.com",
         email_taken_message: "Barua pepe hii tayari imesajiliwa. Tafadhali tumia barua pepe tofauti au ingia.",
@@ -25882,6 +25918,12 @@ Website: "Sitio web",
     error_text: "Hitilafu"
     },
     hi : {
+                feature_weekly_report: "साप्ताहिक बिक्री रिपोर्ट",
+        feature_monthly_report: "मासिक बिक्री रिपोर्ट",
+        feature_welcome_email: "सेटअप गाइड के साथ स्वागत ईमेल",
+        feature_license_reminder: "लाइसेंस नवीनीकरण अनुस्मारक",
+        after_payment_instructions: "Selar पर भुगतान पूरा करने के बाद, इस पृष्ठ पर वापस आएं और अपना लाइसेंस सक्रिय करने के लिए नीचे दिए गए सत्यापन बटन पर क्लिक करें।",
+        thank_you_message: "आपकी खरीदारी के लिए धन्यवाद! आपका लाइसेंस जल्द ही सक्रिय हो जाएगा।",
          business_email_website: "व्यवसाय ईमेल और वेबसाइट",
         placeholder_website: "https://aapkivebsite.com",
         email_taken_message: "यह ईमेल पहले से पंजीकृत है। कृपया एक अलग ईमेल का उपयोग करें या लॉगिन करें।",
@@ -29703,6 +29745,12 @@ Website: "Sitio web",
     error_text: "त्रुटि"
     },
     ms :{
+         feature_weekly_report: "Laporan Jualan Mingguan",
+        feature_monthly_report: "Laporan Jualan Bulanan",
+        feature_welcome_email: "E-mel Alu-aluan dengan Panduan Persediaan",
+        feature_license_reminder: "Peringatan Pembaharuan Lesen",
+        after_payment_instructions: "Selepas melengkapkan pembayaran di Selar, kembali ke halaman ini dan klik butang pengesahan di bawah untuk mengaktifkan lesen anda.",
+        thank_you_message: "Terima kasih atas pembelian anda! Lesen anda akan diaktifkan tidak lama lagi.",
          business_email_website: "E-mel Perniagaan & Laman Web",
         placeholder_website: "https://lamanwebanda.com",
         email_taken_message: "E-mel ini sudah berdaftar. Sila gunakan e-mel lain atau log masuk.",

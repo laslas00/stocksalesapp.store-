@@ -281,28 +281,15 @@ document.getElementById('loginBtn').onclick = async function() {
             return;
         }
 
-        // ========== STEP 7: LICENSE CHECK - FIXED VERSION ==========
+        // ========== STEP 7: LICENSE CHECK - NOW ONLY USES business_info ==========
         let licenseValid = false;
         let licenseData = null;
         let errorMessage = null;
 
         if (user.business_id) {
-            console.log('🔍 Checking license for business:', user.business_id);
+            console.log('🔍 Checking license from business_info for business:', user.business_id);
             
-            // FIRST: Check licenses table (most accurate)
-            const { data: licenseRows, error: licenseError } = await client
-                .from('licenses')
-                .select('*')
-                .eq('business_id', user.business_id)
-                .in('status', ['active', 'trial'])
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-            if (licenseError) {
-                console.error('License query error:', licenseError);
-            }
-
-            // SECOND: Check business_info table as fallback
+            // Check business_info table for license info (licenses table is DEPRECATED)
             const { data: bizInfo, error: bizError } = await client
                 .from('business_info')
                 .select('license_plan, license_status, license_expires_at, license_activated_at')
@@ -311,89 +298,96 @@ document.getElementById('loginBtn').onclick = async function() {
 
             if (bizError) {
                 console.error('Business info query error:', bizError);
-            }
-
-            // Determine which license data to use (prefer licenses table)
-            const activeLicense = licenseRows && licenseRows.length > 0 ? licenseRows[0] : null;
-            
-            if (activeLicense) {
-                licenseData = {
-                    plan: activeLicense.plan,
-                    status: activeLicense.status,
-                    expires_at: activeLicense.expires_at,
-                    activated_at: activeLicense.activated_at,
-                    source: 'licenses_table'
-                };
-                console.log('📋 Found license in licenses table:', licenseData);
-            } else if (bizInfo && (bizInfo.license_status === 'active' || bizInfo.license_status === 'trial')) {
-                licenseData = {
-                    plan: bizInfo.license_plan || 'starter',
-                    status: bizInfo.license_status,
-                    expires_at: bizInfo.license_expires_at,
-                    activated_at: bizInfo.license_activated_at,
-                    source: 'business_info_table'
-                };
-                console.log('📋 Found license in business_info table:', licenseData);
+                errorMessage = '❌ Database error checking license. Please try again.';
+            } else if (bizInfo) {
+                console.log('📋 Business info license data:', bizInfo);
+                
+                // Check if license exists and is active or trial
+                const hasValidStatus = bizInfo.license_status === 'active' || bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing';
+                
+                if (bizInfo.license_plan && hasValidStatus) {
+                    licenseData = {
+                        plan: bizInfo.license_plan,
+                        status: bizInfo.license_status,
+                        expires_at: bizInfo.license_expires_at,
+                        activated_at: bizInfo.license_activated_at,
+                        source: 'business_info_table'
+                    };
+                } else if (bizInfo.license_status === 'expired') {
+                    errorMessage = `⏰ <strong>License Expired</strong><br><br>
+                    Your license has expired.<br><br>
+                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
+                } else if (bizInfo.license_status === 'inactive') {
+                    errorMessage = `❌ <strong>License Inactive</strong><br><br>
+                    Your license is inactive. Please contact support.<br><br>
+                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">View plans →</a>`;
+                } else {
+                    errorMessage = `❌ <strong>No Active License Found</strong><br><br>
+                    Your business doesn't have an active license or subscription.<br><br>
+                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Purchase a plan to continue →</a>`;
+                }
             } else {
-                // No valid license found
-                errorMessage = `❌ <strong>No Active License Found</strong><br><br>
-                Your business doesn't have an active license or subscription.<br><br>
-                <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Purchase a plan to continue →</a>`;
+                // No business_info record found
+                errorMessage = `❌ <strong>Business Not Found</strong><br><br>
+                Your account is not properly configured. Please contact support.`;
             }
 
             // If we have license data, check if it's expired
             if (licenseData && !errorMessage) {
-                const expiresAt = new Date(licenseData.expires_at);
+                const expiresAt = licenseData.expires_at ? new Date(licenseData.expires_at) : null;
                 const now = new Date();
                 
-                console.log(`📅 License expires: ${expiresAt}`);
-                console.log(`📅 Current time: ${now}`);
-                
-                if (expiresAt < now) {
-                    // LICENSE IS EXPIRED - BLOCK LOGIN
-                    const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
-                    const expiryDate = expiresAt.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    });
+                if (expiresAt) {
+                    console.log(`📅 License expires: ${expiresAt}`);
+                    console.log(`📅 Current time: ${now}`);
                     
-                    errorMessage = `⏰ <strong>License Expired</strong><br><br>
-                    Your ${planName} ${licenseData.status === 'trial' ? 'trial' : 'plan'} expired on <strong>${expiryDate}</strong>.<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
-                    
-                    // Update status in database
-                    if (activeLicense) {
-                        await client.from('licenses')
-                            .update({ status: 'expired', updated_at: now.toISOString() })
-                            .eq('id', activeLicense.id);
+                    if (expiresAt < now) {
+                        // LICENSE IS EXPIRED - BLOCK LOGIN
+                        const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
+                        const expiryDate = expiresAt.toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                        
+                        errorMessage = `⏰ <strong>License Expired</strong><br><br>
+                        Your ${planName} ${licenseData.status === 'trial' ? 'trial' : 'plan'} expired on <strong>${expiryDate}</strong>.<br><br>
+                        <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
+                        
+                        // Update status in business_info
+                        await client.from('business_info')
+                            .update({ license_status: 'expired' })
+                            .eq('id', user.business_id);
+                    } else {
+                        // LICENSE IS VALID - ALLOW LOGIN
+                        licenseValid = true;
+                        const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                        const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
+                        
+                        console.log(`✅ LICENSE VALID: ${planName} | ${licenseData.status} | ${daysLeft} days remaining`);
+                        
+                        // Store license info in localStorage
+                        localStorage.setItem('licensePlan', licenseData.plan);
+                        localStorage.setItem('licenseStatus', licenseData.status);
+                        localStorage.setItem('licenseExpires', licenseData.expires_at);
+                        localStorage.setItem('licenseDaysLeft', daysLeft);
+                        
+                        // Show trial warning if less than 3 days left
+                        if ((licenseData.status === 'trial' || licenseData.status === 'trialing') && daysLeft <= 3) {
+                            setTimeout(() => {
+                                if (typeof showMessageModal === 'function') {
+                                    showMessageModal(`⚠️ Your free trial ends in ${daysLeft} day${daysLeft > 1 ? 's' : ''}! Upgrade to keep using the app.`);
+                                }
+                            }, 2000);
+                        }
                     }
-                    await client.from('business_info')
-                        .update({ license_status: 'expired' })
-                        .eq('id', user.business_id);
                 } else {
-                    // LICENSE IS VALID - ALLOW LOGIN
+                    // No expiry date - assume valid
                     licenseValid = true;
-                    const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
-                    const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
-                    
-                    console.log(`✅ LICENSE VALID: ${planName} | ${licenseData.status} | ${daysLeft} days remaining`);
-                    
-                    // Store license info in localStorage
+                    console.log(`✅ LICENSE VALID (no expiry): ${licenseData.plan}`);
                     localStorage.setItem('licensePlan', licenseData.plan);
                     localStorage.setItem('licenseStatus', licenseData.status);
-                    localStorage.setItem('licenseExpires', licenseData.expires_at);
-                    localStorage.setItem('licenseDaysLeft', daysLeft);
-                    
-                    // Show trial warning if less than 3 days left
-                    if (licenseData.status === 'trial' && daysLeft <= 3) {
-                        setTimeout(() => {
-                            if (typeof showMessageModal === 'function') {
-                                showMessageModal(`⚠️ Your free trial ends in ${daysLeft} day${daysLeft > 1 ? 's' : ''}! Upgrade to keep using the app.`);
-                            }
-                        }, 2000);
-                    }
                 }
             }
         } else {
@@ -418,7 +412,7 @@ document.getElementById('loginBtn').onclick = async function() {
         // Get business info for display
         const { data: businessInfo } = await client
             .from('business_info')
-            .select('name')
+            .select('name, language')
             .eq('id', user.business_id)
             .maybeSingle();
         
@@ -435,15 +429,24 @@ document.getElementById('loginBtn').onclick = async function() {
             console.log('🔍 Cached business_id:', finalBusinessId);
         }
 
+        // Update current language from business info
+        if (businessInfo?.language) {
+            currentLanguage = businessInfo.language;
+            localStorage.setItem('language', currentLanguage);
+        }
+
+        // Create business name slug
         const businessName = (businessInfo?.name || 'shop').toLowerCase().replace(/\s+/g, '-');
+        
+        // Build URL parameters
         const urlParams = new URLSearchParams({
             lang: currentLanguage || 'en',
             user: user.username,
             role: user.role,
             business: businessName,
             id: finalBusinessId,
-            name:username,
-            userid:user.id || username
+            name: username,
+            userid: user.id || username
         });
 
         const newUrl = `shop.html?${urlParams.toString()}`;
@@ -482,7 +485,7 @@ document.getElementById('loginBtn').onclick = async function() {
         }
 
         // ========== STEP 10: Show main content ==========
-        await restoreDeviceBackup();
+        if (typeof restoreDeviceBackup === 'function') await restoreDeviceBackup();
         document.getElementById('loginModal').classList.add('hidden');
         const loadingIndicator = document.getElementById('loadingIndicator');
         if (loadingIndicator) loadingIndicator.classList.add('hidden');
@@ -494,8 +497,8 @@ document.getElementById('loginBtn').onclick = async function() {
         this.disabled = false;
         this.textContent = 'Login';
 
-        await initializeHomeOverlay();
-        updateTime();
+        if (typeof initializeHomeOverlay === 'function') await initializeHomeOverlay();
+        if (typeof updateTime === 'function') updateTime();
         
         // Update sidebar user display
         if (typeof updateSidebarUserDisplay === 'function') {
@@ -527,7 +530,7 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkForUpdates === 'function') checkForUpdates();
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof connectWebSocket === 'function') connectWebSocket();
-            checkSecuritySetup(user);
+            if (typeof checkSecuritySetup === 'function') checkSecuritySetup(user);
         } else if (user.role === 'manager') {
             if (typeof removeSalesAssociateInfo === 'function') removeSalesAssociateInfo();
             if (typeof showManagerInfo === 'function') showManagerInfo(user);
@@ -537,9 +540,9 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkForUpdates === 'function') checkForUpdates();
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof connectWebSocket === 'function') connectWebSocket();
-            checkSecuritySetup(user);
-            startNotificationListener();
-            startUserRoleListener();
+            if (typeof checkSecuritySetup === 'function') checkSecuritySetup(user);
+            if (typeof startNotificationListener === 'function') startNotificationListener();
+            if (typeof startUserRoleListener === 'function') startUserRoleListener();
         } else {
             if (typeof showSalesAssociateInfo === 'function') showSalesAssociateInfo(user);
             const isFirstLogin = !localStorage.getItem('tourCompleted');
@@ -548,9 +551,9 @@ document.getElementById('loginBtn').onclick = async function() {
             if (typeof checkForUpdates === 'function') checkForUpdates();
             if (typeof checkRatingTrigger === 'function') setTimeout(checkRatingTrigger, 10000);
             if (typeof connectWebSocket === 'function') connectWebSocket();
-            checkSecuritySetup(user);
-            startNotificationListener();
-            startUserRoleListener();
+            if (typeof checkSecuritySetup === 'function') checkSecuritySetup(user);
+            if (typeof startNotificationListener === 'function') startNotificationListener();
+            if (typeof startUserRoleListener === 'function') startUserRoleListener();
         }
 
     } catch (err) {

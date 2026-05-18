@@ -4477,6 +4477,8 @@ if (receiptBusinessLogo) {
         }
         // 10. Customer Info Display
         const customerInfoDiv = document.getElementById('receiptCustomerInfo');
+        // Define customerNameToShow from data
+        const customerNameToShow = data.customerName || data.customer || '';
         if (customerInfoDiv) {
             if (customerNameToShow && customerNameToShow !== 'Tapez le nom du client') {
                 customerInfoDiv.textContent = `${translate('customer')}: ${customerNameToShow}`;
