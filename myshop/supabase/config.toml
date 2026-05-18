@@ -1,0 +1,66 @@
+
+[functions.weekly-report]
+enabled = true
+verify_jwt = true
+import_map = "./functions/weekly-report/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/weekly-report/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/weekly-report/*.html" ]
+
+[functions.monthly-report]
+enabled = true
+verify_jwt = true
+import_map = "./functions/monthly-report/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/monthly-report/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/monthly-report/*.html" ]
+
+[functions.welcome-email]
+enabled = true
+verify_jwt = true
+import_map = "./functions/welcome-email/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/welcome-email/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/welcome-email/*.html" ]
+
+[functions.license-reminder]
+enabled = true
+verify_jwt = true
+import_map = "./functions/license-reminder/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/license-reminder/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/license-reminder/*.html" ]
+
+[functions.expire-licenses]
+enabled = true
+verify_jwt = true
+import_map = "./functions/expire-licenses/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/expire-licenses/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/expire-licenses/*.html" ]
+
+[functions.license-sync]
+enabled = true
+verify_jwt = true
+import_map = "./functions/license-sync/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/license-sync/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/license-sync/*.html" ]

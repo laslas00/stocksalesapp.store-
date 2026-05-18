@@ -325,18 +325,20 @@
     </button>
   </div>
 
-  <!-- Pro -->
+  <!-- Professional -->
   <div class="plan-card popular">
     <div class="popular-badge" data-translate="popular_badge">Most Popular</div>
     <div class="plan-name" data-translate="plan_pro_name">Professional</div>
-    <div class="plan-price" id="proPrice">40,000 CFA<span data-translate="per_year">/year</span></div>
-    <div class="plan-period" data-translate="plan_pro_period">Save 5% with annual billing</div>
+    <div class="plan-price" id="proPrice">40,000 CFA<span data-translate="per_month">/month</span></div>
+     <div class="plan-period" data-translate="plan_starter_period">Billed monthly</div>
     <ul class="plan-features">
       <li><i class="fas fa-check"></i> <span data-translate="feature_everything_starter">Everything in Starter</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_3_devices">Up to 3 Devices</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_analytics">Advanced Analytics</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_priority_support">Priority Support</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_custom_receipts">Custom Receipts</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_weekly_report">📊 Weekly Email Reports</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_monthly_report">📈 Monthly Insights Report</span></li>
     </ul>
     <button class="btn btn-primary" onclick="startPayment('professional')">
       <span data-translate="subscribe_btn">Subscribe</span>
@@ -346,14 +348,18 @@
   <!-- Business -->
   <div class="plan-card">
     <div class="plan-name" data-translate="plan_business_name">Business</div>
-    <div class="plan-price" id="bizPrice">85,000 CFA<span data-translate="per_year">/year</span></div>
-    <div class="plan-period" data-translate="plan_business_period">Billed annually</div>
+    <div class="plan-price" id="bizPrice">85,000 CFA<span data-translate="per_month">/month</span></div>
+    <div class="plan-period" data-translate="plan_starter_period">Billed monthly</div>
     <ul class="plan-features">
-      <li><i class="fas fa-check"></i> <span data-translate="feature_everything_pro">Everything in Pro</span></li>
+      <li><i class="fas fa-check"></i> <span data-translate="feature_everything_pro">Everything in Professional</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_unlimited_devices">Unlimited Devices</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_api_access">API Access</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_white_label">White Label</span></li>
       <li><i class="fas fa-check"></i> <span data-translate="feature_dedicated_support">Dedicated Support</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_weekly_report">📊 Weekly Email Reports</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_monthly_report">📈 Monthly Insights Report</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_welcome_email">🎉 Welcome Email</span></li>
+      <li class="feature-highlight"><i class="fas fa-check" style="color: #f59e0b;"></i> <span data-translate="feature_license_reminder">🔔 License Reminders</span></li>
     </ul>
     <button class="btn btn-outline" onclick="startPayment('business')">
       <span data-translate="subscribe_btn">Subscribe</span>
@@ -924,8 +930,8 @@ function refreshPrices() {
     if (selector) selector.value = c;
 
     document.getElementById('starterPrice').innerHTML = formatPrice(3500, c) + '<span data-translate="per_month">/month</span>';
-    document.getElementById('proPrice').innerHTML = formatPrice(40000, c) + '<span data-translate="per_year">/year</span>';
-    document.getElementById('bizPrice').innerHTML = formatPrice(85000, c) + '<span data-translate="per_year">/year</span>';
+    document.getElementById('proPrice').innerHTML = formatPrice(5800, c) + '<span data-translate="per_month">/month</span>';
+    document.getElementById('bizPrice').innerHTML = formatPrice(15000, c) + '<span data-translate="per_month">/month</span>';
 }
 
 function changeCurrency() {

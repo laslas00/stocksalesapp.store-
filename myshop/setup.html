@@ -1628,7 +1628,7 @@ async function completeSetup() {
     const completeBtn = document.getElementById('finishBtn');
     if (!completeBtn) return;
     
-    completeBtn.innerHTML = (translate('saving_text') || 'Saving') + ' <i class="fas fa-spinner fa-spin"></i>';
+    completeBtn.innerHTML = (translate('saving_text') || 'Saving...') + ' <i class="fas fa-spinner fa-spin"></i>';
     completeBtn.disabled = true;
 
     try {
@@ -1641,12 +1641,16 @@ async function completeSetup() {
             throw new Error('Database connection failed. Please refresh the page and try again.');
         }
 
+        console.log('✅ Client ready');
+
         const selectedLanguage = setupData.settings?.language || 'en';
         localStorage.setItem('language', selectedLanguage);
         localStorage.setItem('systemLanguage', selectedLanguage);
         currentLanguage = selectedLanguage;
 
-        // Upload logo if exists
+        // ============================================
+        // STEP 1: Upload logo if exists
+        // ============================================
         let logoUrl = '';
         if (logoFile) {
             const fileExt = logoFile.name.split('.').pop();
@@ -1658,18 +1662,21 @@ async function completeSetup() {
                 if (!uploadError) {
                     const { data: urlData } = client.storage.from('logos').getPublicUrl(fileName);
                     logoUrl = urlData.publicUrl;
+                    console.log('✅ Logo uploaded:', logoUrl);
                 }
             } catch (uploadErr) {
                 console.warn('⚠️ Logo upload error (non-critical):', uploadErr);
             }
         }
 
-        const adminEmail = setupData.business.email || `${setupData.owner.username}@StockApp.local`;
+        const adminEmail = setupData.business.email || `${setupData.owner.username.toLowerCase()}@StockApp.local`;
         const adminPassword = setupData.owner.password;
         const adminUsername = setupData.owner.username;
         const adminFullName = setupData.owner.name;
-        
-        // Create new business
+
+        // ============================================
+        // STEP 2: Create business FIRST
+        // ============================================
         const newBusinessInfo = {
             name: setupData.business.name || '',
             address: setupData.business.address || '',
@@ -1685,7 +1692,7 @@ async function completeSetup() {
             created_at: new Date().toISOString()
         };
 
-        console.log('📤 Creating new business...');
+        console.log('📤 Creating business...');
         const { data: newBiz, error: bizInsertError } = await client
             .from('business_info')
             .insert([newBusinessInfo])
@@ -1696,12 +1703,41 @@ async function completeSetup() {
             throw new Error('Failed to create business: ' + bizInsertError.message);
         }
         const newBusinessId = newBiz.id;
-        console.log('✅ New business created:', newBusinessId);
+        console.log('✅ Business created:', newBusinessId, '-', newBiz.name);
 
-        // Create user with business_id
-        const userProfile = {
-            username: adminUsername,
+        // ============================================
+        // STEP 3: Create user via Supabase Auth
+        // ============================================
+        console.log('📤 Creating user via Supabase Auth...');
+        
+        const { data: authData, error: authError } = await client.auth.signUp({
+            email: adminEmail,
             password: adminPassword,
+            options: {
+                data: {
+                    username: adminUsername,
+                    full_name: adminFullName,
+                    role: 'administrator',
+                    business_id: newBusinessId
+                }
+            }
+        });
+
+        if (authError) {
+            console.error('❌ Auth signup failed:', authError);
+            throw new Error('Failed to create account: ' + authError.message);
+        }
+
+        const newUserId = authData.user?.id;
+        console.log('✅ Auth user created:', newUserId);
+
+        // ============================================
+        // STEP 4: Save user profile to users table
+        // ============================================
+        const userProfile = {
+            id: newUserId,
+            password: adminPassword,
+            username: adminUsername,
             full_name: adminFullName,
             role: 'administrator',
             email: adminEmail,
@@ -1713,63 +1749,81 @@ async function completeSetup() {
             created_at: new Date().toISOString()
         };
 
-        console.log('📤 Saving user...');
-
-        // Check if username already exists (double check)
-        const { data: existingUser } = await client
+        console.log('📤 Saving user profile...');
+        
+        const { error: profileError } = await client
             .from('users')
-            .select('id')
-            .eq('username', adminUsername)
-            .maybeSingle();
+            .upsert([userProfile], { onConflict: 'id' });
 
-        if (existingUser) {
-            await client.from('users').update(userProfile).eq('username', adminUsername);
-            console.log('✅ User updated');
+        if (profileError) {
+            console.warn('⚠️ Profile save warning:', profileError);
+            // Don't throw - auth user already created
         } else {
-            await client.from('users').insert([userProfile]);
-            console.log('✅ User created');
+            console.log('✅ User profile saved');
         }
 
-        // Create 7-day free trial license
+        // ============================================
+        // STEP 5: Create 7-day free trial
+        // ============================================
         const trialExpires = new Date();
         trialExpires.setDate(trialExpires.getDate() + 7);
 
         console.log('🎁 Creating 7-day free trial...');
+        
         const { error: licenseError } = await client
-            .from('licenses')
-            .insert([{
-                business_id: newBusinessId,
-                plan: 'starter',
-                status: 'trial',
-                activated_at: new Date().toISOString(),
-                expires_at: trialExpires.toISOString(),
-                created_at: new Date().toISOString()
-            }]);
-
-        if (licenseError) {
-            console.warn('⚠️ Trial license creation failed:', licenseError);
-        } else {
-            console.log('✅ 7-day free trial activated! Expires:', trialExpires.toLocaleDateString());
-        }
-
-        // Update business_info with trial status
-        await client.from('business_info')
+            .from('business_info')
             .update({
-                license_plan: 'starter',
-                license_status: 'trial',
+                license_plan: 'trial',
+                license_status: 'active',
                 license_activated_at: new Date().toISOString(),
                 license_expires_at: trialExpires.toISOString()
             })
             .eq('id', newBusinessId);
 
-        // Cache business ID
+        if (licenseError) {
+            console.warn('⚠️ Trial activation warning:', licenseError);
+        } else {
+            console.log('✅ 7-day trial active! Expires:', trialExpires.toLocaleDateString());
+        }
+
+        // ============================================
+        // STEP 6: Track setup in user_setups table
+        // ============================================
+        try {
+            const setupTracking = {
+                username: adminUsername,
+                email: adminEmail,
+                owner_name: adminFullName,
+                business_name: setupData.business.name,
+                business_address: setupData.business.address || '',
+                business_phone: setupData.business.primaryPhone || '',
+                business_website: setupData.business.website || '',
+                business_description: setupData.business.description || '',
+                language: selectedLanguage,
+                currency: setupData.settings?.currency || 'XAF',
+                device_id: localStorage.getItem('deviceId') || 'web',
+                user_agent: navigator.userAgent,
+                setup_completed_at: new Date().toISOString()
+            };
+
+            await client.from('user_setups').insert([setupTracking]);
+            console.log('✅ Setup tracked in user_setups');
+        } catch (trackErr) {
+            console.warn('⚠️ Setup tracking warning:', trackErr);
+        }
+
+        // ============================================
+        // STEP 7: Save to localStorage
+        // ============================================
         localStorage.setItem('businessId', newBusinessId);
         localStorage.setItem('businessInfo', JSON.stringify({ ...newBusinessInfo, id: newBusinessId }));
-        localStorage.setItem('licensePlan', 'starter');
-        localStorage.setItem('licenseStatus', 'trial');
+        localStorage.setItem('licensePlan', 'trial');
+        localStorage.setItem('licenseStatus', 'active');
         localStorage.setItem('licenseExpires', trialExpires.toISOString());
+        localStorage.setItem('currentUserId', newUserId);
+        localStorage.setItem('currentUsername', adminUsername);
+        localStorage.setItem('currentRole', 'administrator');
 
-        // Save setup completion
         localStorage.setItem('StockApp_setup', JSON.stringify({
             isFirstTime: false,
             completedAt: new Date().toISOString(),
@@ -1777,31 +1831,98 @@ async function completeSetup() {
             ownerName: adminFullName,
             ownerUsername: adminUsername,
             businessId: newBusinessId,
+            userId: newUserId,
             language: selectedLanguage,
             version: '5.3.5'
         }));
         localStorage.setItem('setup_completed', 'true');
 
-        // Track event
+        // ============================================
+        // STEP 8: Track event
+        // ============================================
         if (typeof trackAppEvent === 'function') {
-            trackAppEvent('setup_complete', { businessName: setupData.business.name, language: selectedLanguage, trial: '7days' }, adminUsername);
+            trackAppEvent('setup_complete', { 
+                businessName: setupData.business.name, 
+                language: selectedLanguage, 
+                trial: '7days' 
+            }, adminUsername);
         }
 
-        // Show success
+        // ============================================
+        // STEP 9: Send welcome email
+        // ============================================
+        console.log('📧 Triggering welcome email...');
+        try {
+            const welcomeResponse = await fetch(
+                'https://zexxdoxuzvkovszfqcio.supabase.co/functions/v1/welcome-email',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        business_id: newBusinessId,
+                        user_id: newUserId
+                    })
+                }
+            );
+            
+            const welcomeData = await welcomeResponse.json();
+            
+            if (welcomeData.success) {
+                console.log('✅ Welcome email sent to:', adminEmail);
+            } else {
+                console.warn('⚠️ Welcome email:', welcomeData.message || welcomeData.error);
+            }
+        } catch (welcomeErr) {
+            console.warn('⚠️ Welcome email trigger failed:', welcomeErr.message);
+        }
+
+        // ============================================
+        // STEP 10: Show "Check Your Email" screen
+        // ============================================
         document.querySelectorAll('.setup-step').forEach(step => {
             step.classList.remove('active');
             step.style.display = 'none';
         });
-        document.getElementById('success-content').style.display = 'block';
-        document.getElementById('success-content').classList.add('active');
 
-        console.log('✅ Setup complete! Business:', newBusinessId, '| User:', adminUsername);
-        console.log('🎁 Free trial: 7 days | Plan: Starter | Expires:', trialExpires.toLocaleDateString());
+        const successEl = document.getElementById('success-content');
+        if (successEl) {
+            // Update success message to mention email
+            const successTitle = successEl.querySelector('h1');
+            const successMsg = successEl.querySelector('p');
+            
+            if (successTitle) {
+                successTitle.textContent = translate('setup_complete') || '🎉 Setup Complete!';
+            }
+            if (successMsg) {
+                if (adminEmail && adminEmail.includes('@')) {
+                    successMsg.innerHTML = `
+                        <strong>${translate('check_your_email') || '📧 Check your email!'}</strong><br/><br/>
+                        ${translate('verification_sent_to') || 'We sent a welcome email to'}:<br/>
+                        <span style="color: #3b82f6; font-weight: bold;">${adminEmail}</span><br/><br/>
+                        ${translate('check_email_to_continue') || 'Please check your inbox and click the link to verify your account.'}<br/>
+                        <small style="color: #94a3b8;">${translate('redirecting_soon') || 'Redirecting to login in a moment...'}</small>
+                    `;
+                } else {
+                    successMsg.textContent = translate('system_ready') || 'Your workspace is ready. Redirecting to login...';
+                }
+            }
+            
+            successEl.style.display = 'block';
+            successEl.classList.add('active');
+        }
 
-        // Redirect
+        console.log('✅ Setup complete!');
+        console.log('   Business:', newBusinessId, '-', setupData.business.name);
+        console.log('   User:', adminUsername, '(', newUserId, ')');
+        console.log('   Trial: 7 days | Expires:', trialExpires.toLocaleDateString());
+        console.log('   Email:', adminEmail);
+
+        // ============================================
+        // STEP 11: Redirect after delay (enough time to read)
+        // ============================================
         setTimeout(() => {
             window.location.href = `shop.html?newSetup=true&trial=7days&lang=${encodeURIComponent(selectedLanguage)}`;
-        }, 3000);
+        }, 8000); // 8 seconds - enough time to read "check email" message
 
     } catch (error) {
         console.error('❌ Setup error:', error);
@@ -1812,7 +1933,6 @@ async function completeSetup() {
         }
     }
 }
-
 // ============================================
 // TOGGLE PASSWORD VISIBILITY
 // ============================================
@@ -1966,6 +2086,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
+function clearMyLocalStorage() {
+    localStorage.clear();
+    console.log("Local storage has been successfully emptied.");
+}
+
+// To use it, just call the function:
+clearMyLocalStorage();
 
 
 console.log('📡 Setup page ready - using Supabase project:', MYSUPABASE_URL);
