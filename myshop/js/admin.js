@@ -1266,7 +1266,6 @@ async function demoteUserToSales(username) {
     document.getElementById('modalAddAssociateBtn').addEventListener('click', modalAddAssociateBtn);
 
 async function makeUserManager(username) {
-    // Check if user has permission (administrator only)
     if (!currentUser || currentUser.role !== 'administrator') {
         showMessageModal(translations[currentLanguage]?.onlyAdminsCanPromote || 'Only administrators can promote users to manager.');
         return;
@@ -1285,46 +1284,78 @@ async function makeUserManager(username) {
     }
 
     try {
-        const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
-
-        // Update user role in Supabase (with business safety)
+        const now = new Date().toISOString();
+        const promoterName = currentUser.full_name || currentUser.username;
+        
+        // 1. Update user role in Supabase
         let updateQuery = client.from('users').update({
             role: 'manager',
-            promoted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            promoted_at: now,
+            promoted_by: promoterName,
+            promotion_date_label: new Date().toLocaleString(),
+            updated_at: now
         }).eq('username', username);
-        if (currentBusinessId) updateQuery = updateQuery.eq('business_id', currentBusinessId);
 
         const { data: updatedUser, error } = await updateQuery.select().single();
-
         if (error) throw new Error(error.message);
 
-        // Update local users list
+        // 2. Update local users list
         const idx = users.findIndex(u => u.username === username);
         if (idx !== -1) {
-            users[idx] = { ...users[idx], role: 'manager', promoted_at: new Date().toISOString() };
+            users[idx] = { 
+                ...users[idx], 
+                role: 'manager', 
+                promoted_at: now,
+                promoted_by: promoterName,
+                promotion_date_label: new Date().toLocaleString()
+            };
         }
 
-        // Broadcast via Supabase Realtime (optional)
+        // 3. BROADCAST: Insert into notifications table for ALL users to see
+        const { error: broadcastError } = await client
+            .from('notifications')
+            .insert([{
+                type: 'manager_promoted',
+                event: 'manager-promoted',
+                username: username,
+                promoter_name: promoterName,
+                message: `${getDisplayName(updatedUser) || username} has been promoted to Manager! 🎉`,
+                recipient_username: 'all', // Everyone sees this
+                business_id: businessInfo?.id || null,
+                created_at: now,
+                is_read: false
+            }]);
+
+        if (broadcastError) {
+            console.warn('Broadcast failed (non-critical):', broadcastError);
+        }
+
+        // 4. Track event
         if (typeof trackAppEvent === 'function') {
             trackAppEvent('user_promoted', { username, newRole: 'manager' }, currentUser.username);
         }
 
+        // 5. Show success
         const successMessage = translations[currentLanguage]?.nowManager 
             ? `${username} ${translations[currentLanguage].nowManager}`
             : `✅ ${username} is now a Manager!`;
         showMessageModal(successMessage);
 
+        // 6. Close user details modal if open
         const userDetailsModal = document.getElementById('modalUserDetails');
         if (userDetailsModal && !userDetailsModal.classList.contains('hidden')) {
             userDetailsModal.classList.add('hidden');
         }
 
+        // 7. Refresh UI
         if (typeof rendersalesAssociates === 'function') rendersalesAssociates();
         if (typeof renderModalAssociates === 'function') renderModalAssociates();
 
-        if (typeof showPromotionEnvelope === 'function' && currentUser && currentUser.username === username) {
-            showPromotionEnvelope(username);
+        // 8. Show promotion envelope to the promoted user (if it's them)
+        if (currentUser && currentUser.username === username) {
+            if (typeof showPromotionEnvelope === 'function') {
+                showPromotionEnvelope(username);
+            }
         }
 
     } catch (error) {
@@ -1332,7 +1363,6 @@ async function makeUserManager(username) {
         showMessageModal('❌ ' + error.message);
     }
 }
-
 
 function toggleSalesPasswordVisibility(button) {
     const passwordSpan = document.getElementById('displaySalesPassText');
@@ -1362,4 +1392,111 @@ if (downloadclientBtn) {
         e.preventDefault();
         openMicrosoftStore();
     });
+}
+// ==================== REALTIME NOTIFICATION LISTENER ====================
+let notificationChannel = null;
+
+function startNotificationListener() {
+    const client = getSB();
+    if (!client) {
+        console.warn('⚠️ Cannot start notification listener - no Supabase client');
+        return;
+    }
+
+    console.log('🔔 Starting notification listener...');
+
+    notificationChannel = client
+        .channel('public-notifications')
+        .on('postgres_changes',
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'notifications',
+                filter: `recipient_username=eq.all` // Only "all" recipient notifications
+            },
+            (payload) => {
+                const notification = payload.new;
+                console.log('📢 Received broadcast:', notification);
+
+                // Handle manager promotion
+                if (notification.event === 'manager-promoted') {
+                    const promotedUsername = notification.username;
+
+                    // If THIS user is the one who got promoted → show certificate
+                    if (currentUser && currentUser.username === promotedUsername) {
+                        console.log('🎉 I was promoted! Showing certificate...');
+                        if (typeof showPromotionEnvelope === 'function') {
+                            // Refresh user data first
+                            loadUsers().then(() => {
+                                showPromotionEnvelope(promotedUsername);
+                            });
+                        }
+                    }
+
+                    // Show notification to ALL users
+                    if (typeof showNotificationOnWindow === 'function') {
+                        showNotificationOnWindow({
+                            title: '🎉 Promotion!',
+                            message: notification.message
+                        });
+                    }
+
+                    // Show in-app notification bar
+                    if (typeof showMessageModal === 'function') {
+                        showMessageModal(notification.message);
+                    }
+                }
+            }
+        )
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Notification listener active');
+            }
+        });
+
+    return notificationChannel;
+}
+
+// Call this after login
+function stopNotificationListener() {
+    if (notificationChannel) {
+        notificationChannel.unsubscribe();
+        console.log('🔕 Notification listener stopped');
+    }
+}
+// Listen for when THIS user's role changes
+function startUserRoleListener() {
+    if (!currentUser) return;
+
+    const client = getSB();
+    if (!client) return;
+
+    client
+        .channel('my-user-updates')
+        .on('postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'users',
+                filter: `username=eq.${currentUser.username}`
+            },
+            (payload) => {
+                const updatedUser = payload.new;
+                const oldUser = payload.old;
+
+                // Check if role changed to manager
+                if (oldUser.role !== 'manager' && updatedUser.role === 'manager') {
+                    console.log('🎉 I was just promoted!');
+                    
+                    // Update local user data
+                    currentUser = { ...currentUser, role: 'manager', ...updatedUser };
+                    
+                    // Show promotion certificate
+                    if (typeof showPromotionEnvelope === 'function') {
+                        showPromotionEnvelope(currentUser.username);
+                    }
+                }
+            }
+        )
+        .subscribe();
 }
