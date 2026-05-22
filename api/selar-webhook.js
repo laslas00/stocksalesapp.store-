@@ -1,5 +1,12 @@
 // api/selar-webhook.js - Secure webhook for Selar payments
+// In Vercel function, check for secret
+const webhookSecret = process.env.WEBHOOK_SECRET;
+if (webhookSecret && req.headers['x-webhook-secret'] !== webhookSecret) {
+  return res.status(401).json({ error: 'Unauthorized' });
+}
+
 import { createClient } from '@supabase/supabase-js';
+
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
