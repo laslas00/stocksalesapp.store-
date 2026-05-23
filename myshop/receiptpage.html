@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Receipt - StockApp*</title>
+    <link rel="icon" type="image/png" href="image/icon.ico">
+    
+    <!-- Stylesheets -->
+    <link href="libs/fonts/inter.css" rel="stylesheet">
+    <link rel="stylesheet" href="libs/font-awesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/recipt.css">
+    <link rel="stylesheet" href="styles/print.css">
+    <link rel="stylesheet" href="styles/adptive.css">
+    <link href="styles/output.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/fontawesome-simple.css">
+    
+    <!-- Scripts (libraries first) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/env.js"></script>
+    <script src="libs/jspdf.umd.min.js"></script>
+    <script src="libs/html2canvas.min.js"></script>
+    <script src="libs/d3.v7.min.js"></script>
+    <script src="libs/chart.js"></script>
+    <script src="libs/chartjs-chart-financial.js"></script>
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="libs/JsBarcode.all.min.js"></script>
+    <script src="libs/qrcode.min.js"></script>
+    <script src="libs/qrious.min.js"></script>
+    <script src="libs/zxing.min.js"></script>
+    <script src="libs/jszip.min.js"></script>
+    <script src="js/curency.js"></script>
+         <script src="js/hideme.js"></script>
+    <style>
+    /* Center the not found container */
+    .receiptnofound-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    
+    /* Not found state styling */
+    .not-found {
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .not-found.hidden {
+        display: none;
+    }
+    
+    .not-found h2 {
+        font-weight: bold;
+        text-align: center;
+    }
+    
+    .not-found p {
+        font-weight: bold;
+        text-align: center;
+    }
+    
+    /* Button hover effect */
+    .not-found button:hover {
+        background-color: #2563eb !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Input focus effect */
+    .not-found input:focus {
+        outline: none;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* PRINT STYLES */
+    @media print {
+        body {
+            color: white !important;
+            background-color: white !important;
+        }
+        
+        /* Hide not found elements when printing */
+        .not-found {
+            display: none !important;
+        }
+        
+        .loading {
+            display: none !important;
+        }
+        
+        /* Hide buttons when printing */
+        button, 
+        #manualReceiptInput {
+            display: none !important;
+        }
+        
+        /* Ensure receipt content is visible */
+        #receiptContent:not(.hidden) {
+            display: block !important;
+        }
+    }
+</style>
+</head>
+<body>
+<div id="receiptContainer" class="receiptnofound-container">
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <p>Loading receipt...</p>
+    </div>
+    
+    <!-- Receipt Content (hidden initially) -->
+    <div id="receiptContent" class="hidden"></div>
+    
+    <!-- Not Found State -->
+    <div id="notFoundState" class="not-found hidden">
+        <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            padding: 40px 20px;
+        ">
+            <i class="fas fa-receipt" style="font-size: 64px; color: #999; margin-bottom: 20px;"></i>
+            <h2 style="font-weight: bold; font-size: 24px; margin-bottom: 10px;">Receipt Not Found</h2>
+            <p style="font-weight: bold; font-size: 16px; margin-bottom: 20px;">The receipt you're looking for doesn't exist or has been removed.</p>
+            <input type="text" 
+                   id="manualReceiptInput" 
+                   placeholder="Enter Receipt ID (e.g., CR-283059)" 
+                   style="padding: 12px 16px; width: 100%; max-width: 400px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; text-align: center;">
+            <button onclick="searchManualReceipt()" 
+                    style="padding: 12px 24px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.3s;">
+                Search Receipt
+            </button>
+        </div>
+    </div>
+</div>
+    
+    <!-- Receipt Modal -->
+    <div id="receiptModal" class="modal-overlay hidden">
+        <div class="receipt-content w-full md:w-1/2 lg:w-1/3 p-6">
+            <button class="receipt-modal-close-btn" onclick="closeReceiptModal()">&times;</button>
+            
+            <div id="receiptPrintArea" class="text-black font-mono text-sm">
+                <div id="receiptWatermark" class="absolute inset-0 opacity-10 pointer-events-none z-0 print-visible"></div>
+                
+                <!-- Business Header -->
+                <div class="text-center mb-4">
+                    <img id="receiptBusinessLogo" src="" alt="Business Logo" class="mx-auto h-12 w-auto object-contain mb-2 hidden print-visible">
+                    <h3 id="receiptBusinessName" class="text-lg font-bold mb-1"></h3>
+                    <p id="receiptBusinessDetails" class="text-xs italic"></p>
+                </div>
+                
+                <!-- Festive Badge -->
+                <div id="festiveBadge" class="festive-badge hidden">
+                    <span id="badgeIcon" class="badge-icon"></span>
+                    <span id="badgeText" class="badge-text" data-translate="off"></span>
+                </div>
+                
+                <!-- Title with decorative lines -->
+                <div style="text-align: center; margin: 15px 0 20px 0; position: relative; height: 50px;">
+                    <!-- Top Blue Line -->
+                    <div style="
+                        position: absolute;
+                        left: 0;
+                        top: 30%;
+                        width: 100%;
+                        height: 12px;
+                        background: linear-gradient(
+                            90deg,
+                            #0a3d8f 0%,
+                            #0d47a1 20%,
+                            #1565c0 45%,
+                            #42a5f5 65%,
+                            #90caf9 85%,
+                            transparent 100%
+                        );
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                        z-index: 0;
+                    "></div>
+                    
+                    <!-- Bottom Red Line -->
+                    <div style="
+                        position: absolute;
+                        left: 0;
+                        top: 55%;
+                        width: 100%;
+                        height: 12px;
+                        background: linear-gradient(
+                            90deg,
+                            transparent 0%,
+                            #ef9a9a 15%,
+                            #ef5350 35%,
+                            #e53935 55%,
+                            #c62828 80%,
+                            #8e0000 100%
+                        );
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                        z-index: 0;
+                    "></div>
+                    
+                    <!-- Title Text -->
+                    <h3 style="
+                        display: inline-block;
+                        position: absolute;
+                        left: 50%;
+                        top: 50%;
+                        transform: translate(-50%, -50%);
+                        margin: 0;
+                        padding: 0 15px;
+                        font-size: 22px;
+                        font-weight: 800;
+                        letter-spacing: 1px;
+                        z-index: 2;
+                        color: #000000;
+                        background: transparent;
+                        text-transform: none;
+                        white-space: nowrap;
+                        text-shadow: 
+                            -1px -1px 0 #ffffff,
+                            1px -1px 0 #ffffff,
+                            -1px  1px 0 #ffffff,
+                            1px  1px 0 #ffffff;
+                    " data-translate="receiptInvoice">
+                        RECEIPT • INVOICE
+                    </h3>
+                </div>
+                
+                <!-- Receipt Details & QR Code -->
+                <div class="flex items-start gap-6">                  
+                    <div class="text-center" id="qrContainer">
+                        <img id="receiptQRCode" src="" alt="QR Code" class="w-30 h-30 hidden border-2 border-black p-1">
+                        <p class="text-xs mt-1" data-translate="scanToVerify">Scan to verify</p>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <div class="border-t border-b border-gray-400 py-1 mb-1">
+                            <div class="grid grid-cols-2 gap-y-1 gap-x-3">
+                                <div>
+                                    <p id="receiptCustomerInfo" class="font-semibold leading-tight text-lg"></p>
+                                    <p id="receiptCustomerPhoneNumber" class="text-xs leading-tight"></p>
+                                    <input type="text"
+                                        id="receiptCustomerNameInput"
+                                        class="hidden block w-full px-2 py-1 text-xs border border-pink-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 mt-0.5"
+                                        placeholder="Enter customer name (optional)">
+                                </div>
+                                
+                                <p>
+                                    <span class="font-semibold">Receipt ID:</span>
+                                    <span id="receiptSaleId" class="font-semibold"></span>
+                                </p>
+                                
+                                <p>
+                                    <span class="font-semibold">Date:</span>
+                                    <span id="receiptDate"></span>
+                                </p>
+                                
+                                <p>
+                                    <span class="font-semibold">Cashier:</span>
+                                    <span id="receiptCashierName"></span>
+                                </p>
+                                
+                                <p>
+                                    <span class="font-semibold">Payment:</span>
+                                    <span id="receiptPaymentTypeDisplay"></span>
+                                    <input type="text"
+                                        id="receiptPaymentTypeInput"
+                                        class="hidden block w-full px-2 py-1 text-xs border border-green-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 mt-0.5"
+                                        value="Cash">
+                                </p>
+                                
+                                <p>
+                                    <span id="receiptSerialNumberDisplay" class="hidden font-semibold"></span>
+                                    <input type="text"
+                                        id="receiptSerialNumberInput"
+                                        class="hidden block w-full px-2 py-1 text-xs border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Serial number (optional)">
+                                </p>
+                                
+                                <p id="receiptGuaranteeSection" class="col-span-2 mt-1 pt-1 border-t border-dashed text-xs font-semibold"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Items Table -->
+                <div class="table-container mb-4">
+                    <table class="receipt-table min-w-full border-collapse">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="text-left text-lg text-white-805 font-bold pb-1 w-2/5" data-translate="tableItem">Item</th>
+                                <th class="text-left text-lg text-white-805 font-bold pb-1 w-1/5" data-translate="tableType">Type</th>
+                                <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/6" data-translate="tableQty">Qty</th>
+                                <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/6" data-translate="tableUnitPrice">Unit Price</th>
+                                <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/6" data-translate="tableSubtotal">Subtotal</th>
+                            </tr>
+                            <tr><td colspan="5"><div class="border-b text-lg border-white-800"></div></td></tr>
+                        </thead>
+                        <tbody id="receiptItemsTableBody" class="table-body text-lg divide-y divide-white-300">
+                            <!-- Table rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="border-t border-red-800 my-1"></div>
+                
+                <!-- Payment Summary -->
+                <div id="receiptfooter2" class="mb-2 w-full">
+                    <div class="flex justify-between items-start">
+                        <div class="text-left w-1/2">
+                            <p id="receiptAdvancePayment" class="text-sm mb-0">
+                                <span class="font-semibold" data-translate="advancePayment">Advance Payment:</span>
+                                <span id="receiptAdvanceValue">00</span>
+                                <input type="text" id="receiptAdvanceValueInput" class="receiptEditInput hidden border px-1 py-0 rounded w-20" value="00" step="0.01">
+                            </p>
+                            <p id="receiptAmountPaid" class="text-sm mb-0">
+                                <span class="font-semibold" data-translate="amountPaid">Amount Paid:</span>
+                                <span id="receiptAmountPaidValue">00</span>
+                                <input type="text" id="receiptAmountPaidValueInput" class="receiptEditInput hidden border px-1 py-0 rounded w-20" value="00" step="0.01">
+                            </p>
+                            <p id="receiptBalanceDue" class="text-sm text-red-700 font-semibold mb-0">
+                                <span class="font-semibold" data-translate="balanceDue">Balance Due:</span>
+                                <span id="receiptBalanceValue">00</span>
+                                <input type="text" id="receiptBalanceValueInput" class="receiptEditInput hidden border px-1 py-0 rounded w-20 bg-red-50" value="00" step="0.01">
+                            </p>
+                            <p id="receiptAdvancePaymentDate" class="text-sm hidden">
+                                <span data-translate="toBePaidOn">to be paid on</span> 
+                                <span id="receiptAdvanceDateValue"></span>
+                            </p>
+                        </div>
+                        
+                        <div class="text-right w-1/2">
+                            <p class="mb-0 text-sm">
+                                <span class="font-semibold" data-translate="subtotal">Subtotal:</span>
+                                <span id="receiptSubtotal">0.00</span>
+                            </p>
+                            <p class="mb-0 text-sm">
+                                <span class="font-semibold" data-translate="tax">Tax:</span>
+                                <span id="receiptTax">0.00</span>
+                            </p>
+                            <div id="reptotel" class="text-right text-lg font-bold">
+                                <span class="font-semibold" data-translate="total">Total:</span>
+                                <span id="receiptTotalAmount">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-300 my-1"></div>
+                </div>
+                
+                <!-- Footer -->
+                <div id="receiptfooter" class="text-center text-xs text-white-700 mt-2">
+                    <p id="receiptBusinessAddress" class="text-xs mb-0"></p>
+                    <p id="receiptBusinessContact" class="text-xs"></p>
+                    <p id="receiptBusinessSocial" class="text-xs mb-0"></p>
+                    <div style="display: inline;">
+                        <p class="italic" style="display: inline;" data-translate="thankYou">Thank you for your business!</p>
+                        <p class="" style="display: inline;" data-translate="pleaseComeAgain"> Please Come Again</p>
+                        <p class="text-white-800" style="display: inline;" data-translate="computerGenerated"> This is a computer-generated document.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="mt-6 flex justify-center space-x-4">
+                <button id="doneEditingBtn" class="hidden bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-md shadow-sm transition duration-150 ease-in-out" data-translate="doneEditing">
+                    Done Editing
+                </button>
+                <button id="saveReceiptModificationsBtn" class="hidden bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm transition duration-150 ease-in-out" data-translate="saveChanges">
+                    Save Changes
+                </button>
+                <button id="printReceiptBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out" data-translate="printReceipt">
+                    Print Receipt
+                </button>
+                <button id="downloadPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out" data-translate="downloadPdf">
+                    Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+        // ============================================
+        // GLOBAL VARIABLES & INITIALIZATION
+        // ============================================
+        
+        // Supabase config
+        const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
+        
+        // Business info cache
+        let businessInfo = null;
+        let currentUser = null;
+        let currentLanguage = 'en';
+        let currentBusinessId = null;
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        
+        function getSB() {
+            if (window._sb) return window._sb;
+            if (window.supabase?.createClient) {
+                window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                return window._sb;
+            }
+            return null;
+        }
+        
+        function formatCurrency(amount, currency = 'XAF') {
+            if (currency === 'XAF' || currency === 'CFA' || currency === 'FCFA') {
+                return new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA';
+            }
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(amount || 0);
+        }
+        
+        function safeSetText(elementId, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text || '';
+                return true;
+            }
+            console.warn(`Element with id "${elementId}" not found. Text not set: "${text}"`);
+            return false;
+        }
+        
+        function translate(key) {
+            const translations = {
+                'receiptInvoice': 'RECEIPT • INVOICE',
+                'scanToVerify': 'Scan to verify',
+                'tableItem': 'Item',
+                'tableType': 'Type',
+                'tableQty': 'Qty',
+                'tableUnitPrice': 'Unit Price',
+                'tableSubtotal': 'Subtotal',
+                'advancePayment': 'Advance Payment:',
+                'amountPaid': 'Amount Paid:',
+                'balanceDue': 'Balance Due:',
+                'toBePaidOn': 'to be paid on',
+                'subtotal': 'Subtotal:',
+                'tax': 'Tax:',
+                'total': 'Total:',
+                'thankYou': 'Thank you for your business!',
+                'pleaseComeAgain': 'Please Come Again',
+                'computerGenerated': 'This is a computer-generated document.',
+                'doneEditing': 'Done Editing',
+                'saveChanges': 'Save Changes',
+                'printReceipt': 'Print Receipt',
+                'downloadPdf': 'Download PDF',
+                'theCashier': 'Cashier',
+                'yourBusinessName': 'Your Business',
+                'tel': 'Tel',
+                'tel2': 'Tel 2',
+                'item': 'Item',
+                'type': 'Type',
+                'qty': 'Qty',
+                'unitPrice': 'Unit Price',
+                'service': 'Service',
+                'product': 'Product',
+                'customer': 'Customer',
+                'guarantee': 'Guarantee',
+                'validUntil': 'Valid Until',
+                'defaultGuaranteeText': 'This product is guaranteed for ${warrantyPeriod}',
+                'days': 'days',
+                'weeks': 'weeks',
+                'months': 'months',
+                'years': 'years',
+                'mixedPayment': 'Mixed Payment',
+                'remaining': 'Remaining',
+                'fully_paid': 'Fully Paid',
+                'receiptModalNotAvailable': 'Receipt modal not available',
+                'errorShowingReceiptFromData': 'Error showing receipt'
+            };
+            return translations[key] || key;
+        }
+        
+        function translatePaymentType(type) {
+            const paymentTypes = {
+                'Cash': 'Cash',
+                'Credit Payment': 'Credit Payment',
+                'Credit (Paid)': 'Credit (Paid)',
+                'Credit (Unpaid)': 'Credit (Unpaid)',
+                'Mobile Money': 'Mobile Money',
+                'Bank Transfer': 'Bank Transfer'
+            };
+            return paymentTypes[type] || type;
+        }
+        
+        function showMessageModal(message) {
+            alert(message);
+        }
+        
+           function closeReceiptModal() {
+            const modal = document.getElementById('receiptModal');
+            if (modal) modal.classList.add('hidden');
+              window.location.href = 'https://www.stocksalesapp.store/myshop/';
+        }
+        
+        function setupReceiptModal() {
+            const printBtn = document.getElementById('printReceiptBtn');
+            if (printBtn) {
+                printBtn.onclick = function() {
+                    window.print();
+                };
+            }
+            
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+            if (downloadPdfBtn) {
+                downloadPdfBtn.onclick = function() {
+                    alert('PDF download functionality to be implemented');
+                };
+            }
+        }
+        
+        function closeCalculator() {}
+        
+        // ============================================
+        // LOAD BUSINESS INFO BY BUSINESS ID
+        // ============================================
+        
+        async function loadBusinessInfoById(businessId) {
+            if (!businessId) {
+                console.warn('No business ID provided');
+                return null;
+            }
+            
+            try {
+                const client = getSB();
+                if (!client) return null;
+                
+                console.log('🔍 Loading business info for ID:', businessId);
+                
+                const { data, error } = await client
+                    .from('business_info')
+                    .select('*')
+                    .eq('id', businessId)
+                    .maybeSingle();
+                
+                if (error) {
+                    console.error('Error loading business info:', error);
+                    return null;
+                }
+                
+                if (data) {
+                    businessInfo = {
+                        id: data.id,
+                        name: data.name || '',
+                        address: data.address || '',
+                        shopNumber: data.shop_number || data.phone || '',
+                        phoneNumberTwo: data.phone_number_two || '',
+                        email: data.email || '',
+                        Website: data.website || '',
+                        socialMediaHandles: data.social_media_handles || '',
+                        details: data.details || '',
+                        logoData: data.logo_url || '',
+                        logo_url: data.logo_url || '',
+                        warrantyDuration: data.warranty_duration || 0,
+                        warrantyUnit: data.warranty_unit || 'days',
+                        warrantyText: data.warranty_text || '',
+                        currency: data.currency || 'XAF',
+                        fontStyle: data.font_style || 'default',
+                        currentLanguage: data.language || 'en',
+                        festiveBadgeEnabled: data.festive_badge_enabled || false,
+                        currentBadgeIndex: data.current_badge_index || 0,
+                        ownerName: data.owner_name || '',
+                        setup_completed: data.setup_completed,
+                        created_at: data.created_at,
+                        updated_at: data.updated_at
+                    };
+                    
+                    currentBusinessId = businessId;
+                    localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
+                    localStorage.setItem('businessId', businessId);
+                    
+                    console.log('✅ Business info loaded:', businessInfo.name);
+                    return businessInfo;
+                }
+                
+                return null;
+                
+            } catch (error) {
+                console.error('Error in loadBusinessInfoById:', error);
+                return null;
+            }
+        }
+        
+        // ============================================
+        // LOAD RECEIPT FROM SALES/CUSTOMER_RECEIPTS
+        // ============================================
+        
+        async function loadReceiptFromSale(sale) {
+            // Extract business_id from the sale record
+            const businessId = sale.business_id;
+            
+            if (businessId) {
+                await loadBusinessInfoById(businessId);
+            } else {
+                // Fallback to default or localStorage
+                const savedBusinessInfo = localStorage.getItem('businessInfo');
+                if (savedBusinessInfo) {
+                    try {
+                        businessInfo = JSON.parse(savedBusinessInfo);
+                    } catch(e) {}
+                }
+            }
+            
+            // Parse items - handle different possible formats
+            let items = [];
+            if (sale.items && typeof sale.items === 'object') {
+                items = Array.isArray(sale.items) ? sale.items : [sale.items];
+            } else {
+                // Single item sale
+                items = [{
+                    name: sale.product_name || sale.productname || sale.name || 'Product',
+                    type: sale.type || 'product',
+                    quantity: sale.quantity || 1,
+                    price: sale.total_amount || sale.totalamount || sale.price || sale.unit_price || 0,
+                    taxRate: sale.tax_rate || 0,
+                    taxAmount: sale.tax_amount || 0,
+                    paymentType: sale.payment_type || sale.paymenttype || 'Cash'
+                }];
+            }
+            
+            const receiptData = {
+                receiptId: sale.receipt_id || sale.id,
+                id: sale.id,
+                date: sale.date_sold || sale.datesold || sale.created_at,
+                customerName: sale.customer_name || sale.customername || sale.customerName || '',
+                customerPhoneNumber: sale.customer_phone || '',
+                cashier: sale.username || sale.sold_by || '',
+                paymentTypeDisplay: sale.payment_type || sale.paymenttype || 'Cash',
+                items: items,
+                amountPaid: sale.amount_paid || sale.total_amount || sale.totalamount || 0,
+                balanceDue: sale.balance_due || 0,
+                advancePaymentAmount: sale.advance_payment || 0,
+                advancePaymentDate: sale.advance_payment_date || '',
+                business_id: businessId,
+                source: 'sales'
+            };
+            
+            await showReceiptFromData(receiptData);
+        }
+        
+        async function loadReceiptFromCustomerReceipt(receipt) {
+            // Extract business_id from the receipt record
+            const businessId = receipt.business_id;
+            
+            if (businessId) {
+                await loadBusinessInfoById(businessId);
+            }
+            
+            // Parse items JSON if needed
+            let items = receipt.items;
+            if (typeof items === 'string') {
+                try {
+                    items = JSON.parse(items);
+                } catch(e) {
+                    items = [];
+                }
+            }
+            
+            const receiptData = {
+                receiptId: receipt.receipt_id,
+                id: receipt.id,
+                date: receipt.date,
+                customerName: receipt.customer_name,
+                customerPhoneNumber: receipt.customer_phone,
+                cashier: receipt.cashier,
+                paymentTypeDisplay: receipt.payment_type_display,
+                items: items,
+                amountPaid: receipt.amount_paid,
+                balanceDue: receipt.balance_due,
+                advancePaymentAmount: receipt.advance_payment_amount,
+                advancePaymentDate: receipt.advance_payment_date,
+                business_id: businessId,
+                source: 'customer_receipts'
+            };
+            
+            await showReceiptFromData(receiptData);
+        }
+        
+        // ============================================
+        // RECEIPT DISPLAY FUNCTIONS
+        // ============================================
+        
+        async function showReceiptFromData(data) {
+            try {
+                console.log('showReceiptFromData called with data:', data);
+                
+                setupReceiptModal();
+                closeCalculator();
+                
+                const saveBtn = document.getElementById('saveReceiptModificationsBtn');
+                const doneBtn = document.getElementById('doneEditingBtn');
+                if (saveBtn) saveBtn.classList.add('hidden');
+                if (doneBtn) doneBtn.classList.add('hidden');
+                
+                const receiptModal = document.getElementById('receiptModal');
+                if (!receiptModal) {
+                    console.error('Receipt modal element not found');
+                    showMessageModal(translate('receiptModalNotAvailable'));
+                    return;
+                }
+                receiptModal.classList.remove('hidden');
+                
+                // Customer phone number
+                const receiptCustomerPhoneNumber = document.getElementById('receiptCustomerPhoneNumber');
+                if (receiptCustomerPhoneNumber) {
+                    const phoneNumber = data.customerPhoneNumber || '';
+                    if (phoneNumber) {
+                        receiptCustomerPhoneNumber.textContent = `Customer Phone: ${phoneNumber}`;
+                        receiptCustomerPhoneNumber.classList.remove('hidden');
+                    } else {
+                        receiptCustomerPhoneNumber.classList.add('hidden');
+                    }
+                }
+                
+                const receiptfooter = document.getElementById('receiptfooter');
+                const receiptfooter2 = document.getElementById('receiptfooter2');
+                if (receiptfooter) receiptfooter.classList.remove('hidden');
+                if (receiptfooter2) receiptfooter2.classList.remove('hidden');
+                
+                document.querySelectorAll('.receiptEditInput').forEach(el => el.classList.add('hidden'));
+                
+                // Business info
+                const receiptBusinessLogo = document.getElementById('receiptBusinessLogo');
+                if (receiptBusinessLogo) {
+                    const logoUrl = businessInfo?.logo_url || businessInfo?.logoData || '';
+                    if (logoUrl) {
+                        receiptBusinessLogo.src = logoUrl;
+                        receiptBusinessLogo.classList.remove('hidden');
+                    } else {
+                        receiptBusinessLogo.classList.add('hidden');
+                    }
+                }
+                
+                safeSetText('receiptBusinessName', businessInfo?.name || translate('yourBusinessName'));
+                safeSetText('receiptBusinessAddress', businessInfo?.address || '');
+                safeSetText('receiptCashierName', data.cashier || translate('theCashier'));
+                
+                let contactInfo = [];
+                if (businessInfo?.shopNumber) contactInfo.push(`${translate('tel')}: ${businessInfo.shopNumber}`);
+                if (businessInfo?.phoneNumberTwo) contactInfo.push(`${translate('tel2')}: ${businessInfo.phoneNumberTwo}`);
+                if (businessInfo?.email) contactInfo.push(businessInfo.email);
+                if (businessInfo?.Website) contactInfo.push(businessInfo.Website);
+                safeSetText('receiptBusinessContact', contactInfo.join(' | '));
+                safeSetText('receiptBusinessSocial', businessInfo?.socialMediaHandles || '');
+                safeSetText('receiptBusinessDetails', businessInfo?.details || '');
+                safeSetText('receiptSaleId', data.receiptId || data.id || `receipt-${Date.now()}`);
+                
+                let displayDate = data.date;
+                try {
+                    if (displayDate) {
+                        const dateObj = new Date(displayDate);
+                        if (!isNaN(dateObj.getTime())) {
+                            displayDate = dateObj.toLocaleDateString();
+                        }
+                    }
+                } catch (e) {}
+                safeSetText('receiptDate', displayDate);
+                
+                // Watermark
+                let watermarkElement = document.getElementById('receiptWatermark');
+                const printArea = document.getElementById('receiptPrintArea');
+                
+                if (!watermarkElement && printArea) {
+                    watermarkElement = document.createElement('div');
+                    watermarkElement.id = 'receiptWatermark';
+                    watermarkElement.className = 'absolute inset-0 opacity-10 pointer-events-none z-0 hidden print-visible';
+                    printArea.prepend(watermarkElement);
+                }
+                
+                if (watermarkElement) {
+                    const logoUrl = businessInfo?.logo_url || businessInfo?.logoData || '';
+                    if (logoUrl) {
+                        watermarkElement.style.backgroundImage = `url('${logoUrl}')`;
+                        watermarkElement.style.backgroundRepeat = 'no-repeat';
+                        watermarkElement.style.backgroundPosition = 'center';
+                        watermarkElement.style.backgroundSize = '50% auto';
+                        watermarkElement.classList.remove('hidden');
+                    } else {
+                        watermarkElement.classList.add('hidden');
+                    }
+                }
+                
+                // Build items table
+                let calculatedSubtotal = 0;
+                let calculatedTaxTotal = 0;
+                const currency = businessInfo?.currency || 'XAF';
+                
+                const receiptItemsTableBody = document.getElementById('receiptItemsTableBody');
+                if (receiptItemsTableBody) {
+                    receiptItemsTableBody.innerHTML = '';
+                    
+                    const tableHeader = document.querySelector('.receipt-table thead tr:first-child');
+                    if (tableHeader) {
+                        tableHeader.innerHTML = `
+                            <th class="text-left text-lg text-white-805 font-bold pb-1 w-2/5">${translate('item')}</th>
+                            <th class="text-left text-lg text-white-805 font-bold pb-1 w-1/6">${translate('type')}</th>
+                            <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/12">${translate('qty')}</th>
+                            <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/12">${translate('unitPrice')}</th>
+                            <th class="text-right text-lg text-white-805 font-bold pb-1 w-1/12">${translate('subtotal')}</th>
+                        `;
+                    }
+                    
+                    if (data.items && Array.isArray(data.items)) {
+                        data.items.forEach((item, index) => {
+                            const displayTotal = parseFloat(item.price) || parseFloat(item.total) || parseFloat(item.amount) || 0;
+                            const quantity = parseFloat(item.quantity) || 1;
+                            const unitPrice = quantity > 0 ? displayTotal / quantity : displayTotal;
+                            
+                            const itemTaxRate = parseFloat(item.taxRate) || 0;
+                            const itemTaxAmount = parseFloat(item.taxAmount) || (displayTotal * (itemTaxRate / 100));
+                            
+                            calculatedSubtotal += displayTotal;
+                            calculatedTaxTotal += itemTaxAmount;
+                            
+                            const itemRow = document.createElement('tr');
+                            itemRow.className = 'receipt-item-row';
+                            itemRow.innerHTML = `
+                                <td class="px-4 py-2 text-sm" style="color: black;">${item.name || item.productName || 'Unknown Item'}</td>
+                                <td class="px-4 py-2 text-sm" style="color: black;">${item.type === 'service' ? translate('service') : translate('product')}</td>
+                                <td class="px-4 py-2 text-sm text-right" style="color: black;">${quantity}</td>
+                                <td class="px-4 py-2 text-sm text-right" style="color: black;">${formatCurrency(unitPrice, currency)}</td>
+                                <td class="px-4 py-2 text-sm font-semibold text-right" style="color: black;">${formatCurrency(displayTotal, currency)}</td>
+                            `;
+                            receiptItemsTableBody.appendChild(itemRow);
+                        });
+                    }
+                    
+                    const itemCount = data.items ? data.items.length : 0;
+                    const remainingRows = Math.max(0, 13 - itemCount);
+                    for (let i = 0; i < remainingRows; i++) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="px-4 py-2 text-sm">&nbsp;</td>
+                            <td class="px-4 py-2 text-sm">&nbsp;</td>
+                            <td class="px-4 py-2 text-sm text-right">&nbsp;</td>
+                            <td class="px-4 py-2 text-sm text-right">&nbsp;</td>
+                            <td class="px-4 py-2 text-sm font-semibold text-right">&nbsp;</td>
+                        `;
+                        receiptItemsTableBody.appendChild(tr);
+                    }
+                    
+                    const calculatedTotalAmount = calculatedSubtotal + calculatedTaxTotal;
+                    safeSetText('receiptSubtotal', formatCurrency(calculatedSubtotal, currency));
+                    safeSetText('receiptTax', formatCurrency(calculatedTaxTotal, currency));
+                    safeSetText('receiptTotalAmount', formatCurrency(calculatedTotalAmount, currency));
+                }
+                
+                // Payment type display
+                let paymentTypeDisplay = translatePaymentType(data.paymentTypeDisplay || 'Cash');
+                const paymentTypeDisplayElement = document.getElementById('receiptPaymentTypeDisplay');
+                if (paymentTypeDisplayElement) {
+                    paymentTypeDisplayElement.textContent = paymentTypeDisplay;
+                    paymentTypeDisplayElement.classList.remove('hidden');
+                }
+                
+                const paymentTypeInput = document.getElementById('receiptPaymentTypeInput');
+                if (paymentTypeInput) {
+                    paymentTypeInput.value = paymentTypeDisplay;
+                    paymentTypeInput.classList.add('hidden');
+                }
+                
+                const getSafeNumber = (value) => {
+                    if (value === null || value === undefined || value === '' || isNaN(value)) return 0;
+                    return parseFloat(value);
+                };
+                
+                const calculatedTotalAmount = calculatedSubtotal + calculatedTaxTotal;
+                let advancePayment = getSafeNumber(data.advancePaymentAmount || data.advancePayment || 0);
+                let amountPaid = getSafeNumber(data.amountPaid || data.amountPaidText || calculatedTotalAmount);
+                let balanceDue = getSafeNumber(data.balanceDue || data.balanceDueText || 0);
+                
+                if (balanceDue === 0 && amountPaid < calculatedTotalAmount) {
+                    balanceDue = calculatedTotalAmount - amountPaid;
+                }
+                
+                safeSetText('receiptAdvanceValue', formatCurrency(advancePayment, currency));
+                safeSetText('receiptAmountPaidValue', formatCurrency(amountPaid, currency));
+                safeSetText('receiptBalanceValue', formatCurrency(balanceDue, currency));
+                
+                const receiptAdvancePayment = document.getElementById('receiptAdvancePayment');
+                const receiptAmountPaid = document.getElementById('receiptAmountPaid');
+                const receiptBalanceDue = document.getElementById('receiptBalanceDue');
+                const receiptAdvancePaymentDateElement = document.getElementById('receiptAdvancePaymentDate');
+                
+                if (receiptAdvancePayment) receiptAdvancePayment.classList.remove('hidden');
+                if (receiptAmountPaid) receiptAmountPaid.classList.remove('hidden');
+                if (receiptBalanceDue) receiptBalanceDue.classList.remove('hidden');
+                if (receiptAdvancePaymentDateElement) receiptAdvancePaymentDateElement.classList.add('hidden');
+                
+                // QR Code
+                try {
+                    if (typeof QRious !== 'undefined') {
+                        const qrImg = document.getElementById('receiptQRCode');
+                        if (qrImg) {
+                            const receiptId = data.receiptId || data.id || 'NEW-RCPT';
+                            const businessId = data.business_id || currentBusinessId || 'unknown';
+                            const baseUrl = window.location.origin + window.location.pathname;
+                            const viewUrl = `${baseUrl}?receipt=${encodeURIComponent(receiptId)}&bid=${encodeURIComponent(businessId)}`;
+                            
+                            const qr = new QRious({
+                                value: viewUrl,
+                                size: 160,
+                                level: 'M'
+                            });
+                            
+                            qrImg.src = qr.toDataURL();
+                            qrImg.classList.remove('hidden');
+                            qrImg.style.cursor = 'pointer';
+                            qrImg.title = 'Scan to view receipt or click to copy link';
+                            qrImg.onclick = function() {
+                                navigator.clipboard.writeText(viewUrl).then(() => {
+                                    showMessageModal('Receipt link copied!');
+                                });
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.warn('QR generation failed:', e);
+                }
+                
+                // Customer info
+                const customerInfoDiv = document.getElementById('receiptCustomerInfo');
+                const customerNameToShow = data.customerName || data.customer_name || '';
+                
+                if (customerInfoDiv) {
+                    if (customerNameToShow && customerNameToShow !== 'Tapez le nom du client') {
+                        customerInfoDiv.textContent = `${translate('customer')}: ${customerNameToShow}`;
+                        customerInfoDiv.classList.remove('hidden');
+                    } else {
+                        customerInfoDiv.classList.add('hidden');
+                    }
+                }
+                
+                const customerInput = document.getElementById('receiptCustomerNameInput');
+                if (customerInput) customerInput.classList.add('hidden');
+                
+                const serialInput = document.getElementById('receiptSerialNumberInput');
+                if (serialInput) serialInput.classList.add('hidden');
+                
+                // Guarantee section
+                const guaranteeSection = document.getElementById('receiptGuaranteeSection');
+                if (guaranteeSection && businessInfo) {
+                    if (businessInfo.warrantyUnit === 'none' || businessInfo.warrantyDuration === 0) {
+                        guaranteeSection.classList.add('hidden');
+                    } else {
+                        guaranteeSection.classList.remove('hidden');
+                        const warrantyUnit = businessInfo.warrantyUnit;
+                        const warrantyPeriod = `${businessInfo.warrantyDuration} ${translate(warrantyUnit)}`;
+                        let text = businessInfo.warrantyText?.trim() || 
+                                  translate('defaultGuaranteeText').replace('${warrantyPeriod}', warrantyPeriod);
+                        
+                        let saleDate = new Date();
+                        try {
+                            if (data.date) {
+                                saleDate = new Date(data.date);
+                            }
+                        } catch (e) {}
+                        
+                        let expires = new Date(saleDate);
+                        const duration = businessInfo.warrantyDuration;
+                        const unit = businessInfo.warrantyUnit;
+                        
+                        if (unit === 'days') expires.setDate(expires.getDate() + duration);
+                        else if (unit === 'weeks') expires.setDate(expires.getDate() + (duration * 7));
+                        else if (unit === 'months') expires.setMonth(expires.getMonth() + duration);
+                        else if (unit === 'years') expires.setFullYear(expires.getFullYear() + duration);
+                        
+                        guaranteeSection.innerHTML = `
+                            <p class="font-bold text-black">${translate('guarantee')}:</p>
+                            <p class="font-semibold text-black">${text}</p>
+                            <p id="receiptGuaranteevalidity" class="mt-1 text-red-600">${translate('validUntil')}: <span id="receiptGuaranteeDate">${expires.toLocaleDateString()}</span></p>
+                        `;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error showing receipt from data:', error);
+                showMessageModal((translate('errorShowingReceiptFromData') || 'Error showing receipt') + ': ' + error.message);
+            }
+        }
+        
+        // ============================================
+        // RECEIPT LOADING FUNCTIONS
+        // ============================================
+        
+        async function loadReceipt() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const receiptId = urlParams.get('receipt');
+            const businessId = urlParams.get('bid');
+            
+            if (!receiptId) {
+                showNotFound();
+                return;
+            }
+            
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('receiptContent').classList.add('hidden');
+            document.getElementById('notFoundState').classList.add('hidden');
+            
+            try {
+                const client = getSB();
+                if (!client) throw new Error('No database connection');
+                
+                // Store businessId from URL if provided
+                if (businessId) {
+                    currentBusinessId = businessId;
+                }
+                
+                // Search customer_receipts first
+                let query = client.from('customer_receipts').select('*').eq('receipt_id', receiptId);
+                if (businessId) query = query.eq('business_id', businessId);
+                
+                const { data: customReceipt, error: receiptError } = await query.maybeSingle();
+                
+                if (customReceipt) {
+                    await loadReceiptFromCustomerReceipt(customReceipt);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
+                    return;
+                }
+                
+                // Search sales table by receipt_id
+                let salesQuery = client.from('sales').select('*').eq('receipt_id', receiptId);
+                if (businessId) salesQuery = salesQuery.eq('business_id', businessId);
+                
+                const { data: salesData, error: salesError } = await salesQuery.order('created_at', { ascending: true });
+                
+                if (salesData && salesData.length > 0) {
+                    // Group by business_id if multiple
+                    const firstSale = salesData[0];
+                    await loadReceiptFromSale(firstSale);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
+                    return;
+                }
+                
+                // Search sales by ID (UUID)
+                const { data: singleSale, error: singleError } = await client
+                    .from('sales')
+                    .select('*')
+                    .eq('id', receiptId)
+                    .maybeSingle();
+                
+                if (singleSale) {
+                    await loadReceiptFromSale(singleSale);
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('receiptContent').classList.remove('hidden');
+                    return;
+                }
+                
+                showNotFound();
+                
+            } catch (error) {
+                console.error('Error loading receipt:', error);
+                showNotFound();
+            }
+        }
+        
+        function showNotFound() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('receiptContent').classList.add('hidden');
+            document.getElementById('notFoundState').classList.remove('hidden');
+        }
+        
+        function searchManualReceipt() {
+            const input = document.getElementById('manualReceiptInput').value.trim();
+            if (!input) return;
+            
+            const url = new URL(window.location);
+            url.searchParams.set('receipt', input);
+            window.location.href = url.toString();
+        }
+        
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById('manualReceiptInput');
+                if (input && input.value.trim()) {
+                    searchManualReceipt();
+                }
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReceipt();
+        });
+    </script>
+</body>
+</html>
