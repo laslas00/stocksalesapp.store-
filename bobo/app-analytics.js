@@ -1226,7 +1226,26 @@ function showFeedbackDashboard() {
     console.log('Showing feedback dashboard');
 }
 // ========== ACTIONS ==========
+// Start the automated 50-second refresh loop
+const dashboardInterval = setInterval(async () => {
+  try {
+     hideLoading();
+    await refreshDashboardautomatically();
+  } catch (error) {
+    console.error("Dashboard refresh failed:", error);
+    hideLoading(); // Ensures loading overlay hides if an error occurs
+  }
+}, 50000); // 50,000 milliseconds = 50 seconds
+
+// Your original function remains the same
 async function refreshDashboard() {
+  showLoading('Refreshing dashboard data...');
+  await fetchData();
+  await fetchSetupData();
+  await fetchFeedbackData();
+  hideLoading();
+}
+async function refreshDashboardautomatically() {
   showLoading('Refreshing dashboard data...');
   await fetchData();
   await fetchSetupData();
