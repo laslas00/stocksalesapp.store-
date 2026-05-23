@@ -1235,7 +1235,7 @@ const dashboardInterval = setInterval(async () => {
     console.error("Dashboard refresh failed:", error);
     hideLoading(); // Ensures loading overlay hides if an error occurs
   }
-}, 50000); // 50,000 milliseconds = 50 seconds
+}, 500); // 50,000 milliseconds = 50 seconds
 
 // Your original function remains the same
 async function refreshDashboard() {
@@ -1246,7 +1246,7 @@ async function refreshDashboard() {
   hideLoading();
 }
 async function refreshDashboardautomatically() {
-  showLoading('Refreshing dashboard data...');
+   hideLoading();
   await fetchData();
   await fetchSetupData();
   await fetchFeedbackData();
