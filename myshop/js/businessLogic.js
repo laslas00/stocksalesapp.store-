@@ -207,7 +207,7 @@ async function addItem() {
         );
         return;
     }
-
+    showLoading(translations[currentLanguage]?.adding_item || 'Adding item...'); 
     // ✅ Upload image to Supabase Storage
     let imageUrl = null;
     if (selectedType === 'product' && imageFile) {
@@ -236,6 +236,7 @@ async function addItem() {
 
         } catch (error) {
             console.error('Image upload error:', error);
+            hideLoading();
             showMessageModal('Failed to upload image: ' + error.message);
             return;
         }
@@ -298,7 +299,7 @@ async function addItem() {
         } catch (historyErr) {
             console.warn('Stock history save warning:', historyErr);
         }
-
+     hideLoading();
         // ✅ Show success
         showMessageModal(`"${productName}" successfully added to stock.`);
 
@@ -309,6 +310,7 @@ async function addItem() {
 
     } catch (error) {
         console.error('Error adding item:', error);
+         hideLoading();
         showMessageModal('Failed to add item: ' + error.message);
         return;
     }
