@@ -139,7 +139,290 @@ body {
 #closeNotificationBtn:hover {
     color: #ef4444; /* red-500 */
 }
+/* Security Questions Modal - Responsive Styles */
+.securityQuestions-model {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999999999999999999000;
+    padding: 1rem;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
 
+/* Modal Content Container */
+.securityQuestions-model-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    max-width: 32rem;
+    width: 100%;
+    margin: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Slide In Animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Responsive Breakpoints */
+
+/* Large Screens (Desktops, 1200px and above) */
+@media screen and (min-width: 1200px) {
+    .securityQuestions-model-content {
+        max-width: 600px;
+        padding: 2rem;
+    }
+    
+    .securityQuestions-model-content h3 {
+        font-size: 1.75rem;
+    }
+    
+    .securityQuestions-model-content select,
+    .securityQuestions-model-content input {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+}
+
+/* Medium Screens (Tablets, 768px to 1199px) */
+@media screen and (min-width: 768px) and (max-width: 1199px) {
+    .securityQuestions-model-content {
+        max-width: 550px;
+        padding: 1.75rem;
+        margin: 1rem;
+    }
+    
+    .securityQuestions-model-content h3 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Small Screens (Large Phones, 480px to 767px) */
+@media screen and (min-width: 480px) and (max-width: 767px) {
+    .securityQuestions-model {
+        padding: 0.75rem;
+    }
+    
+    .securityQuestions-model-content {
+        max-width: 95%;
+        padding: 1.25rem;
+        border-radius: 1rem;
+    }
+    
+    .securityQuestions-model-content h3 {
+        font-size: 1.25rem;
+    }
+    
+    .securityQuestions-model-content p {
+        font-size: 0.7rem;
+    }
+    
+    .securityQuestions-model-content select,
+    .securityQuestions-model-content input {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+    
+    .securityQuestions-model-content button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Extra Small Screens (Phones below 480px) */
+@media screen and (max-width: 479px) {
+    .securityQuestions-model {
+        padding: 0.5rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+    
+    .securityQuestions-model-content {
+        max-width: 100%;
+        padding: 1rem;
+        border-radius: 0.75rem;
+    }
+    
+    .securityQuestions-model-content h3 {
+        font-size: 1.1rem;
+    }
+    
+    .securityQuestions-model-content p {
+        font-size: 0.65rem;
+    }
+    
+    /* Stack buttons vertically on very small screens */
+    .securityQuestions-model-content .flex.gap-3 {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+    
+    .securityQuestions-model-content .flex.gap-3 button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .securityQuestions-model-content select,
+    .securityQuestions-model-content input {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .securityQuestions-model-content .space-y-6 {
+        gap: 1rem;
+    }
+    
+    /* Make header more compact */
+    .securityQuestions-model-content .flex.items-center.justify-between {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    /* Adjust close button size */
+    .securityQuestions-model-content svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}
+
+/* Landscape Mode for Mobile */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .securityQuestions-model {
+        align-items: flex-start;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .securityQuestions-model-content {
+        max-width: 80%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+    
+    .securityQuestions-model-content .space-y-6 {
+        gap: 0.75rem;
+    }
+    
+    .securityQuestions-model-content .mt-8 {
+        margin-top: 1rem;
+    }
+    
+    .securityQuestions-model-content h3 {
+        font-size: 1rem;
+    }
+}
+
+/* Touch-friendly adjustments for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .securityQuestions-model-content select,
+    .securityQuestions-model-content input,
+    .securityQuestions-model-content button {
+        min-height: 44px; /* Better touch target size */
+    }
+    
+    .securityQuestions-model-content button {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Optional: Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+    .securityQuestions-model {
+        background-color: rgba(0, 0, 0, 0.95);
+    }
+}
+
+/* Optional: Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .securityQuestions-model-content {
+        animation: none;
+    }
+}
+
+/* Fix for notch devices (iPhone etc.) */
+@supports (padding: max(0px)) {
+    .securityQuestions-model {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Alternative: Mobile-first approach (simpler version) */
+/* Use this if you prefer mobile-first design */
+
+.mobile-first-security-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.mobile-first-security-modal .modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 20px;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Responsive text and spacing */
+.mobile-first-security-modal h3 {
+    font-size: clamp(1.1rem, 5vw, 1.75rem);
+}
+
+.mobile-first-security-modal p {
+    font-size: clamp(0.65rem, 3vw, 0.875rem);
+}
+
+.mobile-first-security-modal select,
+.mobile-first-security-modal input {
+    padding: clamp(8px, 2vw, 12px);
+    font-size: clamp(0.85rem, 3.5vw, 1rem);
+}
+
+.mobile-first-security-modal button {
+    padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
+    font-size: clamp(0.875rem, 3vw, 1rem);
+}
+
+/* Responsive button layout */
+@media (max-width: 480px) {
+    .mobile-first-security-modal .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .mobile-first-security-modal .button-group button {
+        width: 100%;
+    }
+}
 .modal-content {
        background-color: #18181b !important;
     padding: 2rem;
@@ -727,6 +1010,23 @@ margin-left: auto; /* Pushes the modal to the right when combined with right:0 a
 
     .login-Modal:not(.hidden) .modal-content {
         transform: translateY(0);
+    }
+}
+/* For tablets - make it larger but not full screen */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    .login-Modal .modal-content {
+        width: 85%;
+        max-width: 600px;
+        min-width: 400px;
+    }
+}
+
+/* For very large tablets (iPad Pro) */
+@media screen and (min-width: 1024px) and (max-width: 1366px) {
+    .login-Modal .modal-content {
+        width: 70%;
+        max-width: 650px;
+        min-width: 450px;
     }
 }
 .backup-btn {
@@ -4925,5 +5225,282 @@ textarea {
     
     #adminProfileModal .shadow-2xl {
         box-shadow: none;
+    }
+}
+
+/* ========================================
+   PWA INSTALL BANNER - FULLY RESPONSIVE
+   ======================================== */
+
+.pwa-install-banner {
+    /* Positioning - centered at bottom */
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    
+    /* Layout */
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    
+    /* Sizing - responsive */
+    width: calc(100% - 2rem);
+    max-width: 500px;
+    min-width: 280px;
+    
+    /* Styling */
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.25rem;
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    
+    /* Animation */
+    animation: slideUp 0.4s cubic-bezier(0.21, 1.11, 0.35, 1.01);
+}
+
+/* Show state */
+.pwa-install-banner.show {
+    display: flex;
+}
+
+/* Content wrapper */
+.pwa-install-content {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    flex: 1;
+}
+
+/* Icon styling */
+.pwa-install-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 0.875rem;
+    flex-shrink: 0;
+}
+
+.pwa-install-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: white;
+    stroke-width: 1.8;
+}
+
+/* Text styling */
+.pwa-install-text strong {
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: block;
+    color: #f8fafc;
+}
+
+.pwa-install-text p {
+    margin: 0.2rem 0 0;
+    font-size: 0.75rem;
+    color: rgba(248, 250, 252, 0.75);
+}
+
+/* Actions container */
+.pwa-install-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Install button */
+.pwa-install-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pwa-install-btn:hover {
+    transform: scale(1.02);
+    background: linear-gradient(135deg, #059669, #047857);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.pwa-install-btn:active {
+    transform: scale(0.98);
+}
+
+/* Close button */
+.pwa-install-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    border: none;
+    border-radius: 0.5rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.pwa-install-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.pwa-install-close:active {
+    transform: scale(0.95);
+}
+
+/* ========================================
+   ANIMATION
+   ======================================== */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Mobile (up to 480px) */
+@media screen and (max-width: 480px) {
+    .pwa-install-banner {
+        width: calc(100% - 1.5rem);
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        bottom: 0.75rem;
+    }
+    
+    .pwa-install-icon {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .pwa-install-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .pwa-install-text strong {
+        font-size: 0.85rem;
+    }
+    
+    .pwa-install-text p {
+        font-size: 0.7rem;
+    }
+    
+    .pwa-install-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .pwa-install-close {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+}
+
+/* Landscape mode on mobile */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .pwa-install-banner {
+        bottom: 0.5rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .pwa-install-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .pwa-install-text p {
+        display: none;
+    }
+}
+
+/* Tablet (481px - 768px) */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .pwa-install-banner {
+        max-width: 450px;
+    }
+}
+
+/* Desktop (769px and above) */
+@media screen and (min-width: 769px) {
+    .pwa-install-banner {
+        max-width: 480px;
+        bottom: 1.5rem;
+    }
+    
+    .pwa-install-text strong {
+        font-size: 1rem;
+    }
+    
+    .pwa-install-text p {
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+@media (prefers-color-scheme: dark) {
+    .pwa-install-banner {
+        background: rgba(15, 23, 42, 0.98);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* ========================================
+   LIGHT MODE SUPPORT
+   ======================================== */
+@media (prefers-color-scheme: light) {
+    .pwa-install-banner {
+        background: rgba(255, 255, 255, 0.98);
+        color: #1e293b;
+        border-color: rgba(0, 0, 0, 0.1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+    
+    .pwa-install-text strong {
+        color: #1e293b;
+    }
+    
+    .pwa-install-text p {
+        color: rgba(30, 41, 59, 0.7);
+    }
+    
+    .pwa-install-close {
+        background: rgba(0, 0, 0, 0.05);
+        color: #1e293b;
+    }
+    
+    .pwa-install-close:hover {
+        background: rgba(0, 0, 0, 0.1);
     }
 }

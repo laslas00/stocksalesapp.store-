@@ -57,14 +57,21 @@
             </filter>
         </svg>
     </div>
-    <div id="pwaInstallBanner">
-        <div>
-            <strong>Install StockApp*</strong>
-            <p>Add this app to your home screen for faster access.</p>
+    <div id="pwaInstallBanner" class="pwa-install-banner">
+        <div class="pwa-install-content">
+            <div class="pwa-install-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v12m0 0-3-3m3 3 3-3M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                </svg>
+            </div>
+            <div class="pwa-install-text">
+                <strong>Install StockApp*</strong>
+                <p>Add to home screen for faster access & offline use</p>
+            </div>
         </div>
-        <div style="display:flex; gap:0.75rem; align-items:center;">
-            <button id="pwaInstallBtn" type="button">Install</button>
-            <button id="pwaInstallCloseBtn" type="button" aria-label="Close">&times;</button>
+        <div class="pwa-install-actions">
+            <button id="pwaInstallBtn" class="pwa-install-btn">Install</button>
+            <button id="pwaInstallCloseBtn" class="pwa-install-close" aria-label="Close">✕</button>
         </div>
     </div>
 
