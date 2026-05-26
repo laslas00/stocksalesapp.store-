@@ -4,9 +4,7 @@
 (function() {
     'use strict';
 
-    // ==================== CONFIGURATION ====================
-    const SUPABASE_URL = 'https://zexxdoxuzvkovszfqcio.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_svIdBFlhG9fG8zlOsMcs-g_kqUWBT8W';
+
 
     let supabase = null;
     let cachedDeviceId = null;
@@ -14,19 +12,6 @@
     let businessInfo = null;
 
     // ==================== INIT SUPABASE ====================
-    function initSupabase() {
-        if (supabase) return supabase;
-        try {
-            const { createClient } = window.supabase;
-            supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                auth: { persistSession: false }
-            });
-            console.log('✅ Supabase ready');
-        } catch (err) {
-            console.error('Supabase init failed:', err.message);
-        }
-        return supabase;
-    }
 
     // ==================== LOAD USER DATA FROM STORAGE ====================
     function loadUserDataFromStorage() {
@@ -331,7 +316,7 @@
             saveProfileToStorage(profileData);
             
             // Try to update Supabase if available
-            const client = initSupabase();
+            const client =  getSB();
             if (client && profileData.business_id) {
                 try {
                     const deviceId = await getDeviceId();
@@ -565,7 +550,7 @@
     // ==================== TRACK APP EVENT ====================
     window.trackAppEvent = async function(eventType, eventData = {}, username = null) {
         try {
-            const client = initSupabase();
+            const client =  getSB();
             if (!client) return;
 
             const deviceId = await getDeviceId();
@@ -1236,7 +1221,7 @@
         }
         
         try {
-            const client = initSupabase();
+            const client =  getSB();
             const username = window.currentUser?.username || localStorage.getItem('username') || 'Anonymous';
             const deviceId = localStorage.getItem('deviceId') || 'device-' + Date.now();
             

@@ -13,7 +13,6 @@ function closeMessageModal() {
         messageModal.classList.add('hidden'); // Add hidden class if you have CSS for it
     }
     
-    // Close/hide the Electron notification window if it exists
     if (window.electronAPI) {
         if (typeof window.electronAPI.hideNotifyWindow === 'function') {
             window.electronAPI.hideNotifyWindow();
@@ -37,59 +36,59 @@ function closeMessageModal() {
         };
     }
 
-async function setupBusinessInfo(cashierName) {
-    try {
-        if (!businessInfo) {
-            console.warn('Business info not loaded');
-            return;
+    async function setupBusinessInfo(cashierName) {
+        try {
+            if (!businessInfo) {
+                console.warn('Business info not loaded');
+                return;
+            }
+            
+    if (receiptBusinessLogo) {
+        const logoUrl = businessInfo?.logo_url || businessInfo?.logoData || '';
+        if (logoUrl) {
+            receiptBusinessLogo.src = logoUrl;
+            receiptBusinessLogo.classList.remove('hidden');
+        } else {
+            receiptBusinessLogo.classList.add('hidden');
         }
-        
-if (receiptBusinessLogo) {
-    const logoUrl = businessInfo?.logo_url || businessInfo?.logoData || '';
-    if (logoUrl) {
-        receiptBusinessLogo.src = logoUrl;
-        receiptBusinessLogo.classList.remove('hidden');
-    } else {
-        receiptBusinessLogo.classList.add('hidden');
     }
-}
-        if (receiptBusinessName) {
-            receiptBusinessName.textContent = businessInfo.name || 'Your Business Name';
+            if (receiptBusinessName) {
+                receiptBusinessName.textContent = businessInfo.name || 'Your Business Name';
+            }
+            
+            if (receiptBusinessAddress) {
+                receiptBusinessAddress.textContent = businessInfo.address || '';
+            }
+            
+            const cashierElement = document.getElementById('receiptCashierName');
+            if (cashierElement) {
+                cashierElement.textContent = cashierName;
+            }
+            
+            let contactInfo = [];
+            if (businessInfo.shopNumber) contactInfo.push(businessInfo.shopNumber);
+            if (businessInfo.phoneNumberTwo) contactInfo.push(businessInfo.phoneNumberTwo);
+            if (businessInfo.email) contactInfo.push(businessInfo.email);
+                if (businessInfo.Website) contactInfo.push(businessInfo.Website);
+            if (receiptBusinessContact) {
+                receiptBusinessContact.textContent = contactInfo.join(' | ');
+            }
+            
+            if (receiptBusinessSocial) {
+                receiptBusinessSocial.textContent = businessInfo.socialMediaHandles || '';
+            }
+            
+            if (receiptBusinessDetails) {
+                receiptBusinessDetails.textContent = businessInfo.details || '';
+            }
+            
+            // Setup watermark
+            await setupReceiptWatermark();
+            
+        } catch (error) {
+            console.error('Error setting up business info:', error);
         }
-        
-        if (receiptBusinessAddress) {
-            receiptBusinessAddress.textContent = businessInfo.address || '';
-        }
-        
-        const cashierElement = document.getElementById('receiptCashierName');
-        if (cashierElement) {
-            cashierElement.textContent = cashierName;
-        }
-        
-        let contactInfo = [];
-        if (businessInfo.shopNumber) contactInfo.push(businessInfo.shopNumber);
-        if (businessInfo.phoneNumberTwo) contactInfo.push(businessInfo.phoneNumberTwo);
-        if (businessInfo.email) contactInfo.push(businessInfo.email);
-             if (businessInfo.Website) contactInfo.push(businessInfo.Website);
-        if (receiptBusinessContact) {
-            receiptBusinessContact.textContent = contactInfo.join(' | ');
-        }
-        
-        if (receiptBusinessSocial) {
-            receiptBusinessSocial.textContent = businessInfo.socialMediaHandles || '';
-        }
-        
-        if (receiptBusinessDetails) {
-            receiptBusinessDetails.textContent = businessInfo.details || '';
-        }
-        
-        // Setup watermark
-        await setupReceiptWatermark();
-        
-    } catch (error) {
-        console.error('Error setting up business info:', error);
     }
-}
 
 
 
@@ -204,7 +203,7 @@ async function showDashboard() {
         }
         return;
     }
-
+   mainContentContainer.classList.add('hidden');
     // Show loading indicator
     if (typeof showLoading === 'function') {
         showLoading(translate('loading_dashboard'));
@@ -290,270 +289,6 @@ async function showDashboard() {
     }, 10);
 }
 
-// ============================================
-// GREETING ANIMATION WITH TRANSLATION SUPPORT
-// ============================================
-
-// Global variables
-let greetingTimeout = null;
-let originalWelcomePrefix = '';
-
-// CSS Animation Styles (add this once when page loads)
-function injectGreetingStyles() {
-    const styleId = 'greeting-animation-styles';
-    if (document.getElementById(styleId)) return;
-    
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        /* Greeting Container Animation */
-        .greeting-wrapper {
-            display: inline-block;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        #greetings {
-            display: inline-block;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                        opacity 0.3s ease-in-out;
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        /* Slide out animation */
-        #greetings.slide-out {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        
-        /* Slide in animation */
-        #greetings.slide-in {
-            transform: translateY(0);
-            opacity: 1;
-            animation: gentleBounce 0.5s ease-out;
-        }
-        
-        /* Gentle bounce effect */
-        @keyframes gentleBounce {
-            0% {
-                transform: translateY(-15px);
-                opacity: 0;
-            }
-            60% {
-                transform: translateY(3px);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Pulse animation for greeting */
-        #greetings.greeting-active {
-            animation: softPulse 1.5s ease-in-out;
-        }
-        
-        @keyframes softPulse {
-            0% {
-                text-shadow: 0 0 0 rgba(255, 255, 255, 0);
-            }
-            50% {
-                text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            }
-            100% {
-                text-shadow: 0 0 0 rgba(255, 255, 255, 0);
-            }
-        }
-        
-        /* Dark mode support */
-        .dark-mode #greetings.greeting-active {
-            animation: softPulseDark 1.5s ease-in-out;
-        }
-        
-        @keyframes softPulseDark {
-            0% {
-                text-shadow: 0 0 0 rgba(255, 255, 255, 0);
-            }
-            50% {
-                text-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
-            }
-            100% {
-                text-shadow: 0 0 0 rgba(255, 255, 255, 0);
-            }
-        }
-        
-        /* Emoji animation */
-        .greeting-emoji {
-            display: inline-block;
-            animation: wave 0.8s ease-in-out;
-        }
-        
-        @keyframes wave {
-            0%, 100% {
-                transform: rotate(0deg);
-            }
-            25% {
-                transform: rotate(15deg);
-            }
-            75% {
-                transform: rotate(-10deg);
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Call this when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    injectGreetingStyles();
-});
-
-// NEW FUNCTION: Show greeting temporarily with slide animation
-function showGreetingTemporarily() {
-    const greetingsElement = document.getElementById('greetings');
-    
-    if (!greetingsElement) {
-        console.warn('Greetings element not found');
-        return;
-    }
-    
-    // Ensure styles are injected
-    injectGreetingStyles();
-    
-    // Store the original text with translation
-    if (!greetingsElement.dataset.originalText) {
-        const translatedWelcome = typeof translate === 'function' 
-            ? translate('welcomePrefix', 'Welcome to') 
-            : 'Welcome to';
-        greetingsElement.dataset.originalText = translatedWelcome;
-    }
-    
-    // Clear any existing timeout
-    if (greetingTimeout) {
-        clearTimeout(greetingTimeout);
-    }
-    
-    // Remove any existing animation classes
-    greetingsElement.classList.remove('slide-in', 'slide-out', 'greeting-active');
-    
-    // Step 1: Slide out current text
-    greetingsElement.classList.add('slide-out');
-    
-    setTimeout(() => {
-        // Step 2: Change text to greeting (with translation)
-        const greeting = getGreetingMessageWithEmoji();
-        greetingsElement.textContent = greeting;
-        
-        // Step 3: Remove slide-out and add slide-in
-        greetingsElement.classList.remove('slide-out');
-        greetingsElement.classList.add('slide-in', 'greeting-active');
-        
-        // Add wave animation to emoji if present
-        const emojiSpan = document.createElement('span');
-        emojiSpan.className = 'greeting-emoji';
-        
-    }, 300); // Wait for slide-out animation
-    
-    // Step 4: Remove greeting-active after pulse animation completes
-    setTimeout(() => {
-        greetingsElement.classList.remove('greeting-active');
-    }, 1500);
-    
-    // Step 5: After 6 seconds, revert back to original welcome text
-    greetingTimeout = setTimeout(() => {
-        revertToWelcomeText();
-    }, 6000); // 6 seconds display
-}
-
-// NEW FUNCTION: Revert back to original welcome text with slide animation
-function revertToWelcomeText() {
-    const greetingsElement = document.getElementById('greetings');
-    
-    if (!greetingsElement) return;
-    
-    const originalText = greetingsElement.dataset.originalText || 
-        (typeof translate === 'function' ? translate('welcomePrefix', 'Welcome to') : 'Welcome to');
-    
-    // Remove current classes
-    greetingsElement.classList.remove('slide-in', 'greeting-active');
-    
-    // Slide out greeting
-    greetingsElement.classList.add('slide-out');
-    
-    setTimeout(() => {
-        // Restore original translated text
-        greetingsElement.textContent = originalText;
-        
-        // Slide back in
-        greetingsElement.classList.remove('slide-out');
-        greetingsElement.classList.add('slide-in');
-        
-        // Clear the timeout reference
-        greetingTimeout = null;
-        
-        // Remove slide-in class after animation completes
-        setTimeout(() => {
-            greetingsElement.classList.remove('slide-in');
-        }, 400);
-        
-    }, 300); // Wait for slide-out animation
-}
-
-// MODIFIED: Get greeting message with translation support
-function getGreetingMessage() {
-    const hrs = new Date().getHours();
-    
-    if (hrs < 12) {
-        return typeof translate === 'function' 
-            ? translate('good_morning_label', 'Good Morning') 
-            : 'Good Morning';
-    } else if (hrs < 18) {
-        return typeof translate === 'function' 
-            ? translate('good_afternoon_label', 'Good Afternoon') 
-            : 'Good Afternoon';
-    } else {
-        return typeof translate === 'function' 
-            ? translate('good_evening_label', 'Good Evening') 
-            : 'Good Evening';
-    }
-}
-
-// NEW: Get greeting with emoji (for better UX)
-function getGreetingMessageWithEmoji() {
-    const hrs = new Date().getHours();
-    const greeting = getGreetingMessage();
-    
-    if (hrs < 12) {
-        return `☀️ ${greeting}`;
-    } else if (hrs < 18) {
-        return `🌤️ ${greeting}`;
-    } else {
-        return `🌙 ${greeting}`;
-    }
-}
-
-// OPTIONAL: Get personalized greeting with user name
-function getPersonalizedGreeting() {
-    const greeting = getGreetingMessageWithEmoji();
-    
-    try {
-        // Try to get user name from localStorage
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const businessInfo = JSON.parse(localStorage.getItem('businessInfo') || '{}');
-        
-        const userName = userData.name || businessInfo.ownerName || '';
-        
-        if (userName) {
-            return `${greeting}, ${userName}`;
-        }
-    } catch (e) {
-        // Ignore parsing errors
-    }
-    
-    return greeting;
-}
 
 // MODIFIED: Show home overlay with greeting
 async function showHomeOverlay() {
@@ -584,104 +319,7 @@ async function showHomeOverlay() {
     updateLowStockAlert(); 
     closeCalculator();
     
-    // 🎯 Show greeting with slide animation
-    showGreetingTemporarily();
 }
-
-// Clean up function for when leaving home overlay
-function hideHomeOverlay() {
-    // Cancel any pending greeting timeout
-    if (greetingTimeout) {
-        clearTimeout(greetingTimeout);
-        greetingTimeout = null;
-    }
-    
-    // Immediately revert to welcome text (no animation needed)
-    const greetingsElement = document.getElementById('greetings');
-    if (greetingsElement) {
-        greetingsElement.classList.remove('slide-in', 'slide-out', 'greeting-active');
-        const originalText = greetingsElement.dataset.originalText || 
-            (typeof translate === 'function' ? translate('welcomePrefix', 'Welcome to') : 'Welcome to');
-        greetingsElement.textContent = originalText;
-        greetingsElement.style.opacity = '1';
-        greetingsElement.style.transform = 'translateY(0)';
-    }
-    
-    // Your existing hide logic...
-    homeOverlay.classList.add('hidden');
-}
-
-// Optional: Function to manually trigger greeting display
-function refreshGreeting() {
-    if (!homeOverlay.classList.contains('hidden')) {
-        showGreetingTemporarily();
-    }
-}
-
-function closeCalculator() {
-    if (window.calculator) {
-        window.calculator.closeCalculator();
-    }
-}
-    function hideHomeOverlay() {
-        homeOverlay.classList.add('hidden');
-        mainContentContainer.classList.remove('hidden');
-    }
-
-
-
-  async function showCurrentStockSection() {
-        stockOptionsModal.classList.add('hidden');
-        hideAllStockSubSections();
-        currentStockSection.classList.remove('hidden');
-          await loadStock();
-        await loadSalesForYear(year);
-        renderStock();
-        
-    }
-
-
-    function updateSaleFormLabels(itemType) {
-        if (itemType === 'product') {
-            saleQuantityLabel.textContent = 'Quantity Sold';
-            salePriceLabel.textContent = `Sale Price (${getCurrencySymbol()})`;
-            saleProductImageContainer.classList.remove('hidden');
-        } else { 
-            saleQuantityLabel.textContent = 'quantity Sold';
-            salePriceLabel.textContent = `PRICE (${getCurrencySymbol()})`;
-            saleProductImageContainer.classList.add('hidden');
-        }
-    }
-
-
-
-    function updateTime() {
-    const now = new Date(); 
-    const timeOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true 
-    };
-    const timeString = now.toLocaleTimeString('en-US', timeOptions); 
-    const dateOptions = {
-        weekday: 'long', 
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
-    const dateString = now.toLocaleDateString('en-US', dateOptions); 
-    document.getElementById('currentTime').textContent = timeString;
-    document.getElementById('currentDate').textContent = dateString;
-    }
-
-
-    function showSyncingOverlay() {
-        document.getElementById('syncingOverlay').hidden = false;
-    }
-    function hideSyncingOverlay() {
-        document.getElementById('syncingOverlay').hidden = true;
-    }
 
     function hideAllStockSubSections() {
         addItemSection.classList.add('hidden');
@@ -719,76 +357,60 @@ function closeCalculator() {
             showHomeOverlay();
         }
     }
-    function showConvertProgressModal() {
-  document.getElementById("convertProgressModal").classList.remove("hidden");
+// Clean up function for when leaving home overlay
+function hideHomeOverlay() {
+    // Cancel any pending greeting timeout
+    if (greetingTimeout) {
+        clearTimeout(greetingTimeout);
+        greetingTimeout = null;
+    }
+    
+    // Immediately revert to welcome text (no animation needed)
+    const greetingsElement = document.getElementById('greetings');
+    if (greetingsElement) {
+        greetingsElement.classList.remove('slide-in', 'slide-out', 'greeting-active');
+        const originalText = greetingsElement.dataset.originalText || 
+            (typeof translate === 'function' ? translate('welcomePrefix', 'Welcome to') : 'Welcome to');
+        greetingsElement.textContent = originalText;
+        greetingsElement.style.opacity = '1';
+        greetingsElement.style.transform = 'translateY(0)';
+    }
+    
+    // Your existing hide logic...
+    homeOverlay.classList.add('hidden');
 }
 
-function hideConvertProgressModal() {
-  document.getElementById("convertProgressModal").classList.add("hidden");
+
+function closeCalculator() {
+    if (window.calculator) {
+        window.calculator.closeCalculator();
+    }
 }
+    function hideHomeOverlay() {
+        homeOverlay.classList.add('hidden');
+        mainContentContainer.classList.remove('hidden');
+    }
 
 
-function changeAnalyticsYear(delta) {
-    const currentYearDisplay = document.getElementById('currentYearDisplay');
-    const selectedYearInput = document.getElementById('selectedYear');
-    
-    if (!currentYearDisplay) {
-        console.error('Year display element not found');
-        return;
-    }
-     showLoading();
-if (isCancelled) return;
-    // Get current year from display
-    let currentYear = parseInt(currentYearDisplay.textContent);
-    if (isNaN(currentYear)) {
-        currentYear = new Date().getFullYear();
-    }
-    
-    // Update the year
-    currentAnalyticsYear = currentYear + delta;
-    
-    console.log('Changing year from', currentYear, 'to', currentAnalyticsYear);
-    
-    // Update the display
-    currentYearDisplay.textContent = currentAnalyticsYear;
-    
-    // Update hidden input
-    if (selectedYearInput) {
-        selectedYearInput.value = currentAnalyticsYear;
-    }
-    
-    // Check global variable directly (removed window.)
-    if (typeof currentAnalyticsItemId !== 'undefined' && currentAnalyticsItemId) {
-        console.log('Loading analytics for item:', currentAnalyticsItemId, 'year:', currentAnalyticsYear);
-        loadAnalyticsForYear(currentAnalyticsItemId, currentAnalyticsYear);
-    } else {
-        // Fallback: Check if we can recover the ID from the item currently being edited
-        if (currentItemBeingEdited && currentItemBeingEdited.id) {
-            console.warn('Recovered Item ID from currentItemBeingEdited');
-            currentAnalyticsItemId = currentItemBeingEdited.id;
-            loadAnalyticsForYear(currentAnalyticsItemId, currentAnalyticsYear);
-        } else {
-            console.error('No currentAnalyticsItemId found');
-        }
-    }
-}
-function updateConvertProgress(current, total) {
-  const text = document.getElementById("convertProgressText");
-  const bar = document.getElementById("convertProgressBar");
-  const percent = Math.floor((current / total) * 100);
-  text.textContent = `Converting ${current} of ${total} images... (${percent}%)`;
-  bar.style.width = percent + "%";
-}
 
-// Get current user from localStorage (adjust to how you store it)
-function getCurrentUser() {
-    try {
-        const userStr = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
-        return userStr ? JSON.parse(userStr) : null;
-    } catch {
-        return null;
+  async function showCurrentStockSection() {
+        stockOptionsModal.classList.add('hidden');
+        hideAllStockSubSections();
+        currentStockSection.classList.remove('hidden');
+          await loadStock();
+        await loadSalesForYear(year);
+        renderStock();
+        
     }
-}
+
+
+
+    function showSyncingOverlay() {
+        document.getElementById('syncingOverlay').hidden = false;
+    }
+    function hideSyncingOverlay() {
+        document.getElementById('syncingOverlay').hidden = true;
+    }
 
 // Helper to show password prompt
 function showPasswordPrompt(title, onConfirm, onCancel) {
@@ -845,7 +467,7 @@ async function handleFullReset() {
         () => {
             // Show password prompt
             showPasswordPrompt(
-                'Enter admin password to confirm reset',
+                'Enter admin password to confirm reset ',
                 (enteredPassword) => {
                     if (enteredPassword === 'admin123') {
                         performFullReset();

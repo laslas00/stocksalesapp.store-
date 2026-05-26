@@ -2,6 +2,10 @@
 (function() {
     'use strict';
 
+    // Global variable to track current open modal (for back button)
+    window.currentModalId = window.currentModalId || null;
+    window._logoutTimer = null;
+
     // Safe fixImagePath function that doesn't break if the original isn't available
     function safeFixImagePath(path) {
         if (!path) return '';
@@ -18,6 +22,174 @@
         
         // Local asset - return as-is
         return path;
+    }
+
+    // ========== MODAL HISTORY HELPERS ==========
+    
+    /**
+     * Show modal with history state for Android back button
+     */
+    function showModalWithHistory(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return false;
+        
+        // Add history state for back button
+        window.history.pushState({ modal: modalId }, '', window.location.href);
+        
+        // Show the modal
+        modal.classList.remove('hidden');
+        
+        // Handle scale classes if they exist
+        const content = modal.querySelector('.scale-95, .scale-100');
+        if (content) {
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+        
+        // Track which modal is open
+        window.currentModalId = modalId;
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        
+        return true;
+    }
+
+    /**
+     * Hide modal with history cleanup
+     */
+    function hideModalWithHistory(modalId, isFromBackButton = false) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return false;
+        
+        // Hide the modal
+        modal.classList.add('hidden');
+        
+        // Handle scale classes if they exist
+        const content = modal.querySelector('.scale-100');
+        if (content) {
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+        }
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        
+        // Update history if not from back button
+        if (!isFromBackButton && window.currentModalId === modalId) {
+            window.history.pushState({ modal: null }, '', window.location.href);
+            window.currentModalId = null;
+        } else if (isFromBackButton) {
+            window.currentModalId = null;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Close current modal (generic)
+     */
+    function closeCurrentModal() {
+        if (window.currentModalId) {
+            const modal = document.getElementById(window.currentModalId);
+            if (modal && !modal.classList.contains('hidden')) {
+                hideModalWithHistory(window.currentModalId);
+            }
+        }
+    }
+
+    /**
+     * Navigate app views using history state
+     */
+    function navigateToView(viewName) {
+        const dashboardContainer = document.getElementById('main-dashboard-container');
+        const dashcontainer = document.getElementById('dashcontainer');
+        const stockManagementSection = document.getElementById('stockManagementSection');
+        const salesManagementSection = document.getElementById('salesManagementSection');
+        const stockOptionsModal = document.getElementById('stockOptionsModal');
+        const salesOptionsModal = document.getElementById('salesOptionsModal');
+
+        if (viewName === 'stock') {
+            if (stockOptionsModal) stockOptionsModal.classList.remove('hidden');
+            if (salesOptionsModal) salesOptionsModal.classList.add('hidden');
+            if (stockManagementSection) stockManagementSection.classList.remove('hidden');
+            if (salesManagementSection) salesManagementSection.classList.add('hidden');
+            if (dashboardContainer) { dashboardContainer.classList.add('nosee'); dashboardContainer.classList.remove('see'); }
+            if (dashcontainer) dashcontainer.classList.add('hidden');
+            if (typeof hideHomeOverlay === 'function') hideHomeOverlay();
+            document.title = "StockApp* -> Let's take a look at the shop inventory items";
+        } else if (viewName === 'sales') {
+            if (stockOptionsModal) stockOptionsModal.classList.add('hidden');
+            if (salesOptionsModal) salesOptionsModal.classList.remove('hidden');
+            if (stockManagementSection) stockManagementSection.classList.add('hidden');
+            if (salesManagementSection) salesManagementSection.classList.remove('hidden');
+            if (dashboardContainer) { dashboardContainer.classList.add('nosee'); dashboardContainer.classList.remove('see'); }
+            if (dashcontainer) dashcontainer.classList.add('hidden');
+            if (typeof hideHomeOverlay === 'function') hideHomeOverlay();
+            document.title = "StockApp* -> Sales Registry";
+        } else {
+            if (stockOptionsModal) stockOptionsModal.classList.add('hidden');
+            if (salesOptionsModal) salesOptionsModal.classList.add('hidden');
+            if (stockManagementSection) stockManagementSection.classList.add('hidden');
+            if (salesManagementSection) salesManagementSection.classList.add('hidden');
+            if (dashboardContainer) { dashboardContainer.classList.remove('nosee'); dashboardContainer.classList.add('see'); }
+            if (dashcontainer) dashcontainer.classList.remove('hidden');
+            if (typeof showHomeOverlay === 'function') showHomeOverlay();
+            document.title = "StockApp*";
+        }
+    }
+
+    function initializeAppHistoryState() {
+        const currentState = window.history.state;
+        if (!currentState || currentState.view !== 'dashboard') {
+            window.history.replaceState({ view: 'dashboard' }, '', window.location.href);
+        }
+    }
+
+    window.navigateToView = navigateToView;
+    window.initializeAppHistoryState = initializeAppHistoryState;
+
+    /**
+     * Setup global back button handler for all modals
+     */
+    function setupGlobalBackButtonHandler() {
+        if (window._backButtonHandlerSetup) return;
+        window._backButtonHandlerSetup = true;
+        
+        window.addEventListener('popstate', function(event) {
+            // Check if any modal is open
+            if (window.currentModalId) {
+                const modal = document.getElementById(window.currentModalId);
+                if (modal && !modal.classList.contains('hidden')) {
+                    // Close the modal based on type
+                    if (window.currentModalId === 'logoutModal') {
+                        // Cancel logout timer and close modal
+                        if (window._logoutTimer) {
+                            clearInterval(window._logoutTimer);
+                            window._logoutTimer = null;
+                        }
+                        hideModalWithHistory(window.currentModalId, true);
+                    } else if (window.currentModalId === 'imageZoomModal' && typeof closeImageZoom === 'function') {
+                        closeImageZoom(true);
+                    } else if (window.currentModalId === 'businessSettingsModal' && typeof closeBusinessSettingsModal === 'function') {
+                        closeBusinessSettingsModal(true);
+                    } else if (window.currentModalId === 'adminProfileModal' && typeof closeAdminProfileModal === 'function') {
+                        closeAdminProfileModal(true);
+                    } else {
+                        hideModalWithHistory(window.currentModalId, true);
+                    }
+                    event.preventDefault();
+                    return;
+                }
+            }
+            // No modal open, handle app view navigation if state exists
+            const view = event.state && event.state.view ? event.state.view : 'dashboard';
+            if (view) {
+                navigateToView(view);
+                event.preventDefault();
+                return;
+            }
+        });
     }
 
     // Sidebar configuration
@@ -47,6 +219,8 @@
         document.body.insertBefore(sidebarContainer, document.body.firstChild);
         setupEventListeners();
         adjustBodyPadding();
+        setupGlobalBackButtonHandler();
+        initializeAppHistoryState();
     }
 
     /**
@@ -284,55 +458,10 @@
             }
         });
 
-        // Setup logout button
+        // Setup logout button with history support
         const logoutBtn = document.getElementById('sidebar-logout-btn');
         if (logoutBtn) {
-            logoutBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Check if logout modal exists, if not create it
-                let logoutModal = document.getElementById('logoutModal');
-                if (!logoutModal) {
-                    logoutModal = createLogoutModal();
-                    document.body.appendChild(logoutModal);
-                }
-                
-                const logoutModalContent = document.getElementById('logoutModalContent');
-                const countdownTimer = document.getElementById('countdownTimer');
-
-                // Show the logout modal
-                logoutModal.classList.remove('hidden');
-                if (logoutModalContent) {
-                    logoutModalContent.classList.add('scale-100');
-                    logoutModalContent.classList.remove('scale-95');
-                }
-
-                let countdown = 5;
-                if (countdownTimer) countdownTimer.textContent = countdown;
-
-                // Start the countdown
-                const timerInterval = setInterval(() => {
-                    countdown--;
-                    if (countdownTimer) countdownTimer.textContent = countdown;
-                    if (countdown <= 0) {
-                        clearInterval(timerInterval);
-                        // Perform the actual logout and reload
-                        window.currentUser = null;
-                        if (typeof currentUser !== 'undefined') window.currentUser = null;
-                        localStorage.removeItem('rememberedUser');
-                        localStorage.removeItem('userSession');
-                        localStorage.removeItem('currentRole');
-                        localStorage.removeItem('currentUsername');
-                        localStorage.removeItem('currentUserId');
-                        localStorage.removeItem('licensePlan');
-                        localStorage.removeItem('licenseStatus');
-                        localStorage.removeItem('licenseExpires');
-                        localStorage.removeItem('licenseDaysLeft');
-                        window.location.reload();
-                    }
-                }, 1000);
-            };
+            setupLogoutWithHistory(logoutBtn);
         }
 
         setupUserSectionClickHandler();
@@ -349,14 +478,71 @@
         });
     }
 
-    // Helper function to create logout modal if it doesn't exist
+    /**
+     * Setup logout button with modal history support
+     */
+    function setupLogoutWithHistory(logoutBtn) {
+        logoutBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Check if logout modal exists, if not create it
+            let logoutModal = document.getElementById('logoutModal');
+            if (!logoutModal) {
+                logoutModal = createLogoutModal();
+                document.body.appendChild(logoutModal);
+            }
+            
+            const logoutModalContent = document.getElementById('logoutModalContent');
+            const countdownTimer = document.getElementById('countdownTimer');
+
+            // Show the logout modal with history state
+            showModalWithHistory('logoutModal');
+
+            let countdown = 5;
+            if (countdownTimer) countdownTimer.textContent = countdown;
+
+            // Clear any existing timer
+            if (window._logoutTimer) clearInterval(window._logoutTimer);
+            
+            // Start the countdown
+            window._logoutTimer = setInterval(() => {
+                countdown--;
+                if (countdownTimer) countdownTimer.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(window._logoutTimer);
+                    window._logoutTimer = null;
+                    // Perform the actual logout and reload
+                    window.currentUser = null;
+                    if (typeof currentUser !== 'undefined') window.currentUser = null;
+                    localStorage.removeItem('rememberedUser');
+                    localStorage.removeItem('userSession');
+                    localStorage.removeItem('currentRole');
+                    localStorage.removeItem('currentUsername');
+                    localStorage.removeItem('currentUserId');
+                    localStorage.removeItem('licensePlan');
+                    localStorage.removeItem('licenseStatus');
+                    localStorage.removeItem('licenseExpires');
+                    localStorage.removeItem('licenseDaysLeft');
+                    window.location.reload();
+                }
+            }, 1000);
+        };
+    }
+
+    /**
+     * Helper function to create logout modal if it doesn't exist
+     */
     function createLogoutModal() {
         const modal = document.createElement('div');
         modal.id = 'logoutModal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
         modal.innerHTML = `
             <div id="logoutModalContent" class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full mx-4 transform transition-all scale-95">
-                <div class="text-center">
+                <div class="text-center relative">
+                    <button id="closeLogoutBtn" class="absolute top-0 right-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
                     <div class="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
                         <i class="fas fa-sign-out-alt text-2xl text-red-500"></i>
                     </div>
@@ -365,10 +551,25 @@
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
                         <div class="bg-red-500 h-2 rounded-full animate-pulse" style="width: 100%"></div>
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Please wait...</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Press back button or click X to cancel</p>
                 </div>
             </div>
         `;
+        
+        // Add close button functionality after DOM is ready
+        setTimeout(() => {
+            const closeBtn = document.getElementById('closeLogoutBtn');
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    if (window._logoutTimer) {
+                        clearInterval(window._logoutTimer);
+                        window._logoutTimer = null;
+                    }
+                    hideModalWithHistory('logoutModal');
+                };
+            }
+        }, 0);
+        
         return modal;
     }
 
@@ -553,6 +754,9 @@
     window.updateCurrentUserInfo = updateCurrentUserInfo;
     window.updateSidebarUserDisplay = updateUserDisplay;
     window.refreshPlanBadge = updatePlanBadgeFromBusinessInfo;
+    window.showModalWithHistory = showModalWithHistory;
+    window.hideModalWithHistory = hideModalWithHistory;
+    window.closeCurrentModal = closeCurrentModal;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initSidebar);
@@ -615,8 +819,8 @@ async function handleSettingsClick() {
             salesManagementSection.classList.add('hidden');
             stockOptionsModal.classList.add('hidden');
             salesOptionsModal.classList.add('hidden');
-               const panel = document.getElementById('reminderListPanel');
-    panel.classList.add('hidden');
+            const panel = document.getElementById('reminderListPanel');
+            panel.classList.add('hidden');
             await showBusinessSettingsModal();
            
         } catch (error) {
@@ -663,8 +867,6 @@ function showReportsSection() {
 function showSettingsSection() {
     document.title = "StockApp* → Settings";
 }
-
-function hideDashboard() {}
 
 function showReminderListPanel() {
     stockManagementSection.classList.add('hidden');

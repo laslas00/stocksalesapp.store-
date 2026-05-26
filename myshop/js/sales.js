@@ -6,6 +6,18 @@ const recordSaleBtn = document.getElementById('recordSaleBtn');
 if (recordSaleBtn) {
     recordSaleBtn.addEventListener('click', recordSale);
 }
+    function updateSaleFormLabels(itemType) {
+        if (itemType === 'product') {
+            saleQuantityLabel.textContent = 'Quantity Sold';
+            salePriceLabel.textContent = `Sale Price (${getCurrencySymbol()})`;
+            saleProductImageContainer.classList.remove('hidden');
+        } else { 
+            saleQuantityLabel.textContent = 'quantity Sold';
+            salePriceLabel.textContent = `PRICE (${getCurrencySymbol()})`;
+            saleProductImageContainer.classList.add('hidden');
+        }
+    }
+
 
    function showSaleProductSuggestions() {
         const inputVal = saleProductNameInput.value.toLowerCase().trim();
@@ -863,6 +875,9 @@ if (typeof salesHistoryTypeFilter !== 'undefined' && salesHistoryTypeFilter) {
     salesHistoryPaymentFilter.addEventListener('change', renderSales);
     salesHistoryTypeFilter.addEventListener('change', renderSales);
 async function showSalesManagement() { 
+    if (!window.history.state || window.history.state.view !== 'sales') {
+        window.history.pushState({ view: 'sales' }, '', window.location.href);
+    }
     hideHomeOverlay();
      closeBusinessModal();
      const dashboardContainer = document.getElementById('main-dashboard-container');

@@ -14,6 +14,9 @@ async function showStockManagement() {
         }
         
         if (currentUser.role === 'administrator' || currentUser.role === 'manager') {
+            if (!window.history.state || window.history.state.view !== 'stock') {
+                window.history.pushState({ view: 'stock' }, '', window.location.href);
+            }
             document.title = "StockApp* -> Let's take a look at the shop inventory items";
             
             // Hide UI elements

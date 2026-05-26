@@ -131,7 +131,50 @@ async function loadAnalyticsForYear(itemId, year) {
         showMessageModal(`${translate('failed_to_load_data_for_year')}: ${error.message}`);
     }
 }
-
+function changeAnalyticsYear(delta) {
+    const currentYearDisplay = document.getElementById('currentYearDisplay');
+    const selectedYearInput = document.getElementById('selectedYear');
+    
+    if (!currentYearDisplay) {
+        console.error('Year display element not found');
+        return;
+    }
+     showLoading();
+if (isCancelled) return;
+    // Get current year from display
+    let currentYear = parseInt(currentYearDisplay.textContent);
+    if (isNaN(currentYear)) {
+        currentYear = new Date().getFullYear();
+    }
+    
+    // Update the year
+    currentAnalyticsYear = currentYear + delta;
+    
+    console.log('Changing year from', currentYear, 'to', currentAnalyticsYear);
+    
+    // Update the display
+    currentYearDisplay.textContent = currentAnalyticsYear;
+    
+    // Update hidden input
+    if (selectedYearInput) {
+        selectedYearInput.value = currentAnalyticsYear;
+    }
+    
+    // Check global variable directly (removed window.)
+    if (typeof currentAnalyticsItemId !== 'undefined' && currentAnalyticsItemId) {
+        console.log('Loading analytics for item:', currentAnalyticsItemId, 'year:', currentAnalyticsYear);
+        loadAnalyticsForYear(currentAnalyticsItemId, currentAnalyticsYear);
+    } else {
+        // Fallback: Check if we can recover the ID from the item currently being edited
+        if (currentItemBeingEdited && currentItemBeingEdited.id) {
+            console.warn('Recovered Item ID from currentItemBeingEdited');
+            currentAnalyticsItemId = currentItemBeingEdited.id;
+            loadAnalyticsForYear(currentAnalyticsItemId, currentAnalyticsYear);
+        } else {
+            console.error('No currentAnalyticsItemId found');
+        }
+    }
+}
 function createMoreInfoModalIfNeeded() {
     if (document.getElementById('moreInfoModal')) {
         return; // Modal already exists

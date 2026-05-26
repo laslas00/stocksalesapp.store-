@@ -44,11 +44,17 @@ function zoomImage(imageUrl, imageTitle = '') {
         titleEl.textContent = imageTitle;
     }
     
+    // === ADD HISTORY STATE FOR BACK BUTTON ===
+    window.history.pushState({ modal: 'imageZoomModal' }, '', window.location.href);
+    
     // Show modal
     modal.classList.remove('hidden');
     setTimeout(() => {
         modal.classList.add('active');
     }, 10);
+    
+    // Track current modal
+    currentModalId = 'imageZoomModal';
     
     // Prevent body scroll
     document.body.style.overflow = 'hidden';
@@ -64,7 +70,7 @@ function zoomImage(imageUrl, imageTitle = '') {
     updateZoomIndicator();
 }
 
-function closeImageZoom() {
+function closeImageZoom(isFromBackButton = false) {
     const modal = document.getElementById('imageZoomModal');
     if (modal) {
         modal.classList.remove('active');
@@ -84,10 +90,20 @@ function closeImageZoom() {
     }
     
     // Remove wheel zoom listener
-    modal.removeEventListener('wheel', handleWheelZoom);
+    if (modal) {
+        modal.removeEventListener('wheel', handleWheelZoom);
+    }
     
     // Reset state
     isDragging = false;
+    
+    // === UPDATE HISTORY IF NOT FROM BACK BUTTON ===
+    if (!isFromBackButton && currentModalId === 'imageZoomModal') {
+        window.history.pushState({ modal: null }, '', window.location.href);
+        currentModalId = null;
+    } else if (isFromBackButton) {
+        currentModalId = null;
+    }
 }
 
 // Zoom controls
@@ -310,3 +326,38 @@ function zoomUserPhoto() {
 
 
 
+// Put this all in a file like modalHelper.js or in your <script> tag
+
+let currentModalId = null;
+
+function showModal(modalId) {
+    if (currentModalId) {
+        document.getElementById(currentModalId).classList.add('hidden');
+    }
+    
+    window.history.pushState({ modal: modalId }, '', window.location.href);
+    document.getElementById(modalId).classList.remove('hidden');
+    currentModalId = modalId;
+}
+
+function hideModal(modalId, isFromBack = false) {
+    document.getElementById(modalId).classList.add('hidden');
+    currentModalId = null;
+    
+    if (!isFromBack) {
+        window.history.pushState({ modal: null }, '', window.location.href);
+    }
+}
+
+function closeCurrentModal() {
+    if (currentModalId) {
+        hideModal(currentModalId);
+    }
+}
+
+// Back button handler
+window.addEventListener('popstate', function() {
+    if (currentModalId) {
+        hideModal(currentModalId, true);
+    }
+});
