@@ -1,4 +1,11 @@
-const CACHE_NAME = 'stockapp-shell-v1';
+// ========================================
+// SERVICE WORKER VERSION CONTROL
+// ========================================
+const APP_VERSION = '2.0.2'; // ← CHANGE THIS EVERY TIME YOU UPDATE
+const CACHE_NAME = `stockapp-v${APP_VERSION}`;
+
+console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
+
 const ASSETS_TO_CACHE = [
   'shop.html',
   'manifest.webmanifest',
@@ -87,16 +94,14 @@ const ASSETS_TO_CACHE = [
 // Helper function to check if response is cacheable
 function isCacheableResponse(response) {
   if (!response || !response.ok) return false;
-  // 206 Partial Content is NOT cacheable
   if (response.status === 206) return false;
-  // Only cache 200 responses
   if (response.status !== 200) return false;
   return true;
 }
 
-// Install event - cache files individually with error handling
+// Install event
 self.addEventListener('install', event => {
-  console.log('Service Worker installing...');
+  console.log(`Service Worker v${APP_VERSION} installing...`);
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -107,22 +112,16 @@ self.addEventListener('install', event => {
         for (const asset of ASSETS_TO_CACHE) {
           try {
             const response = await fetch(asset, {
-              // Force a full response, not a range request
-              headers: {
-                'Range': 'bytes=0-'  // Request full file
-              }
+              headers: { 'Range': 'bytes=0-' }
             });
             
             if (response && isCacheableResponse(response)) {
               await cache.put(asset, response);
               console.log(`✅ Cached: ${asset}`);
             } else if (response && response.status === 206) {
-              // Handle partial response - fetch again without range
-              console.warn(`⚠️ Partial response for ${asset}, retrying without range...`);
+              console.warn(`⚠️ Partial response for ${asset}, retrying...`);
               const fullResponse = await fetch(asset, {
-                headers: {
-                  'Range': undefined  // Remove range header
-                }
+                headers: { 'Range': undefined }
               });
               if (fullResponse && fullResponse.status === 200) {
                 await cache.put(asset, fullResponse);
@@ -147,7 +146,7 @@ self.addEventListener('install', event => {
         if (skipped.length > 0) {
           console.warn('Skipped (206 partial):', skipped);
         }
-        console.log('Service Worker install complete!');
+        console.log(`Service Worker v${APP_VERSION} install complete!`);
       })
       .then(() => self.skipWaiting())
   );
@@ -155,7 +154,7 @@ self.addEventListener('install', event => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
-  console.log('Service Worker activating...');
+  console.log(`Service Worker v${APP_VERSION} activating...`);
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
@@ -169,24 +168,19 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - with 206 handling
+// Fetch event
 self.addEventListener('fetch', event => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  // Skip Supabase API calls
   const url = event.request.url;
   if (url.includes('supabase.co') || url.includes('api/')) {
     return;
   }
   
-  // Handle navigation requests
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .catch(() => {
-          return caches.match('shop.html');
-        })
+        .catch(() => caches.match('shop.html'))
     );
     return;
   }
@@ -194,23 +188,18 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
+        if (cachedResponse) return cachedResponse;
         
-        // Clone the request to remove range headers if needed
         const newRequest = new Request(event.request, {
           headers: new Headers(event.request.headers)
         });
         
-        // Remove Range header to avoid 206 responses
         if (newRequest.headers.has('Range')) {
           newRequest.headers.delete('Range');
         }
         
         return fetch(newRequest)
           .then(networkResponse => {
-            // Only cache successful 200 responses
             if (networkResponse && networkResponse.status === 200) {
               const responseToCache = networkResponse.clone();
               caches.open(CACHE_NAME)
@@ -221,9 +210,6 @@ self.addEventListener('fetch', event => {
                     console.warn('Cache put failed:', e);
                   }
                 });
-            } else if (networkResponse && networkResponse.status === 206) {
-              // Don't cache 206 responses
-              console.log('Skipping cache for 206 response:', url);
             }
             return networkResponse;
           })
@@ -242,6 +228,29 @@ self.addEventListener('fetch', event => {
           });
       })
   );
+});
+
+// ========================================
+// FIXED: Message handler (NO PROMISES in postMessage)
+// ========================================
+
+self.addEventListener('message', async function(event) {
+    if (event.data && event.data.type === 'CHECK_INSTALL_STATUS') {
+        const clients = await self.clients.matchAll();
+        let isInstalled = false;
+        
+        for (const client of clients) {
+            if (client.url && (client.url.includes('/myshop/') || client.url.includes('stocksalesapp'))) {
+                isInstalled = true;
+                break;
+            }
+        }
+        
+        event.source.postMessage({
+            type: 'INSTALL_STATUS',
+            installed: isInstalled
+        });
+    }
 });
 
 // Background sync

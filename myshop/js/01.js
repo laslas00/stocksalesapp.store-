@@ -1,18 +1,17 @@
+if (!sessionStorage.getItem('cameFromSplash')) {
+    window.location.href = "main.html";
+} else {
+    sessionStorage.removeItem('cameFromSplash');
+}
 
-    if (!sessionStorage.getItem('cameFromSplash')) {
-        window.location.href = "main.html";
-    } else {
-        sessionStorage.removeItem('cameFromSplash');
-    }
 
 
-// Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', function() {
     
     // Register Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('/myshop/sw.js')
+            navigator.serviceWorker.register('sw.js')
                 .then(function (registration) {
                     console.log('Service worker registered with scope:', registration.scope);
                 })
@@ -22,92 +21,209 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // PWA Install Banner Logic
+    // ========================================
+    // UNINSTALL DETECTION LOGIC
+    // ========================================
+    
+    // Check if app is running in standalone mode (installed PWA)
+    function isAppInstalled() {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                             window.matchMedia('(display-mode: fullscreen)').matches ||
+                             window.navigator.standalone === true;
+        
+        const isFromHomeScreen = window.navigator.standalone === true;
+        const wasInstalledFlag = localStorage.getItem('pwaInstalled') === 'true';
+        
+        return isStandalone || isFromHomeScreen || wasInstalledFlag;
+    }
+    
+    // Track installation status
+    let wasPreviouslyInstalled = localStorage.getItem('pwaInstalled') === 'true';
+    let isCurrentlyInstalled = isAppInstalled();
+    
+    // Detect uninstall
+    const wasUninstalled = wasPreviouslyInstalled && !isCurrentlyInstalled;
+    
+    if (wasUninstalled) {
+        console.log('🔴 App was uninstalled! Resetting banner state...');
+        localStorage.removeItem('pwaInstalled');
+        localStorage.removeItem('pwaBannerDismissed');
+        localStorage.removeItem('pwaBannerDismissedAt');
+        localStorage.removeItem('pwaInstallCompleted');
+        sessionStorage.removeItem('pwaInstallShown');
+        wasPreviouslyInstalled = false;
+    }
+    
+    if (isCurrentlyInstalled && !wasPreviouslyInstalled) {
+        console.log('✅ App is installed (display mode: standalone)');
+        localStorage.setItem('pwaInstalled', 'true');
+    }
+    
+    // ========================================
+    // BANNER DISMISSAL WITH EXPIRY
+    // ========================================
+    
+    const BANNER_DISMISSAL_DAYS = 7;
+    const BANNER_DISMISSAL_KEY = 'pwaBannerDismissed';
+    const BANNER_DISMISSAL_TIME_KEY = 'pwaBannerDismissedAt';
+    
+    function isBannerDismissedValid() {
+        const dismissedAt = localStorage.getItem(BANNER_DISMISSAL_TIME_KEY);
+        if (!dismissedAt) return false;
+        const daysSinceDismissal = (Date.now() - parseInt(dismissedAt)) / (1000 * 60 * 60 * 24);
+        return daysSinceDismissal < BANNER_DISMISSAL_DAYS;
+    }
+    
+    function shouldShowBanner() {
+        if (isAppInstalled()) return false;
+        const isDismissed = localStorage.getItem(BANNER_DISMISSAL_KEY) === 'true';
+        const isDismissalValid = isBannerDismissedValid();
+        if (isDismissed && isDismissalValid) return false;
+        if (isDismissed && !isDismissalValid) {
+            localStorage.removeItem(BANNER_DISMISSAL_KEY);
+            localStorage.removeItem(BANNER_DISMISSAL_TIME_KEY);
+        }
+        return true;
+    }
+    
+    // ========================================
+    // SERVICE WORKER COMMUNICATION
+    // ========================================
+    
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CHECK_INSTALL_STATUS' });
+    }
+    
+    navigator.serviceWorker.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'INSTALL_STATUS') {
+            if (!event.data.installed && localStorage.getItem('pwaInstalled') === 'true') {
+                localStorage.removeItem('pwaInstalled');
+                console.log('🔄 Sync: Uninstall detected via service worker');
+                localStorage.removeItem('pwaBannerDismissed');
+                localStorage.removeItem('pwaBannerDismissedAt');
+                if (deferredInstallPrompt && shouldShowBanner()) {
+                    pwaInstallBanner?.classList.add('show');
+                }
+            }
+        }
+    });
+    
+    // ========================================
+    // PERIODIC INSTALL STATUS CHECK
+    // ========================================
+    
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            setTimeout(() => {
+                const currentlyInstalled = isAppInstalled();
+                const storedInstalled = localStorage.getItem('pwaInstalled') === 'true';
+                
+                if (storedInstalled && !currentlyInstalled) {
+                    console.log('🔴 Uninstall detected on visibility change');
+                    localStorage.removeItem('pwaInstalled');
+                    localStorage.removeItem('pwaBannerDismissed');
+                    localStorage.removeItem('pwaBannerDismissedAt');
+                    if (deferredInstallPrompt && shouldShowBanner()) {
+                        pwaInstallBanner?.classList.add('show');
+                    }
+                } else if (currentlyInstalled && !storedInstalled) {
+                    console.log('✅ Install detected on visibility change');
+                    localStorage.setItem('pwaInstalled', 'true');
+                    pwaInstallBanner?.classList.remove('show');
+                }
+            }, 500);
+        }
+    });
+    
+    window.addEventListener('focus', function() {
+        setTimeout(() => {
+            const currentlyInstalled = isAppInstalled();
+            const storedInstalled = localStorage.getItem('pwaInstalled') === 'true';
+            
+            if (storedInstalled && !currentlyInstalled) {
+                console.log('🔴 Uninstall detected on window focus');
+                localStorage.removeItem('pwaInstalled');
+                localStorage.removeItem('pwaBannerDismissed');
+                localStorage.removeItem('pwaBannerDismissedAt');
+                if (deferredInstallPrompt && shouldShowBanner()) {
+                    pwaInstallBanner?.classList.add('show');
+                }
+            }
+        }, 300);
+    });
+    
+    // ========================================
+    // PWA INSTALL BANNER LOGIC
+    // ========================================
+    
     let deferredInstallPrompt = null;
     const pwaInstallBanner = document.getElementById('pwaInstallBanner');
     const pwaInstallBtn = document.getElementById('pwaInstallBtn');
     const pwaInstallCloseBtn = document.getElementById('pwaInstallCloseBtn');
     
-    // Check if already installed (PWA mode)
-    const isPWAInstalled = window.matchMedia('(display-mode: standalone)').matches || 
-                           window.navigator.standalone === true;
-    
-    // Check if user already dismissed the banner
-    const hasDismissedBanner = localStorage.getItem('pwaBannerDismissed') === 'true';
-    
-    // Only show banner if NOT already installed and NOT dismissed
-    if (!isPWAInstalled && !hasDismissedBanner) {
+    if (shouldShowBanner()) {
         window.addEventListener('beforeinstallprompt', function (event) {
             event.preventDefault();
             deferredInstallPrompt = event;
-            if (pwaInstallBanner) {
-                pwaInstallBanner.classList.add('show');
+            if (shouldShowBanner() && !isAppInstalled()) {
+                pwaInstallBanner?.classList.add('show');
+                console.log('📱 Showing install banner');
             }
         });
     }
     
-    // Install button click
     pwaInstallBtn?.addEventListener('click', async function () {
         if (!deferredInstallPrompt) {
-            // Fallback for browsers that don't support beforeinstallprompt
-            alert('To install, open this site in Chrome and look for the install icon in the address bar.');
+            if (isIOS()) {
+                alert('To install: Tap the Share button (box with arrow) then select "Add to Home Screen"');
+            } else {
+                alert('To install, open this site in Chrome/Firefox and look for the install icon in the address bar.');
+            }
             return;
         }
         
-        // Hide banner
         pwaInstallBanner?.classList.remove('show');
-        
-        // Show install prompt
         deferredInstallPrompt.prompt();
         const choiceResult = await deferredInstallPrompt.userChoice;
         deferredInstallPrompt = null;
-        console.log('PWA install choice:', choiceResult.outcome);
         
-        // If user declined, store that they saw the prompt
-        if (choiceResult.outcome === 'dismissed') {
-            localStorage.setItem('pwaBannerDismissed', 'true');
+        if (choiceResult.outcome === 'accepted') {
+            console.log('✅ User accepted installation');
+        } else {
+            console.log('❌ User dismissed installation');
+            localStorage.setItem(BANNER_DISMISSAL_KEY, 'true');
+            localStorage.setItem(BANNER_DISMISSAL_TIME_KEY, Date.now().toString());
         }
     });
     
-    // Close button click
     pwaInstallCloseBtn?.addEventListener('click', function () {
-        if (pwaInstallBanner) {
-            pwaInstallBanner.classList.remove('show');
-            // Store that user dismissed the banner (won't show again for 30 days)
-            localStorage.setItem('pwaBannerDismissed', 'true');
-            localStorage.setItem('pwaBannerDismissedAt', Date.now());
-        }
+        pwaInstallBanner?.classList.remove('show');
+        localStorage.setItem(BANNER_DISMISSAL_KEY, 'true');
+        localStorage.setItem(BANNER_DISMISSAL_TIME_KEY, Date.now().toString());
+        console.log('📱 User dismissed banner for', BANNER_DISMISSAL_DAYS, 'days');
     });
     
-    // App installed event
     window.addEventListener('appinstalled', function () {
         deferredInstallPrompt = null;
-        if (pwaInstallBanner) {
-            pwaInstallBanner.classList.remove('show');
-        }
-        console.log('PWA was installed successfully');
+        pwaInstallBanner?.classList.remove('show');
+        localStorage.setItem('pwaInstalled', 'true');
+        localStorage.removeItem(BANNER_DISMISSAL_KEY);
+        localStorage.removeItem(BANNER_DISMISSAL_TIME_KEY);
+        console.log('🎉 PWA was installed successfully!');
         
-        // Optional: Show success message
         if (typeof showMessageModal === 'function') {
-            showMessageModal('✅ StockApp* installed successfully! Check your home screen.', 3000);
+            showMessageModal('✅ StockApp* installed! Check your home screen.', 3000);
         }
     });
     
-    // Optional: Reset banner after 30 days
-    const dismissedAt = localStorage.getItem('pwaBannerDismissedAt');
-    if (dismissedAt && (Date.now() - dismissedAt) > 30 * 24 * 60 * 60 * 1000) {
-        localStorage.removeItem('pwaBannerDismissed');
-        localStorage.removeItem('pwaBannerDismissedAt');
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
     
-    // For iOS devices (which don't support beforeinstallprompt)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS && !isPWAInstalled && !localStorage.getItem('pwaBannerDismissed')) {
-        // Show custom iOS instruction banner
+    if (isIOS() && !isAppInstalled() && shouldShowBanner()) {
         setTimeout(() => {
             if (pwaInstallBanner && !pwaInstallBanner.classList.contains('show')) {
                 pwaInstallBanner.classList.add('show');
-                // Change text for iOS users
                 const bannerText = pwaInstallBanner.querySelector('.pwa-install-text p');
                 if (bannerText) {
                     bannerText.textContent = 'Tap Share → Add to Home Screen';
@@ -115,13 +231,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 const installBtn = document.getElementById('pwaInstallBtn');
                 if (installBtn) {
                     installBtn.textContent = 'How to Install';
-                    installBtn.onclick = () => {
-                        alert('To install: Tap the Share button (box with arrow) then select "Add to Home Screen"');
-                        pwaInstallBanner.classList.remove('show');
-                        localStorage.setItem('pwaBannerDismissed', 'true');
-                    };
                 }
             }
         }, 1000);
     }
-});
+    
+    console.log('🚀 PWA System Ready - Uninstall detection active');
+    
+    // ========================================
+    // FORCE SERVICE WORKER UPDATE CHECKER
+    // ========================================
+    
+    function forceServiceWorkerUpdate() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                // Check for updates every minute
+                setInterval(() => {
+                    registration.update();
+                    console.log('🔄 Checking for Service Worker updates...');
+                }, 60000);
+            });
+            
+            // Listen for new service worker
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('🔄 New Service Worker activated! Reloading...');
+                window.location.reload();
+            });
+        }
+    }
+    
+    // Call the force update checker
+    forceServiceWorkerUpdate();
+    
+}); // ← This closes the DOMContentLoaded event listener
