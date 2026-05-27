@@ -207,40 +207,34 @@ async function addItem() {
         );
         return;
     }
-    showLoading(translations[currentLanguage]?.adding_item || 'Adding item...'); 
-    // ✅ Upload image to Supabase Storage
-    let imageUrl = null;
-    if (selectedType === 'product' && imageFile) {
-        try {
-            const client = getSB();
-            if (!client) throw new Error('Database not connected');
+showLoading(translations[currentLanguage]?.adding_item || 'Adding item...'); 
 
-            const fileExt = imageFile.name.split('.').pop();
-            const fileName = `products/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
+// ✅ Upload image to Cloudinary
+let imageUrl = null;
+if (selectedType === 'product' && imageFile) {
+    try {
+        const client = getSB();
+        if (!client) throw new Error('Database not connected');
+        
+        const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
 
-            const { error: uploadError } = await client.storage
-                .from('logos')
-                .upload(fileName, imageFile, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+        // Simple upload with loading message
+        const uploadResult = await uploadToCloudinary(imageFile, {
+            folder: `businesses/${currentBusinessId}/products`,
+            publicId: `product_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+        });
+        
+        imageUrl = uploadResult.url;
+        console.log('✅ Product image uploaded:', imageUrl);
 
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = client.storage
-                .from('logos')
-                .getPublicUrl(fileName);
-            
-            imageUrl = urlData.publicUrl;
-            console.log('✅ Image uploaded:', imageUrl);
-
-        } catch (error) {
-            console.error('Image upload error:', error);
-            hideLoading();
-            showMessageModal('Failed to upload image: ' + error.message);
-            return;
-        }
+    } catch (error) {
+        console.error('Image upload error:', error);
+        hideLoading();
+        showMessageModal('Failed to upload image: ' + error.message);
+        return;
     }
+}
+ 
 
     // ✅ Create new item (WITH BUSINESS ID)
     const newItem = {

@@ -459,7 +459,7 @@ async function rendersalesAssociates() {
         });
     }
 
-    // Save New Sales Associate
+
 if (saveNewSalesAssociateBtn) {
     saveNewSalesAssociateBtn.addEventListener('click', async function(e) {
         e.preventDefault();
@@ -489,10 +489,15 @@ if (saveNewSalesAssociateBtn) {
             return;
         }
 
+        // Disable button during processing
+        saveNewSalesAssociateBtn.disabled = true;
+        const originalButtonText = saveNewSalesAssociateBtn.textContent;
+        saveNewSalesAssociateBtn.textContent = 'Processing...';
+
         try {
             const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
 
-            // Check if username exists (in same business)
+            // Check if username exists
             let checkQuery = client.from('users').select('id').eq('username', username);
             if (currentBusinessId) checkQuery = checkQuery.eq('business_id', currentBusinessId);
             
@@ -503,28 +508,31 @@ if (saveNewSalesAssociateBtn) {
                 return;
             }
 
-            // Upload photo if selected
+            // Upload photo to Cloudinary
             let photoUrl = '';
             if (photoFile) {
-                const fileExt = photoFile.name.split('.').pop();
-                const fileName = `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
-                
-                const { error: uploadError } = await client.storage
-                    .from('logos')
-                    .upload(fileName, photoFile, {
-                        cacheControl: '3600',
-                        upsert: true
+                try {
+                    saveNewSalesAssociateBtn.textContent = 'Uploading photo...';
+                    
+                    const uploadResult = await uploadToCloudinary(photoFile, {
+                        folder: `businesses/${currentBusinessId}/associates`,
+                        publicId: `associate_${Date.now()}_${username.replace(/\s/g, '_')}`
                     });
-
-                if (!uploadError) {
-                    const { data: urlData } = client.storage
-                        .from('logos')
-                        .getPublicUrl(fileName);
-                    photoUrl = urlData.publicUrl;
+                    
+                    photoUrl = uploadResult.url;
+                    console.log('✅ Photo uploaded:', photoUrl);
+                    
+                } catch (uploadError) {
+                    console.warn('Photo upload failed:', uploadError);
+                    // Show warning but continue
+                    showMessageModal('Photo upload failed, but associate will be created without photo', 'warning');
+                    photoUrl = '';
                 }
             }
 
             // Create new sales associate
+            saveNewSalesAssociateBtn.textContent = 'Saving to database...';
+            
             const { error: insertError } = await client
                 .from('users')
                 .insert([{
@@ -542,16 +550,19 @@ if (saveNewSalesAssociateBtn) {
                     created_at: new Date().toISOString()
                 }]);
 
-                        // In saveNewSalesAssociateBtn, change the error handling to show the full error:
             if (insertError) {
-                console.error('Insert error details:', JSON.stringify(insertError));
-                showMessageModal('Failed to add: ' + insertError.message + ' | Code: ' + insertError.code);
+                console.error('Insert error:', JSON.stringify(insertError));
+                showMessageModal('Failed to add: ' + insertError.message);
                 return;
-            };
+            }
 
             // Clear form
             if (typeof clearSalesAssociateForm === 'function') clearSalesAssociateForm();
+            
+            // Reset file input
+            if (newSalesAssociatePhotoInput) newSalesAssociatePhotoInput.value = '';
 
+            // Refresh lists
             if (typeof loadUsers === 'function') await loadUsers();
             if (typeof rendersalesAssociates === 'function') rendersalesAssociates();
             
@@ -562,10 +573,13 @@ if (saveNewSalesAssociateBtn) {
         } catch (error) {
             console.error('Error adding associate:', error);
             showMessageModal(translations[currentLanguage]?.failedToAddSalesAssociate || 'Failed to add sales associate');
+        } finally {
+            // Re-enable button
+            saveNewSalesAssociateBtn.disabled = false;
+            saveNewSalesAssociateBtn.textContent = originalButtonText;
         }
     });
 }
-
 
     // Show Admin Profile Modal
 window.showAdminProfileModal = async function (username) {
@@ -654,13 +668,19 @@ if (saveAdminProfileBtn) {
         
         const saveBtn = this;
         saveBtn.disabled = true;
-        saveBtn.innerText = translations[currentLanguage]?.saving_text || "SAVING...";
+        
+        // Show different status messages
+        const updateButtonStatus = (message) => {
+            saveBtn.innerText = message;
+        };
+        
+        updateButtonStatus(translations[currentLanguage]?.saving_text || "SAVING...");
 
         const client = getSB();
         if (!client) {
             showMessageModal('Database connection failed.');
             saveBtn.disabled = false;
-            saveBtn.innerText = translations[currentLanguage]?.save_changes || "SAVE CHANGES";
+            updateButtonStatus(translations[currentLanguage]?.save_changes || "SAVE CHANGES");
             return;
         }
 
@@ -670,23 +690,28 @@ if (saveAdminProfileBtn) {
             let finalPhotoUrl = document.getElementById('adminProfilePhotoPreview').src;
             const photoFile = editAdminPhotoInput.files[0];
 
-            // Upload photo to Supabase Storage
-            if (photoFile) {
-                const fileExt = photoFile.name.split('.').pop();
-                const fileName = `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
-                
-                const { error: uploadError } = await client.storage
-                    .from('logos')
-                    .upload(fileName, photoFile, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
+            // Check if it's a default/placeholder image
+            if (finalPhotoUrl === '' || finalPhotoUrl.includes('default-avatar') || finalPhotoUrl === window.location.origin + '/default-avatar.png') {
+                finalPhotoUrl = '';
+            }
 
-                if (!uploadError) {
-                    const { data: urlData } = client.storage
-                        .from('logos')
-                        .getPublicUrl(fileName);
-                    finalPhotoUrl = urlData.publicUrl;
+            // Upload photo to Cloudinary
+            if (photoFile) {
+                try {
+                    updateButtonStatus('📸 Uploading photo...');
+                    
+                    const uploadResult = await uploadToCloudinary(photoFile, {
+                        folder: `businesses/${currentBusinessId}/admins`,
+                        publicId: `admin_${originalUsername}_${Date.now()}`
+                    });
+                    
+                    finalPhotoUrl = uploadResult.url;
+                    console.log('✅ Admin photo uploaded:', finalPhotoUrl);
+                    
+                } catch (uploadError) {
+                    console.warn('⚠️ Photo upload failed:', uploadError);
+                    showMessageModal('Photo upload failed, but continuing with save', 'warning');
+                    // Keep existing photo
                 }
             }
 
@@ -696,15 +721,17 @@ if (saveAdminProfileBtn) {
                 phone: document.getElementById('editAdminPhone').value,
                 email: document.getElementById('editAdminEmail').value,
                 address: document.getElementById('editAdminAddress').value,
-                photo_url: finalPhotoUrl,
+                photo_url: finalPhotoUrl || null,
                 role: 'administrator',
                 updated_at: new Date().toISOString()
             };
 
-            // Remove empty password (don't overwrite with blank)
+            // Remove empty password
             if (!updatedUser.password) delete updatedUser.password;
 
-            // Update in Supabase (with business safety)
+            updateButtonStatus('💾 Saving to database...');
+
+            // Update in Supabase
             let updateQuery = client.from('users').update(updatedUser).eq('username', originalUsername).eq('role', 'administrator');
             if (currentBusinessId) updateQuery = updateQuery.eq('business_id', currentBusinessId);
 
@@ -721,7 +748,11 @@ if (saveAdminProfileBtn) {
             if (originalUsername === currentUser.username) {
                 currentUser = { ...currentUser, ...updatedUser };
                 localStorage.setItem('currentUsername', updatedUser.username);
+                if (finalPhotoUrl) localStorage.setItem('currentUserPhoto', finalPhotoUrl);
             }
+
+            // Clear file input
+            if (editAdminPhotoInput) editAdminPhotoInput.value = '';
 
         } catch (error) {
             console.error('Update admin error:', error);
@@ -787,23 +818,23 @@ if (saveNewAdminBtn) {
                 return;
             }
 
-            // Upload photo if selected
-            if (photoFile) {
-                const fileExt = photoFile.name.split('.').pop();
-                const fileName = `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
-                
-                const { error: uploadError } = await client.storage
-                    .from('logos')
-                    .upload(fileName, photoFile, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
 
-                if (!uploadError) {
-                    const { data: urlData } = client.storage
-                        .from('logos')
-                        .getPublicUrl(fileName);
-                    photoUrl = urlData.publicUrl;
+            if (photoFile) {
+                try {
+                    // Show loading indicator (optional)
+                    saveNewSalesAssociateBtn.textContent = '📸 Uploading photo...';
+                    
+                    const uploadResult = await uploadToCloudinary(photoFile, {
+                        folder: `businesses/${currentBusinessId}/associates`,
+                        publicId: `associate_${Date.now()}_${username.replace(/\s/g, '_')}`
+                    });
+                    
+                    photoUrl = uploadResult.url;
+                    console.log('✅ Associate photo uploaded to Cloudinary:', photoUrl);
+                    
+                } catch (uploadError) {
+                    console.warn('⚠️ Photo upload failed, continuing without photo:', uploadError);
+                    photoUrl = ''; // Continue without photo
                 }
             }
 
@@ -1102,28 +1133,26 @@ document.getElementById('saveSalesProfileBtn')?.addEventListener('click', async 
     try {
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
         
-        // Handle photo upload to Supabase Storage
+        // Handle photo upload to Cloudinary (instead of Supabase)
         let finalPhotoUrl = document.getElementById('salesProfilePhotoPreview').src;
         const photoFile = document.getElementById('editSalesPhoto').files[0];
         
         if (photoFile) {
-            const fileExt = photoFile.name.split('.').pop();
-            const fileName = `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
-            
-            const { error: uploadError } = await client.storage
-                .from('logos')
-                .upload(fileName, photoFile, {
-                    cacheControl: '3600',
-                    upsert: true
+            try {
+                // Update button text to show upload progress
+                saveBtn.textContent = '📸 Uploading photo...';
+                
+                const uploadResult = await uploadToCloudinary(photoFile, {
+                    folder: `businesses/${currentBusinessId}/sales_profiles`,
+                    publicId: `sales_${username}_${Date.now()}`
                 });
-
-            if (!uploadError) {
-                const { data: urlData } = client.storage
-                    .from('logos')
-                    .getPublicUrl(fileName);
-                finalPhotoUrl = urlData.publicUrl;
-            } else {
-                console.warn('Photo upload failed:', uploadError.message);
+                
+                finalPhotoUrl = uploadResult.url;
+                console.log('✅ Sales profile photo uploaded to Cloudinary:', finalPhotoUrl);
+                
+            } catch (uploadError) {
+                console.warn('⚠️ Photo upload failed:', uploadError.message);
+                // Keep existing photo URL (don't update)
             }
         }
         
@@ -1148,6 +1177,9 @@ document.getElementById('saveSalesProfileBtn')?.addEventListener('click', async 
             updatedUser.address = document.getElementById('editSalesAddress').value.trim();
         }
         
+        // Update button text for database operation
+        saveBtn.textContent = '💾 Saving to database...';
+        
         // Update in Supabase (with business safety)
         let updateQuery = client.from('users').update(updatedUser).eq('username', username);
         if (currentBusinessId) updateQuery = updateQuery.eq('business_id', currentBusinessId);
@@ -1159,15 +1191,20 @@ document.getElementById('saveSalesProfileBtn')?.addEventListener('click', async 
         showMessageModal('Profile updated successfully!');
         document.getElementById('salesProfileModal').classList.add('hidden');
         
+        // Clear file input
+        document.getElementById('editSalesPhoto').value = '';
+        
         if (typeof loadUsers === 'function') await loadUsers();
         
         // Update current user if they edited their own profile
         if (currentUser && currentUser.username === username) {
             currentUser = { ...currentUser, ...updatedUser };
             localStorage.setItem('currentUsername', currentUser.username);
+            if (finalPhotoUrl) localStorage.setItem('currentUserPhoto', finalPhotoUrl);
         }
 
     } catch (error) {
+        console.error('Error updating profile:', error);
         showMessageModal(error.message);
     } finally {
         saveBtn.disabled = false;

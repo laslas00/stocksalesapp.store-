@@ -219,45 +219,32 @@ async function saveBusinessSettings() {
         updatedBusinessInfo.fontStyle = businessFontStyleInput.value;
     }
 
-    // ========== UPLOAD LOGO TO SUPABASE STORAGE ==========
-    const logoFile = logoFileInput.files[0]; 
-// Upload logo with correct authentication
+// ========== UPLOAD LOGO TO CLOUDINARY ==========
+const logoFile = logoFileInput.files[0]; 
+
+// Upload logo with Cloudinary
 if (logoFile) {
     try {
         const client = getSB();
         if (!client) throw new Error('Database not connected');
         
-        // Ensure user is authenticated
-        const session = await client.auth.getSession();
-        if (!session.data.session) {
-            throw new Error('User not authenticated. Please log in again.');
+        // Get business ID for organization
+        const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || 'general';
+        
+        // Show uploading status (optional)
+        if (typeof showLoading === 'function') {
+            showLoading('📸 Uploading logo...');
         }
         
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        // Upload to Cloudinary
+        const uploadResult = await uploadToCloudinary(logoFile, {
+            folder: `businesses/${currentBusinessId}/logos`,
+            publicId: `logo_${Date.now()}`
+        });
         
-        // Upload to storage with proper bucket
-        const { error: uploadError } = await client.storage
-            .from('logos')
-            .upload(fileName, logoFile, {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: logoFile.type
-            });
-        
-        if (uploadError) {
-            console.error('Upload error details:', uploadError);
-            throw uploadError;
-        }
-        
-        // Get public URL
-        const { data: urlData } = client.storage
-            .from('logos')
-            .getPublicUrl(fileName);
-        
-        updatedBusinessInfo.logo_url = urlData.publicUrl;
-        updatedBusinessInfo.logoData = urlData.publicUrl;
-        console.log('✅ Logo uploaded successfully:', urlData.publicUrl);
+        updatedBusinessInfo.logo_url = uploadResult.url;
+        updatedBusinessInfo.logoData = uploadResult.url;
+        console.log('✅ Logo uploaded successfully to Cloudinary:', uploadResult.url);
         
     } catch (error) {
         console.error('Logo upload error:', error);

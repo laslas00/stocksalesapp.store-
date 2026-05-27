@@ -50,26 +50,23 @@
     }
 
     // ==================== GET DEVICE ID ====================
-    async function getDeviceId() {
-        if (cachedDeviceId) return cachedDeviceId;
+ async function getDeviceId() {
+    if (cachedDeviceId) return cachedDeviceId;
+    
+    try {
+        const businessId = localStorage.getItem('businessId');
+        const userSession = JSON.parse(localStorage.getItem('userSession') || '{}');
+        const bizId = businessId || userSession?.business_id || window.currentUser?.business_id;
         
-        cachedDeviceId = localStorage.getItem('deviceId');
-        
-        if (!cachedDeviceId && window.electronAPI?.getMachineId) {
-            try {
-                cachedDeviceId = await window.electronAPI.getMachineId();
-                if (cachedDeviceId) localStorage.setItem('deviceId', cachedDeviceId);
-            } catch (err) {}
+        if (bizId) {
+            console.log('📱 Device ID = Business ID:', bizId);
+            localStorage.setItem('deviceId', bizId);
+            cachedDeviceId = bizId;
+            return bizId;
         }
-        
-        if (!cachedDeviceId) {
-            cachedDeviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', cachedDeviceId);
-        }
-        
-        return cachedDeviceId;
-    }
-
+    } catch (err) {}
+    
+}
     // ==================== GET USER LOCATION ====================
     async function getUserLocation() {
         const resultBase = { 
@@ -553,7 +550,7 @@
             const client =  getSB();
             if (!client) return;
 
-            const deviceId = await getDeviceId();
+            const deviceId =  await getDeviceId();
             let location = null;
             try {
                 location = await getUserLocation();
@@ -1223,7 +1220,8 @@
         try {
             const client =  getSB();
             const username = window.currentUser?.username || localStorage.getItem('username') || 'Anonymous';
-            const deviceId = localStorage.getItem('deviceId') || 'device-' + Date.now();
+            const deviceId = getDeviceId();
+              
             
             if (client) {
                 await client.from('user_feedback').insert({

@@ -425,28 +425,33 @@ async function updateItemDetails() {
     const now = new Date().toISOString();
 
     try {
-        // ========== 1. UPLOAD NEW IMAGE IF SELECTED ==========
+        // ========== 1. UPLOAD NEW IMAGE TO CLOUDINARY (if selected) ==========
         let newImageUrl = currentItemBeingEdited.imageUrl || currentItemBeingEdited.image_url || '';
         
         if (currentItemBeingEdited.type === 'product' && newImageFile) {
-            const fileExt = newImageFile.name.split('.').pop();
-            const fileName = `${Date.now()}.${fileExt}`;
-            
-            const { error: uploadError } = await client.storage
-                .from('logos')
-                .upload(fileName, newImageFile, {
-                    cacheControl: '3600',
-                    upsert: true
+            try {
+                // Update loading message
+                if (typeof showLoading === 'function') {
+                    showLoading('📸 Uploading product image...');
+                }
+                
+                const uploadResult = await uploadToCloudinary(newImageFile, {
+                    folder: `businesses/${currentBusinessId}/products`,
+                    publicId: `product_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
                 });
+                
+                newImageUrl = uploadResult.url;
+                console.log('✅ New product image uploaded to Cloudinary:', newImageUrl);
+                
+            } catch (uploadError) {
+                console.error('Image upload error:', uploadError);
+                throw new Error('Image upload failed: ' + uploadError.message);
+            }
+        }
 
-            if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
-            
-            const { data: urlData } = client.storage
-                .from('logos')
-                .getPublicUrl(fileName);
-            newImageUrl = urlData.publicUrl;
-            
-            console.log('✅ New image uploaded:', newImageUrl);
+        // Update loading message
+        if (typeof showLoading === 'function') {
+            showLoading('💾 Saving changes to database...');
         }
 
         // ========== 2. UPDATE ITEM IN SUPABASE (with business safety) ==========

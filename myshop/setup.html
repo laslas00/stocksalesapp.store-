@@ -1069,7 +1069,6 @@
 
 
 
-<script src="js/track.js"></script>
 <script>
 // ============================================
 // SUPABASE CONFIGURATION - YOUR PROJECT
@@ -1624,46 +1623,55 @@ async function completeSetup() {
         // ============================================
         // STEP 1: Upload logo if exists
         // ============================================
-        let logoUrl = '';
-        if (logoFile) {
-            const fileExt = logoFile.name.split('.').pop();
-            const fileName = `${Date.now()}.${fileExt}`;
-            try {
-                const { error: uploadError } = await client.storage
-                    .from('logos')
-                    .upload(fileName, logoFile, { cacheControl: '3600', upsert: false });
-                if (!uploadError) {
-                    const { data: urlData } = client.storage.from('logos').getPublicUrl(fileName);
-                    logoUrl = urlData.publicUrl;
-                    console.log('✅ Logo uploaded:', logoUrl);
-                }
-            } catch (uploadErr) {
-                console.warn('⚠️ Logo upload error (non-critical):', uploadErr);
-            }
-        }
+          // Simple upload using your existing preset
+      let logoUrl = '';
+      if (logoFile) {
+          try {
+              const formData = new FormData();
+              formData.append('file', logoFile);
+              formData.append('upload_preset', 'stockapp_logos');  // Your preset name
+              
+              const response = await fetch(
+                  `https://api.cloudinary.com/v1_1/${window.ENV.CLOUDINARY_CLOUD_NAME}/image/upload`,
+                  { method: 'POST', body: formData }
+              );
+              
+              if (!response.ok) {
+                  throw new Error(`Upload failed: ${response.status}`);
+              }
+              
+              const result = await response.json();
+              logoUrl = result.secure_url;  // Cloudinary URL
+              console.log('✅ Logo uploaded to Cloudinary:', logoUrl);
+              
+          } catch (uploadErr) {
+              console.warn('⚠️ Logo upload error (non-critical):', uploadErr);
+              logoUrl = '';  // Set empty on error
+          }
+      }
 
-        const adminEmail = setupData.business.email || `${setupData.owner.username.toLowerCase()}@StockApp.local`;
-        const adminPassword = setupData.owner.password;
-        const adminUsername = setupData.owner.username;
-        const adminFullName = setupData.owner.name;
+      const adminEmail = setupData.business.email || `${setupData.owner.username.toLowerCase()}@StockApp.local`;
+      const adminPassword = setupData.owner.password;
+      const adminUsername = setupData.owner.username;
+      const adminFullName = setupData.owner.name;
 
-        // ============================================
-        // STEP 2: Create business FIRST
-        // ============================================
-        const newBusinessInfo = {
-            name: setupData.business.name || '',
-            address: setupData.business.address || '',
-            phone: setupData.business.primaryPhone || '',
-            email: setupData.business.email || '',
-            website: setupData.business.website || '',
-            description: setupData.business.description || '',
-            logo_url: logoUrl,
-            currency: setupData.settings?.currency || 'XAF',
-            language: selectedLanguage,
-            setup_completed: true,
-            owner_name: adminFullName,
-            created_at: new Date().toISOString()
-        };
+      // ============================================
+      // STEP 2: Create business FIRST
+      // ============================================
+      const newBusinessInfo = {
+          name: setupData.business.name || '',
+          address: setupData.business.address || '',
+          phone: setupData.business.primaryPhone || '',
+          email: setupData.business.email || '',
+          website: setupData.business.website || '',
+          description: setupData.business.description || '',
+          logo_url: logoUrl,  // Cloudinary URL
+          currency: setupData.settings?.currency || 'XAF',
+          language: selectedLanguage,
+          setup_completed: true,
+          owner_name: adminFullName,
+          created_at: new Date().toISOString()
+      };
 
         console.log('📤 Creating business...');
         const { data: newBiz, error: bizInsertError } = await client

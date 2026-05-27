@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER VERSION CONTROL
 // ========================================
-const APP_VERSION = '2.0.2'; // ← CHANGE THIS EVERY TIME YOU UPDATE
+const APP_VERSION = '2.0.3'; // ← CHANGE THIS EVERY TIME YOU UPDATE
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 
 console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
