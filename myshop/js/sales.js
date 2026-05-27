@@ -1032,10 +1032,10 @@ async function loadSales(startDate, endDate) {
             throw new Error('Database connection not available');
         }
 
-        // Build query with business filter
+        // Build query with business filter and only needed fields
         let query = client
             .from('sales')
-            .select('*')
+            .select('id,product_name,quantity,price,total_amount,payment_type,username,business_id,type,date_sold,receipt_id')
             .gte('date_sold', startDate)
             .lte('date_sold', endDate)
             .order('date_sold', { ascending: false });

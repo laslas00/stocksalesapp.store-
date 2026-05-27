@@ -865,6 +865,19 @@
               <label class="form-label" data-translate="business_email_label">Business Email</label>
               <input type="email" id="businessEmail" class="input-control" data-translate-placeholder="placeholder_email" placeholder="contact@shop.com">
               <div id="emailSuggestion" style="display: none;"></div>
+              <div id="emailVerificationBlock" style="display: none; margin-top: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; background: rgba(255,255,255,0.04);">
+                <p id="emailVerificationPrompt" style="margin-bottom: 10px; font-size: 0.9rem; color: var(--text-main);">
+                  We sent a verification code to <strong id="emailVerificationTarget"></strong>.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                  <input type="text" id="emailVerificationInput" class="input-control" placeholder="Enter code" maxlength="6" style="flex: 1; min-width: 160px;">
+                  <button type="button" id="verifyEmailCodeBtn" class="btn btn-ghost">Verify</button>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                  <button type="button" id="resendVerificationBtn" class="btn btn-ghost">Resend Code</button>
+                  <span id="verificationStatus" style="font-size: 0.85rem; color: var(--text-dim);"></span>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label" data-translate="business_email_website">Business website</label>
@@ -1246,6 +1259,13 @@ async function checkEmailAvailability(email) {
             suggestionEl.style.display = 'none';
             suggestionEl.innerHTML = '';
         }
+        resetEmailVerificationState();
+        return null;
+    }
+
+    const emailFormat = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+    if (!emailFormat.test(email)) {
+        resetEmailVerificationState();
         return null;
     }
     
@@ -1282,6 +1302,7 @@ async function checkEmailAvailability(email) {
                     </div>
                 `;
             }
+            resetEmailVerificationState();
             return false;
         } else {
             // Email available
@@ -1293,6 +1314,11 @@ async function checkEmailAvailability(email) {
                         <span data-translate="email_available">Email available!</span>
                     </div>
                 `;
+            }
+            if (currentVerificationEmail !== email) {
+                await sendVerificationCode(email);
+            } else {
+                showEmailVerificationBlock(email);
             }
             return true;
         }
@@ -1314,6 +1340,200 @@ function suggestEmail(email) {
         // Trigger validation
         checkEmailAvailability(email);
     }
+}
+
+let emailVerificationCode = '';
+let currentVerificationEmail = '';
+let emailVerified = false;
+let emailVerificationSentAt = null;
+let emailResendTimerId = null;
+const emailResendCooldownSeconds = 60;
+
+function generateVerificationCode() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function showEmailVerificationBlock(email) {
+    const block = document.getElementById('emailVerificationBlock');
+    const target = document.getElementById('emailVerificationTarget');
+    if (target) target.textContent = email;
+    if (block) block.style.display = 'block';
+}
+
+function hideEmailVerificationBlock() {
+    const block = document.getElementById('emailVerificationBlock');
+    const status = document.getElementById('verificationStatus');
+    const prompt = document.getElementById('emailVerificationPrompt');
+    const input = document.getElementById('emailVerificationInput');
+    const resendBtn = document.getElementById('resendVerificationBtn');
+    if (block) block.style.display = 'none';
+    if (status) {
+        status.textContent = '';
+        status.style.color = '';
+    }
+    if (prompt) prompt.textContent = '';
+    if (input) input.value = '';
+    if (resendBtn) {
+        resendBtn.disabled = false;
+        resendBtn.textContent = translate('resend_code') || 'Resend Code';
+    }
+}
+
+function resetEmailVerificationState() {
+    emailVerificationCode = '';
+    currentVerificationEmail = '';
+    emailVerified = false;
+    emailVerificationSentAt = null;
+    if (emailResendTimerId) {
+        clearInterval(emailResendTimerId);
+        emailResendTimerId = null;
+    }
+    hideEmailVerificationBlock();
+}
+
+function startEmailResendCooldown() {
+    const resendBtn = document.getElementById('resendVerificationBtn');
+    const status = document.getElementById('verificationStatus');
+    let countdown = emailResendCooldownSeconds;
+
+    if (emailResendTimerId) {
+        clearInterval(emailResendTimerId);
+    }
+
+    if (resendBtn) {
+        resendBtn.disabled = true;
+        resendBtn.textContent = `${translate('resend_code') || 'Resend Code'} (${countdown}s)`;
+    }
+
+    emailResendTimerId = setInterval(() => {
+        countdown -= 1;
+        if (resendBtn) {
+            resendBtn.textContent = `${translate('resend_code') || 'Resend Code'} (${countdown}s)`;
+        }
+
+        if (countdown <= 0) {
+            clearInterval(emailResendTimerId);
+            emailResendTimerId = null;
+            if (resendBtn) {
+                resendBtn.disabled = false;
+                resendBtn.textContent = translate('resend_code') || 'Resend Code';
+            }
+            if (status) {
+                status.textContent = translate('email_verification_ready') || 'You can resend the code now.';
+                status.style.color = 'var(--text-dim)';
+            }
+        }
+    }, 1000);
+}
+
+async function sendVerificationCode(email) {
+    if (!email) return false;
+
+    if (currentVerificationEmail !== email) {
+        resetEmailVerificationState();
+        currentVerificationEmail = email;
+    }
+
+    if (emailVerified && currentVerificationEmail === email) {
+        showEmailVerificationBlock(email);
+        return true;
+    }
+
+    emailVerificationCode = generateVerificationCode();
+    showEmailVerificationBlock(email);
+
+    const status = document.getElementById('verificationStatus');
+    const resendBtn = document.getElementById('resendVerificationBtn');
+    const prompt = document.getElementById('emailVerificationPrompt');
+    if (status) {
+        status.textContent = translate('sending_code_text') || 'Sending verification code...';
+        status.style.color = 'var(--text-dim)';
+    }
+    if (resendBtn) {
+        resendBtn.disabled = true;
+        resendBtn.textContent = translate('resending_code') || 'Resending...';
+    }
+    if (prompt) {
+        prompt.innerHTML = `A verification code has been sent to <strong>${email}</strong>.`;
+    }
+
+    try {
+        let client = getSetupDB();
+        if (client && typeof client.then === 'function') {
+            client = await client;
+        }
+        if (!client || !client.functions) {
+            throw new Error('Unable to initialize Supabase functions client.');
+        }
+
+        const { data, error } = await client.functions.invoke('send-verification-code', {
+            body: JSON.stringify({ email, code: emailVerificationCode }),
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        emailVerificationSentAt = Date.now();
+        if (status) {
+            status.textContent = translate('verification_code_sent_to') || `Verification code sent to ${email}`;
+            status.style.color = 'var(--text-main)';
+        }
+        startEmailResendCooldown();
+        return true;
+    } catch (error) {
+        console.error('Verification email error:', error);
+        if (status) {
+            status.textContent = translate('send_verification_failed') || 'Failed to send verification email.';
+            status.style.color = '#f87171';
+        }
+        if (resendBtn) {
+            resendBtn.disabled = false;
+            resendBtn.textContent = translate('resend_code') || 'Resend Code';
+        }
+        return false;
+    }
+}
+
+function verifyEmailCode() {
+    const codeInput = document.getElementById('emailVerificationInput');
+    const status = document.getElementById('verificationStatus');
+    const enteredCode = codeInput?.value.trim();
+
+    if (!enteredCode || enteredCode.length !== 6) {
+        showMessageModal(translate('enter_verification_code') || '❌ Please enter the 6-digit verification code.');
+        return false;
+    }
+
+    if (enteredCode !== emailVerificationCode) {
+        if (status) {
+            status.textContent = translate('verification_code_invalid') || '❌ Invalid verification code. Please try again.';
+            status.style.color = '#f97316';
+        }
+        return false;
+    }
+
+    emailVerified = true;
+    if (status) {
+        status.textContent = translate('email_verified_success') || '✅ Email verified successfully!';
+        status.style.color = 'var(--success)';
+    }
+    const suggestionEl = document.getElementById('emailSuggestion');
+    if (suggestionEl) {
+        suggestionEl.style.display = 'block';
+        suggestionEl.innerHTML = `
+            <div class="mt-2 text-sm text-green-400">
+                <i class="fas fa-check-circle"></i>
+                <span data-translate="email_verified">Email verified!</span>
+            </div>
+        `;
+    }
+    return true;
+}
+
+function resendVerificationCode() {
+    if (!currentVerificationEmail) return;
+    sendVerificationCode(currentVerificationEmail);
 }
 
 // ============================================
@@ -1422,6 +1642,10 @@ async function validateCurrentStep() {
                     const isEmailAvailable = await checkEmailAvailability(businessEmail);
                     if (isEmailAvailable === false) {
                         showMessageModal(translate('email_taken_message') || '❌ Email already registered! Please use a different email or <a href="index.html" style="color: #3b82f6;">login here</a>.');
+                        return false;
+                    }
+                    if (!emailVerified || currentVerificationEmail !== businessEmail) {
+                        showMessageModal(translate('email_verification_required') || '❌ Please verify your business email before continuing.');
                         return false;
                     }
                 }
@@ -1560,7 +1784,8 @@ function saveStepData() {
                 address: document.getElementById('businessAddress')?.value.trim() || '',
                 email: document.getElementById('businessEmail')?.value.trim() || '',
                 website: document.getElementById('businesswebsite')?.value.trim() || '',
-                primaryPhone: document.getElementById('primaryPhone')?.value.trim() || ''
+                primaryPhone: document.getElementById('primaryPhone')?.value.trim() || '',
+                emailVerified: emailVerified && currentVerificationEmail === (document.getElementById('businessEmail')?.value.trim() || '')
             };
             // Trigger email check if email exists
             if (setupData.business.email) {
@@ -1903,7 +2128,7 @@ async function completeSetup() {
         // ============================================
         setTimeout(() => {
             window.location.href = `shop.html?newSetup=true&trial=7days&lang=${encodeURIComponent(selectedLanguage)}`;
-        }, 8000000); // 8 seconds - enough time to read "check email" message
+        }, 9000); // 9 seconds - enough time to read "check email" message
 
     } catch (error) {
         console.error('❌ Setup error:', error);
@@ -2062,6 +2287,29 @@ document.addEventListener('DOMContentLoaded', function() {
             emailCheckTimer = setTimeout(() => {
                 checkEmailAvailability(e.target.value.trim());
             }, 500);
+        });
+    }
+
+    const verifyEmailBtn = document.getElementById('verifyEmailCodeBtn');
+    if (verifyEmailBtn) {
+        verifyEmailBtn.addEventListener('click', function() {
+            verifyEmailCode();
+        });
+    }
+
+    const resendVerificationBtn = document.getElementById('resendVerificationBtn');
+    if (resendVerificationBtn) {
+        resendVerificationBtn.addEventListener('click', function() {
+            resendVerificationCode();
+        });
+    }
+
+    const verificationInput = document.getElementById('emailVerificationInput');
+    if (verificationInput) {
+        verificationInput.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                verifyEmailCode();
+            }
         });
     }
 });

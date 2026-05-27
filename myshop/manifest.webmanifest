@@ -2,7 +2,7 @@
   "name": "StockApp*",
   "short_name": "StockApp",
   "description": "Inventory and sales management for shops.",
-  "start_url": "shop.html",
+  "start_url": "main.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

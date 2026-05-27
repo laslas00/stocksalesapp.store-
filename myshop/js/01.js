@@ -1,7 +1,19 @@
-if (!sessionStorage.getItem('cameFromSplash')) {
+const urlParams = new URLSearchParams(window.location.search);
+const isFromSplash = urlParams.get('splash') === 'true';
+
+if (!sessionStorage.getItem('cameFromSplash') && !isFromSplash) {
+    // First time - set flag and redirect to splash
+    sessionStorage.setItem('cameFromSplash', 'true');
     window.location.href = "main.html";
 } else {
+    // Already came from splash or was redirected
     sessionStorage.removeItem('cameFromSplash');
+    
+    // Remove splash param from URL if present
+    if (isFromSplash) {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
 }
 
 
@@ -9,11 +21,73 @@ if (!sessionStorage.getItem('cameFromSplash')) {
 document.addEventListener('DOMContentLoaded', function() {
     
     // Register Service Worker
+    async function askNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.log('Notifications are not supported by this browser.');
+            return 'unsupported';
+        }
+
+        if (Notification.permission === 'granted') {
+            return 'granted';
+        }
+
+        if (Notification.permission === 'denied') {
+            console.log('Notification permission already denied.');
+            return 'denied';
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            console.log('Notification permission:', permission);
+            return permission;
+        } catch (error) {
+            console.error('Notification permission request failed:', error);
+            return 'default';
+        }
+    }
+
+    async function sendLocalNotification(title, body, data = {}) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') {
+            console.warn('Cannot send notification: permission not granted or unsupported.');
+            return;
+        }
+
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification(title, {
+                    body,
+                    icon: 'image/logo.jpg',
+                    badge: 'image/logo.jpg',
+                    data: { ...data, url: data.url || 'shop.html' },
+                    vibrate: [100, 50, 100],
+                    tag: data.tag || 'stockapp-notification'
+                });
+            } catch (error) {
+                console.error('Service worker notification failed:', error);
+            }
+        } else {
+            try {
+                new Notification(title, {
+                    body,
+                    icon: 'image/logo.jpg',
+                    data
+                });
+            } catch (error) {
+                console.error('Notification creation failed:', error);
+            }
+        }
+    }
+
+    window.sendLocalNotification = sendLocalNotification;
+    window.askNotificationPermission = askNotificationPermission;
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
             navigator.serviceWorker.register('sw.js')
                 .then(function (registration) {
                     console.log('Service worker registered with scope:', registration.scope);
+                    askNotificationPermission();
                 })
                 .catch(function (error) {
                     console.error('Service worker registration failed:', error);

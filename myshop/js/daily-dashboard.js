@@ -105,7 +105,7 @@ async fetchAllData() {
         
         let query = client
             .from('sales')
-            .select('*')
+            .select('id,product_name,quantity,price,total_amount,payment_type,username,business_id,type,date_sold,receipt_id')
             .gte('date_sold', start)
             .lte('date_sold', end)
             .order('date_sold', { ascending: false });
@@ -145,7 +145,7 @@ async fetchAllData() {
 
         let query = client
             .from('stock')
-            .select('*')
+            .select('id,name,quantity,type,business_id')
             .order('name', { ascending: true });
         
         // Filter by business if multi-tenant

@@ -1,6 +1,10 @@
     const translations = {
 
     en: {
+                email_verification_required: "Email verification is required. Please verify your email address before continuing.",
+        verification_code_sent_to: "Verification code sent to",
+        email_verification_ready: "Email verified! You can now continue with the setup.",
+        enter_verification_code: "Please enter the verification code sent to your email.",
                verification_sent_to: "Verification code sent to",
         check_email_to_continue: "Please check your email to continue with setup.",
         redirecting_soon: "Redirecting soon...",
@@ -344,7 +348,9 @@
         fetch_users_failed: "Failed to fetch users",
         username_not_found: "Username not found",
         no_email_found: "No email address found for this account",
+        no_email_for_user: "No email is registered for this user.",
         no_security_questions: "Security questions not set up for this account",
+        enter_code: "Enter the verification code",
         verify_username_failed: "Failed to verify username. Please try again.",
         send_code_failed: "Failed to send verification code",
         send_verification_failed: "Failed to send verification email: ",
@@ -4524,6 +4530,10 @@
 
     },
     fr: {
+         email_verification_required: "La vérification par e-mail est requise. Veuillez vérifier votre adresse e-mail avant de continuer.",
+        verification_code_sent_to: "Code de vérification envoyé à",
+        email_verification_ready: "E-mail vérifié ! Vous pouvez maintenant continuer l'installation.",
+        enter_verification_code: "Veuillez entrer le code de vérification envoyé à votre e-mail.",
         verification_sent_to: "Code de vérification envoyé à",
         check_email_to_continue: "Veuillez vérifier votre email pour continuer l'installation.",
         redirecting_soon: "Redirection imminente...",
@@ -8991,6 +9001,10 @@
     }
     },
     ar: { 
+        email_verification_required: "التحقق من البريد الإلكتروني مطلوب. يرجى التحقق من عنوان بريدك الإلكتروني قبل المتابعة.",
+        verification_code_sent_to: "تم إرسال رمز التحقق إلى",
+        email_verification_ready: "تم التحقق من البريد الإلكتروني! يمكنك الآن متابعة الإعداد.",
+        enter_verification_code: "يرجى إدخال رمز التحقق المرسل إلى بريدك الإلكتروني.",
          verification_sent_to: "تم إرسال رمز التحقق إلى",
         check_email_to_continue: "يرجى التحقق من بريدك الإلكتروني للمتابعة في الإعداد.",
         redirecting_soon: "جاري إعادة التوجيه قريباً...",
@@ -13494,6 +13508,10 @@
 
     },
     es: {
+         email_verification_required: "Se requiere verificación de correo electrónico. Por favor, verifique su dirección de correo antes de continuar.",
+        verification_code_sent_to: "Código de verificación enviado a",
+        email_verification_ready: "¡Correo verificado! Ahora puede continuar con la configuración.",
+        enter_verification_code: "Por favor, ingrese el código de verificación enviado a su correo electrónico.",
          verification_sent_to: "Código de verificación enviado a",
         check_email_to_continue: "Por favor, revise su correo electrónico para continuar con la configuración.",
         redirecting_soon: "Redirigiendo pronto...",
@@ -17325,6 +17343,10 @@ Website: "Sitio web",
 
     },
     zh: {
+               email_verification_required: "需要电子邮件验证。请在继续之前验证您的电子邮件地址。",
+        verification_code_sent_to: "验证码已发送至",
+        email_verification_ready: "电子邮件已验证！您现在可以继续设置。",
+        enter_verification_code: "请输入发送到您电子邮件的验证码。",
          verification_sent_to: "验证码已发送至",
         check_email_to_continue: "请检查您的电子邮件以继续设置。",
         redirecting_soon: "即将重定向...",
@@ -22096,6 +22118,10 @@ Website: "Sitio web",
     exchanged: "已换货"
     },  
     sw :{
+         email_verification_required: "Uthibitishaji wa barua pepe unahitajika. Tafadhali thibitisha anwani yako ya barua pepe kabla ya kuendelea.",
+        verification_code_sent_to: "Msimbo wa uthibitishaji umetumwa kwa",
+        email_verification_ready: "Barua pepe imethibitishwa! Sasa unaweza kuendelea na usanidi.",
+        enter_verification_code: "Tafadhali ingiza msimbo wa uthibitishaji uliotumwa kwa barua pepe yako.",
         verification_sent_to: "Msimbo wa uthibitishaji umetumwa kwa",
         check_email_to_continue: "Tafadhali angalia barua pepe yako kuendelea na usanidi.",
         redirecting_soon: "Inaelekeza hivi karibuni...",
@@ -26014,6 +26040,10 @@ Website: "Sitio web",
     error_text: "Hitilafu"
     },
     hi : {
+               email_verification_required: "ईमेल सत्यापन आवश्यक है। कृपया जारी रखने से पहले अपना ईमेल पता सत्यापित करें।",
+        verification_code_sent_to: "सत्यापन कोड भेजा गया",
+        email_verification_ready: "ईमेल सत्यापित! अब आप सेटअप जारी रख सकते हैं।",
+        enter_verification_code: "कृपया अपने ईमेल पर भेजा गया सत्यापन कोड दर्ज करें।",
          verification_sent_to: "सत्यापन कोड भेजा गया",
         check_email_to_continue: "सेटअप जारी रखने के लिए कृपया अपना ईमेल जांचें।",
         redirecting_soon: "जल्द ही पुनर्निर्देशित किया जा रहा है...",
@@ -29857,6 +29887,10 @@ Website: "Sitio web",
     error_text: "त्रुटि"
     },
     ms :{
+         email_verification_required: "Pengesahan e-mel diperlukan. Sila sahkan alamat e-mel anda sebelum meneruskan.",
+        verification_code_sent_to: "Kod pengesahan dihantar ke",
+        email_verification_ready: "E-mel disahkan! Anda kini boleh meneruskan persediaan.",
+        enter_verification_code: "Sila masukkan kod pengesahan yang dihantar ke e-mel anda.",
          verification_sent_to: "Kod pengesahan dihantar ke",
         check_email_to_continue: "Sila semak e-mel anda untuk meneruskan persediaan.",
         redirecting_soon: "Mengalihkan sebentar lagi...",

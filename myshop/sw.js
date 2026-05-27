@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER VERSION CONTROL
 // ========================================
-const APP_VERSION = '2.0.3'; // ← CHANGE THIS EVERY TIME YOU UPDATE
+const APP_VERSION = '2.0.4'; // ← CHANGE THIS EVERY TIME YOU UPDATE
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 
 console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
@@ -25,6 +25,7 @@ const ASSETS_TO_CACHE = [
   'libs/d3.v7.min.js',
   'libs/chart.js',
   'libs/chartjs-chart-financial.js',
+  'js/engagement-builder.js',
   'libs/xlsx.full.min.js',
   'libs/JsBarcode.all.min.js',
   'libs/qrcode.min.js',
@@ -89,6 +90,7 @@ const ASSETS_TO_CACHE = [
   'js/upadte.js',
   'js/daily-dashboard.js',
   'js/navbar.js'
+  
 ];
 
 // Helper function to check if response is cacheable
@@ -253,6 +255,24 @@ self.addEventListener('message', async function(event) {
     }
 });
 
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const targetUrl = event.notification.data?.url || 'shop.html';
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url.includes(targetUrl) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(targetUrl);
+            }
+        })
+    );
+});
+
 // Background sync
 self.addEventListener('sync', event => {
   console.log('Background sync:', event.tag);
@@ -274,13 +294,6 @@ self.addEventListener('push', event => {
       vibrate: [200, 100, 200],
       data: { url: data.url || 'shop.html' }
     })
-  );
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url || 'shop.html')
   );
 });
 

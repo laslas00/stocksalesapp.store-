@@ -34,6 +34,24 @@ function getSB() {
 }
 
 let realtimeSubscription = null;
+let salesRefreshTimer = null;
+
+function scheduleSalesYearRefresh(delay = 1500) {
+    if (salesRefreshTimer) {
+        clearTimeout(salesRefreshTimer);
+    }
+    salesRefreshTimer = setTimeout(async () => {
+        salesRefreshTimer = null;
+        if (typeof loadSalesForYear === 'function') {
+            try {
+                await loadSalesForYear(new Date().getFullYear());
+                if (typeof renderSales === 'function') renderSales();
+            } catch (refreshError) {
+                console.error('Failed to refresh sales after realtime event:', refreshError);
+            }
+        }
+    }, delay);
+}
 
 function connectWebSocket() {
     console.log('🔌 Setting up Supabase Realtime...');
@@ -69,9 +87,7 @@ function connectWebSocket() {
                 
                 const saleUser = (typeof users !== 'undefined' ? users.find(u => u.username === sale.username) : null) || currentUser;
                 
-                if (typeof loadSalesForYear === 'function') {
-                    loadSalesForYear(new Date().getFullYear()).then(renderSales);
-                }
+                scheduleSalesYearRefresh();
                 
                 if (typeof enqueueNotification === 'function') {
                     enqueueNotification(
@@ -221,10 +237,12 @@ async function loadStockTOSAVE() {
         // Get business ID for multi-tenant filtering
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
         
-        let query = client
+          let query = client
             .from('stock')
             .select('*')
             .order('name', { ascending: true });
+        
+ 
         
         // Filter by business if multi-tenant
         if (currentBusinessId) {
@@ -272,7 +290,7 @@ async function loadStock() {
         
         const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
         
-        let query = client.from('stock').select('*').order('name', { ascending: true });
+        let query = client.from('stock').select('id,name,quantity,type,business_id,image_url,price,cost_price',).order('name', { ascending: true });
         if (currentBusinessId) query = query.eq('business_id', currentBusinessId);
         
         const { data, error } = await query;
