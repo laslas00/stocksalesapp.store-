@@ -337,33 +337,14 @@ function connectWebSocket() {
         console.warn('Supabase not available for realtime');
         return;
     }
-    
-    if (canUseNativePush() && Notification.permission !== 'granted') {
-        const askOnInteraction = async () => {
-            await requestPushPermission();
-            document.removeEventListener('click', askOnInteraction);
-            document.removeEventListener('touchstart', askOnInteraction);
-        };
-        document.addEventListener('click', askOnInteraction);
-        document.addEventListener('touchstart', askOnInteraction);
-    }
-    
+
+    // Get current business ID for filtering
     const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
+    
     console.log('🔍 Realtime filtering by business_id:', currentBusinessId);
-    
-    notificationSound = new Audio('/sounds/notification.mp3');
-    notificationSound.load();
-    
-    function playNotificationSound() {
-        if (notificationSound && !localStorage.getItem('muteNotifications')) {
-            notificationSound.currentTime = 0;
-            notificationSound.play().catch(e => console.log('Sound play prevented:', e));
-        }
-    }
-    
-    if (realtimeSubscription) realtimeSubscription.unsubscribe();
-    
-         realtimeSubscription = client
+
+    // Listen for new sales (filtered by business)
+    realtimeSubscription = client
         .channel('public-sales')
         .on('postgres_changes', 
             { 
@@ -372,96 +353,75 @@ function connectWebSocket() {
                 table: 'sales',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            async (payload) => {  // ← ADDED async
+            (payload) => {
                 const sale = payload.new;
-                if (currentBusinessId && sale.business_id !== currentBusinessId) return;
+                
+                // Double-check business match
+                if (currentBusinessId && sale.business_id !== currentBusinessId) {
+                    return; // Skip - different business
+                }
                 
                 const saleUser = (typeof users !== 'undefined' ? users.find(u => u.username === sale.username) : null) || currentUser;
-                scheduleSalesYearRefresh();
-                playNotificationSound();
                 
-                const productName = sale.productName || sale.product_name || 'a product';
-                const amount = sale.price || sale.total_amount || 0;
-                const formattedAmount = typeof formatCurrency === 'function' ? formatCurrency(amount) : amount;
-            
-                await triggerPushNotification(
-                    '💰 New Sale!',
-                    `${saleUser?.username || 'Someone'} sold ${productName} for ${formattedAmount}`,
-                    'sale',  // ← type parameter
-                    {  // ← data parameter
-                        saleId: sale.id, 
-                        saleData: sale, 
-                        url: window.location.href,
-                        tag: `sale-${sale.id}`,
-                        requireInteraction: true
-                    }
-                );
+                if (typeof loadSalesForYear === 'function') {
+                    loadSalesForYear(new Date().getFullYear()).then(renderSales);
+                }
                 
                 if (typeof enqueueNotification === 'function') {
-                    enqueueNotification((data, done) => showSaleNotificationBar(data.sale, data.user, done), { sale: sale, user: saleUser });
+                    enqueueNotification(
+                        (data, done) => showSaleNotificationBar(data.sale, data.user, done),
+                        { sale: sale, user: saleUser }
+                    );
                 }
             }
         )
-        // FIXED: Tasks handler with async
-             .on('postgres_changes',
+        // Listen for new tasks (filtered by business)
+        .on('postgres_changes',
             { 
                 event: 'INSERT', 
                 schema: 'public', 
                 table: 'tasks',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            async (payload) => {  // ← ADDED async
+            (payload) => {
                 const task = payload.new;
-                if (currentBusinessId && task.business_id !== currentBusinessId) return;
-                playNotificationSound();
-                await triggerPushNotification(
-                    '📋 New Task',
-                    `${task.title || 'New task'} - ${task.description || 'Click to view'}`,
-                    'task',
-                    { taskId: task.id, taskData: task, url: window.location.href, tag: `task-${task.id}` }
-                );
+                
+                if (currentBusinessId && task.business_id !== currentBusinessId) {
+                    return;
+                }
+                
                 if (typeof showTaskNotificationBar === 'function') showTaskNotificationBar(task);
                 if (typeof loadTasks === 'function') loadTasks();
             }
         )
-        // FIXED: Stock handler with async
+        // Listen for stock changes - low stock (filtered by business)
         .on('postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'stock', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
-            async (payload) => {  // ← ADDED async
+            { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'stock',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
+            (payload) => {
                 const item = payload.new;
-                if (currentBusinessId && item.business_id !== currentBusinessId) return;
+                
+                if (currentBusinessId && item.business_id !== currentBusinessId) {
+                    return;
+                }
+                
                 if (item.quantity < 3) {
-                    playNotificationSound();
-                    await triggerPushNotification(
-                        '⚠️ Low Stock Alert',
-                        `${item.name} has only ${item.quantity} left!`,
-                        'low_stock',
-                        { itemId: item.id, itemData: item, url: window.location.href, tag: `stock-${item.id}`, requireInteraction: true }
-                    );
                     if (typeof enqueueNotification === 'function') {
-                        enqueueNotification(showLowStockNotificationBar, { itemName: item.name, quantity: item.quantity, itemData: item });
+                        enqueueNotification(
+                            showLowStockNotificationBar,
+                            { itemName: item.name, quantity: item.quantity }
+                        );
                     }
                 }
             }
         )
-        // FIXED: Reminders handler with async
-        .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'reminders', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
-            async (payload) => {  // ← ADDED async
-                const reminder = payload.new;
-                if (currentBusinessId && reminder.business_id !== currentBusinessId) return;
-                playNotificationSound();
-                await triggerPushNotification(
-                    '🔔 Reminder',
-                    reminder.title || reminder.message || 'You have a new reminder',
-                    'reminder',
-                    { reminderId: reminder.id, reminderData: reminder, url: window.location.href, tag: `reminder-${reminder.id}` }
-                );
-            }
-        )
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                console.log('✅ Supabase Realtime connected');
+                console.log('✅ Supabase Realtime connected (business:', currentBusinessId || 'all', ')');
             } else {
                 console.log('🔄 Realtime status:', status);
             }
