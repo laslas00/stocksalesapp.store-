@@ -5,6 +5,10 @@ const MY_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
 // Create a dedicated Supabase client for setup (YOUR project, not track.js)
 let setupDB = null;
 
+let notificationSound = null;
+
+let businessInfo = null;
+
 function getSB() {
     if (setupDB && setupDB.from) {
         return setupDB;
@@ -53,6 +57,298 @@ function scheduleSalesYearRefresh(delay = 1500) {
     }, delay);
 }
 
+
+
+// ========================================
+// SUPABASE CLIENT
+// ========================================
+
+function getSB() {
+    if (setupDB && setupDB.from) {
+        return setupDB;
+    }
+    
+    if (!window.supabase || !window.supabase.createClient) {
+        console.error('❌ Supabase CDN library not loaded yet. Retrying...');
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (window.supabase && window.supabase.createClient) {
+                    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
+                    console.log('✅ Setup Supabase client created (retry)');
+                    resolve(setupDB);
+                } else {
+                    console.error('❌ Supabase CDN still not available');
+                    resolve(null);
+                }
+            }, 1000);
+        });
+    }
+    
+    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
+    console.log('✅ Setup Supabase client created');
+    return setupDB;
+}
+
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
+
+function translate(key, fallback = key) {
+    const translations = {
+        'product': 'Product',
+        'sales_for_year': 'sales for the year',
+        'loaded_sales_year': '✅ Loaded',
+        'loading_data_for_year': '📅 Loading data for year',
+        'all_data_loaded': 'All data successfully loaded for',
+        'failed_to_load_some_data': 'Failed to load some data',
+        'error_loading_stock': 'Error loading stock',
+        'error_loading_credit_sales': 'Error loading credit sales',
+        'loaded_loans': 'Loans loaded:',
+        'full_error_loading_loans': 'Error loading loans:',
+        'using_local_data': 'Using cached local data',
+        'error': 'Error',
+        'offline_using_cached': 'Offline mode - using cached stock data',
+        'storage_full_warning': 'Could not cache stock data',
+        'attempting_load_stock': 'Attempting to load stock from Supabase...',
+        'invalid_date': 'Invalid Date'
+    };
+    return translations[key] || fallback;
+}
+
+
+function scheduleSalesYearRefresh(delay = 1500) {
+    if (salesRefreshTimer) clearTimeout(salesRefreshTimer);
+    salesRefreshTimer = setTimeout(async () => {
+        salesRefreshTimer = null;
+        if (typeof loadSalesForYear === 'function') {
+            try {
+                await loadSalesForYear(new Date().getFullYear());
+                if (typeof renderSales === 'function') renderSales();
+            } catch (refreshError) {
+                console.error('Failed to refresh sales:', refreshError);
+            }
+        }
+    }, delay);
+}
+
+// ========================================
+// NATIVE PUSH NOTIFICATIONS
+// ========================================
+
+function canUseNativePush() {
+    const hasPush = 'PushManager' in window;
+    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+    const isSupported = 'serviceWorker' in navigator && hasPush && isSecure;
+    
+    console.log('Native Push Support:', {
+        serviceWorker: 'serviceWorker' in navigator,
+        pushManager: hasPush,
+        https: isSecure,
+        supported: isSupported
+    });
+    
+    return isSupported;
+}
+
+async function requestPushPermission() {
+    if (!canUseNativePush()) {
+        console.log('Native push not supported');
+        return false;
+    }
+    
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('✅ Push notification permission granted');
+            await subscribeToPush();
+            return true;
+        } else {
+            console.log('❌ Push permission denied');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error requesting push permission:', error);
+        return false;
+    }
+}
+
+async function subscribeToPush() {
+    if (!canUseNativePush()) return null;
+    
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            // ✅ USE YOUR ACTUAL VAPID PUBLIC KEY (not the demo key!)
+            const YOUR_VAPID_PUBLIC_KEY = 'BCqU66A4QXNDI5gSketfQ37RXpiZszkNtRAZ6SikdBwiJCAQqdFa25tsOrbewdanquyxJ9tuRqLoCe_1KSU0FUI';
+            
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(YOUR_VAPID_PUBLIC_KEY)
+            });
+            
+            console.log('✅ Push subscription created');
+            await savePushSubscription(subscription);
+        } else {
+            console.log('✅ Already subscribed to push');
+        }
+        
+        return subscription;
+    } catch (error) {
+        console.error('Failed to subscribe to push:', error);
+        return null;
+    }
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function savePushSubscription(subscription) {
+    try {
+        const client = getSB();
+        if (!client) {
+            console.error('No Supabase client');
+            return false;
+        }
+
+        const businessId = (typeof currentUser !== 'undefined' && currentUser?.business_id) || 
+                          (typeof businessInfo !== 'undefined' && businessInfo?.id) || 
+                          localStorage.getItem('businessId');
+        
+        const userId = (typeof currentUser !== 'undefined' && currentUser?.id) || 
+                       localStorage.getItem('userId');
+
+        const p256dh = subscription.getKey('p256dh');
+        const auth = subscription.getKey('auth');
+
+        const payload = {
+            business_id: businessId,
+            user_id: userId,
+            endpoint: subscription.endpoint,
+            p256dh: p256dh ? arrayBufferToBase64(p256dh) : '',
+            auth: auth ? arrayBufferToBase64(auth) : '',
+            user_agent: navigator.userAgent
+        };
+
+        // Upsert to Supabase
+        const { error } = await client
+            .from('push_subscriptions')
+            .upsert(payload, { onConflict: 'endpoint' });
+
+        if (error) {
+            console.error('Failed saving push subscription:', error);
+            return false;
+        }
+
+        console.log('✅ Push subscription saved to Supabase');
+        
+        // Also store locally as fallback
+        localStorage.setItem('pushSubscription', JSON.stringify({
+            endpoint: subscription.endpoint,
+            keys: { p256dh: payload.p256dh, auth: payload.auth }
+        }));
+        
+        return true;
+    } catch (error) {
+        console.error('Push subscription error:', error);
+        return false;
+    }
+}
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+async function sendNativePushNotification(title, body, data = {}, options = {}) {
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification(title, {
+                body: body,
+                icon: options.icon || '/image/logo.jpg',
+                badge: options.badge || '/image/200.png',
+                vibrate: options.vibrate || [200, 100, 200],
+                tag: options.tag || `stockapp-${Date.now()}`,
+                data: { url: data.url || window.location.href, type: data.type || 'notification', ...data },
+                actions: options.actions || [
+                    { action: 'view', title: 'View Details' },
+                    { action: 'dismiss', title: 'Dismiss' }
+                ],
+                silent: options.silent || false,
+                requireInteraction: options.requireInteraction || false,
+                timestamp: Date.now()
+            });
+            console.log(`📱 Native push sent: "${title}"`);
+            return true;
+        } catch (error) {
+            console.error('Failed to send native push:', error);
+            return false;
+        }
+    }
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/image/logo.jpg' });
+        return true;
+    }
+    
+    return false;
+}
+// ========================================
+// TRIGGER PUSH NOTIFICATIONS VIA EDGE FUNCTION
+// ========================================
+
+async function triggerPushNotification(title, body, type, data = {}) {
+    try {
+        const businessId = (typeof currentUser !== 'undefined' && currentUser?.business_id) || 
+                          (typeof businessInfo !== 'undefined' && businessInfo?.id) || 
+                          localStorage.getItem('businessId');
+        
+        console.log(`📤 Triggering push: ${title} for business ${businessId}`);
+        
+        const response = await fetch(
+            `${MYSUPABASE_URL}/functions/v1/send-push`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${MY_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    title: title,
+                    body: body,
+                    type: type,
+                    business_id: businessId,
+                    requireInteraction: data.requireInteraction || type === 'sale' || type === 'low_stock',
+                    data: data
+                })
+            }
+        );
+        
+        const result = await response.json();
+        console.log(`📊 Push result:`, result);
+        return result;
+    } catch (error) {
+        console.error('Failed to trigger push:', error);
+        return null;
+    }
+}
+// ========================================
+// WEBSOCKET / REALTIME CONNECTION - FIXED
+// ========================================
+
 function connectWebSocket() {
     console.log('🔌 Setting up Supabase Realtime...');
     
@@ -61,96 +357,128 @@ function connectWebSocket() {
         console.warn('Supabase not available for realtime');
         return;
     }
-
-    // Get current business ID for filtering
-    const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
     
+    if (canUseNativePush() && Notification.permission !== 'granted') {
+        const askOnInteraction = async () => {
+            await requestPushPermission();
+            document.removeEventListener('click', askOnInteraction);
+            document.removeEventListener('touchstart', askOnInteraction);
+        };
+        document.addEventListener('click', askOnInteraction);
+        document.addEventListener('touchstart', askOnInteraction);
+    }
+    
+    const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
     console.log('🔍 Realtime filtering by business_id:', currentBusinessId);
-
-    // Listen for new sales (filtered by business)
+    
+    notificationSound = new Audio('/sounds/notification.mp3');
+    notificationSound.load();
+    
+    function playNotificationSound() {
+        if (notificationSound && !localStorage.getItem('muteNotifications')) {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(e => console.log('Sound play prevented:', e));
+        }
+    }
+    
+    if (realtimeSubscription) realtimeSubscription.unsubscribe();
+    
     realtimeSubscription = client
         .channel('public-sales')
+        // FIXED: Added 'async' to callback
         .on('postgres_changes', 
-            { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'sales',
-                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
-            },
-            (payload) => {
+            { event: 'INSERT', schema: 'public', table: 'sales', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+            async (payload) => {  // ← ADDED async
                 const sale = payload.new;
-                
-                // Double-check business match
-                if (currentBusinessId && sale.business_id !== currentBusinessId) {
-                    return; // Skip - different business
-                }
+                if (currentBusinessId && sale.business_id !== currentBusinessId) return;
                 
                 const saleUser = (typeof users !== 'undefined' ? users.find(u => u.username === sale.username) : null) || currentUser;
-                
                 scheduleSalesYearRefresh();
+                playNotificationSound();
+                
+                const productName = sale.productName || sale.product_name || 'a product';
+                const amount = sale.price || sale.total_amount || 0;
+                const formattedAmount = typeof formatCurrency === 'function' ? formatCurrency(amount) : amount;
+                
+                // FIXED: Correct parameter order - triggerPushNotification expects (title, body, type, data)
+                await triggerPushNotification(
+                    '💰 New Sale!',
+                    `${saleUser?.username || 'Someone'} sold ${productName} for ${formattedAmount}`,
+                    'sale',  // ← type parameter
+                    {  // ← data parameter
+                        saleId: sale.id, 
+                        saleData: sale, 
+                        url: window.location.href,
+                        tag: `sale-${sale.id}`,
+                        requireInteraction: true
+                    }
+                );
                 
                 if (typeof enqueueNotification === 'function') {
-                    enqueueNotification(
-                        (data, done) => showSaleNotificationBar(data.sale, data.user, done),
-                        { sale: sale, user: saleUser }
-                    );
+                    enqueueNotification((data, done) => showSaleNotificationBar(data.sale, data.user, done), { sale: sale, user: saleUser });
                 }
             }
         )
-        // Listen for new tasks (filtered by business)
+        // FIXED: Tasks handler with async
         .on('postgres_changes',
-            { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'tasks',
-                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
-            },
-            (payload) => {
+            { event: 'INSERT', schema: 'public', table: 'tasks', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+            async (payload) => {  // ← ADDED async
                 const task = payload.new;
-                
-                if (currentBusinessId && task.business_id !== currentBusinessId) {
-                    return;
-                }
-                
+                if (currentBusinessId && task.business_id !== currentBusinessId) return;
+                playNotificationSound();
+                await triggerPushNotification(
+                    '📋 New Task',
+                    `${task.title || 'New task'} - ${task.description || 'Click to view'}`,
+                    'task',
+                    { taskId: task.id, taskData: task, url: window.location.href, tag: `task-${task.id}` }
+                );
                 if (typeof showTaskNotificationBar === 'function') showTaskNotificationBar(task);
                 if (typeof loadTasks === 'function') loadTasks();
             }
         )
-        // Listen for stock changes - low stock (filtered by business)
+        // FIXED: Stock handler with async
         .on('postgres_changes',
-            { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'stock',
-                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
-            },
-            (payload) => {
+            { event: 'UPDATE', schema: 'public', table: 'stock', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+            async (payload) => {  // ← ADDED async
                 const item = payload.new;
-                
-                if (currentBusinessId && item.business_id !== currentBusinessId) {
-                    return;
-                }
-                
+                if (currentBusinessId && item.business_id !== currentBusinessId) return;
                 if (item.quantity < 3) {
+                    playNotificationSound();
+                    await triggerPushNotification(
+                        '⚠️ Low Stock Alert',
+                        `${item.name} has only ${item.quantity} left!`,
+                        'low_stock',
+                        { itemId: item.id, itemData: item, url: window.location.href, tag: `stock-${item.id}`, requireInteraction: true }
+                    );
                     if (typeof enqueueNotification === 'function') {
-                        enqueueNotification(
-                            showLowStockNotificationBar,
-                            { itemName: item.name, quantity: item.quantity }
-                        );
+                        enqueueNotification(showLowStockNotificationBar, { itemName: item.name, quantity: item.quantity, itemData: item });
                     }
                 }
             }
         )
+        // FIXED: Reminders handler with async
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'reminders', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+            async (payload) => {  // ← ADDED async
+                const reminder = payload.new;
+                if (currentBusinessId && reminder.business_id !== currentBusinessId) return;
+                playNotificationSound();
+                await triggerPushNotification(
+                    '🔔 Reminder',
+                    reminder.title || reminder.message || 'You have a new reminder',
+                    'reminder',
+                    { reminderId: reminder.id, reminderData: reminder, url: window.location.href, tag: `reminder-${reminder.id}` }
+                );
+            }
+        )
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                console.log('✅ Supabase Realtime connected (business:', currentBusinessId || 'all', ')');
+                console.log('✅ Supabase Realtime connected');
             } else {
                 console.log('🔄 Realtime status:', status);
             }
         });
 }
-
-// To disconnect:
 function disconnectRealtime() {
     if (realtimeSubscription) {
         realtimeSubscription.unsubscribe();
@@ -159,6 +487,52 @@ function disconnectRealtime() {
     }
 }
 
+// ========================================
+// TEST FUNCTIONS
+// ========================================
+
+async function testNativeNotification() {
+    console.log('🧪 Testing native push notification...');
+    
+    if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            alert('Please enable notifications to test');
+            return;
+        }
+    }
+    
+    if (!('serviceWorker' in navigator)) {
+        alert('Service Worker not supported');
+        return;
+    }
+    
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification('🧪 Test Notification', {
+        body: 'If you see this, native notifications work!',
+        icon: '/image/logo.jpg',
+        badge: '/image/200.png',
+        vibrate: [200, 100, 200],
+        tag: 'test-notification',
+        requireInteraction: true,
+        data: { url: window.location.href, type: 'test' }
+    });
+    
+    console.log('✅ Test notification sent!');
+    alert('Test notification sent! Check your notification shade.');
+}
+
+async function registerBackgroundSync() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.sync.register('sync-notifications');
+            console.log('✅ Background sync registered');
+        } catch (error) {
+            console.log('Background sync not available:', error);
+        }
+    }
+}
 
 async function loadSalesForYear(year) {
     const startDate = `${year}-01-01`;

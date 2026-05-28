@@ -140,22 +140,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Block 3: Festive badge toggle
-    {
-        const toggleSwitch = document.getElementById('toggleBadgeswithc');
-        const hidebtn = document.getElementById('toggleBadgeBtn');
-        if (toggleSwitch) {
-            const isEnabled = localStorage.getItem('festiveBadgeEnabled') !== 'false';
-            toggleSwitch.checked = isEnabled;
-            if (isEnabled) {
-                autoSetBadge();
-                if (hidebtn) hidebtn.classList.remove('hidden');
-            } else {
-                updateBadge(0);
-                if (hidebtn) hidebtn.classList.add('hidden');
-            }
-            toggleSwitch.addEventListener('change', toggleFestiveBadgeoff);
-        }
-    }
+ 
 
     // Block 4: Notifications permission, secret click, reminders button
     {

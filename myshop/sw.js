@@ -1,7 +1,7 @@
 // ========================================
-// SERVICE WORKER VERSION CONTROL
+// SERVICE WORKER - CORRECTED VERSION
 // ========================================
-const APP_VERSION = '2.0.4'; // ← CHANGE THIS EVERY TIME YOU UPDATE
+const APP_VERSION = '2.0.7';
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 
 console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
@@ -25,7 +25,6 @@ const ASSETS_TO_CACHE = [
   'libs/d3.v7.min.js',
   'libs/chart.js',
   'libs/chartjs-chart-financial.js',
-  'js/engagement-builder.js',
   'libs/xlsx.full.min.js',
   'libs/JsBarcode.all.min.js',
   'libs/qrcode.min.js',
@@ -90,10 +89,9 @@ const ASSETS_TO_CACHE = [
   'js/upadte.js',
   'js/daily-dashboard.js',
   'js/navbar.js'
-  
 ];
 
-// Helper function to check if response is cacheable
+
 function isCacheableResponse(response) {
   if (!response || !response.ok) return false;
   if (response.status === 206) return false;
@@ -104,67 +102,33 @@ function isCacheableResponse(response) {
 // Install event
 self.addEventListener('install', event => {
   console.log(`Service Worker v${APP_VERSION} installing...`);
-  
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(async cache => {
-        const failed = [];
-        const skipped = [];
-        
-        for (const asset of ASSETS_TO_CACHE) {
-          try {
-            const response = await fetch(asset, {
-              headers: { 'Range': 'bytes=0-' }
-            });
-            
-            if (response && isCacheableResponse(response)) {
-              await cache.put(asset, response);
-              console.log(`✅ Cached: ${asset}`);
-            } else if (response && response.status === 206) {
-              console.warn(`⚠️ Partial response for ${asset}, retrying...`);
-              const fullResponse = await fetch(asset, {
-                headers: { 'Range': undefined }
-              });
-              if (fullResponse && fullResponse.status === 200) {
-                await cache.put(asset, fullResponse);
-                console.log(`✅ Cached (full): ${asset}`);
-              } else {
-                console.warn(`⚠️ Skipped (206 partial): ${asset}`);
-                skipped.push(asset);
-              }
-            } else {
-              console.warn(`⚠️ Failed (${response?.status}): ${asset}`);
-              failed.push(asset);
-            }
-          } catch (error) {
-            console.warn(`⚠️ Error caching ${asset}:`, error.message);
-            failed.push(asset);
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const asset of ASSETS_TO_CACHE) {
+        try {
+          const response = await fetch(asset);
+          if (response && response.status === 200) {
+            await cache.put(asset, response);
+            console.log(`✅ Cached: ${asset}`);
           }
+        } catch (error) {
+          console.warn(`⚠️ Failed to cache ${asset}:`, error.message);
         }
-        
-        if (failed.length > 0) {
-          console.warn('Failed to cache:', failed);
-        }
-        if (skipped.length > 0) {
-          console.warn('Skipped (206 partial):', skipped);
-        }
-        console.log(`Service Worker v${APP_VERSION} install complete!`);
-      })
-      .then(() => self.skipWaiting())
+      }
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches
+// Activate event
 self.addEventListener('activate', event => {
   console.log(`Service Worker v${APP_VERSION} activating...`);
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log(`Deleting old cache: ${key}`);
-            return caches.delete(key);
-          })
+        keys.filter(key => key !== CACHE_NAME).map(key => {
+          console.log(`Deleting old cache: ${key}`);
+          return caches.delete(key);
+        })
       );
     }).then(() => self.clients.claim())
   );
@@ -175,129 +139,103 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   
   const url = event.request.url;
-  if (url.includes('supabase.co') || url.includes('api/')) {
-    return;
-  }
+  if (url.includes('supabase.co') || url.includes('api/')) return;
   
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
-        .catch(() => caches.match('shop.html'))
+      fetch(event.request).catch(() => caches.match('shop.html'))
     );
     return;
   }
   
   event.respondWith(
-    caches.match(event.request)
-      .then(cachedResponse => {
-        if (cachedResponse) return cachedResponse;
-        
-        const newRequest = new Request(event.request, {
-          headers: new Headers(event.request.headers)
-        });
-        
-        if (newRequest.headers.has('Range')) {
-          newRequest.headers.delete('Range');
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request).then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
         }
-        
-        return fetch(newRequest)
-          .then(networkResponse => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME)
-                .then(cache => {
-                  try {
-                    cache.put(event.request, responseToCache);
-                  } catch (e) {
-                    console.warn('Cache put failed:', e);
-                  }
-                });
-            }
-            return networkResponse;
-          })
-          .catch(error => {
-            console.warn('Fetch failed:', error);
-            if (event.request.destination === 'image') {
-              return caches.match('image/logo.jpg');
-            }
-            if (event.request.destination === 'document') {
-              return caches.match('shop.html');
-            }
-            return new Response('Offline - content not available', {
-              status: 503,
-              statusText: 'Service Unavailable'
-            });
-          });
-      })
-  );
-});
-
-// ========================================
-// FIXED: Message handler (NO PROMISES in postMessage)
-// ========================================
-
-self.addEventListener('message', async function(event) {
-    if (event.data && event.data.type === 'CHECK_INSTALL_STATUS') {
-        const clients = await self.clients.matchAll();
-        let isInstalled = false;
-        
-        for (const client of clients) {
-            if (client.url && (client.url.includes('/myshop/') || client.url.includes('stocksalesapp'))) {
-                isInstalled = true;
-                break;
-            }
-        }
-        
-        event.source.postMessage({
-            type: 'INSTALL_STATUS',
-            installed: isInstalled
-        });
-    }
-});
-
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    const targetUrl = event.notification.data?.url || 'shop.html';
-
-    event.waitUntil(
-        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            for (const client of clientList) {
-                if (client.url.includes(targetUrl) && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            if (self.clients.openWindow) {
-                return self.clients.openWindow(targetUrl);
-            }
-        })
-    );
-});
-
-// Background sync
-self.addEventListener('sync', event => {
-  console.log('Background sync:', event.tag);
-  if (event.tag === 'sync-sales') {
-    event.waitUntil(syncOfflineSales());
-  }
-});
-
-// Push notifications
-self.addEventListener('push', event => {
-  console.log('Push notification received');
-  const data = event.data ? event.data.json() : { title: 'StockAlert', body: 'Update available' };
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'StockApp', {
-      body: data.body || 'Check your inventory!',
-      icon: 'image/logo.jpg',
-      badge: 'image/200.png',
-      vibrate: [200, 100, 200],
-      data: { url: data.url || 'shop.html' }
+        return networkResponse;
+      }).catch(() => {
+        if (event.request.destination === 'image') return caches.match('image/logo.jpg');
+        return new Response('Offline', { status: 503 });
+      });
     })
   );
 });
 
-async function syncOfflineSales() {
-  console.log('Syncing offline sales...');
-  return Promise.resolve();
-}
+// ========================================
+// SINGLE NOTIFICATION CLICK HANDLER
+// ========================================
+self.addEventListener('notificationclick', event => {
+  console.log('🔔 Notification clicked');
+  event.notification.close();
+
+  const notificationData = event.notification.data || {};
+  // USE ABSOLUTE PATH
+  const urlToOpen = notificationData.url || '/myshop/shop.html';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        try {
+          const clientUrl = new URL(client.url);
+          if (clientUrl.pathname.includes('shop.html') && 'focus' in client) {
+            return client.focus();
+          }
+        } catch (e) {}
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// ========================================
+// PUSH EVENT HANDLER (REAL PUSH NOTIFICATIONS)
+// ========================================
+self.addEventListener('push', event => {
+  console.log('📨 Push notification received');
+  
+  let data = { title: 'StockApp', body: 'Update available' };
+  
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+  
+  const options = {
+    body: data.body || 'Check your inventory!',
+    icon: '/myshop/image/logo.jpg',
+    badge: '/myshop/image/200.png',
+    vibrate: [200, 100, 200],
+    data: { url: data.url || '/myshop/shop.html', type: data.type || 'push' },
+    requireInteraction: data.requireInteraction || false
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'StockApp', options)
+  );
+});
+
+// ========================================
+// MESSAGE HANDLER (NO localStorage!)
+// ========================================
+self.addEventListener('message', async function(event) {
+  if (event.data && event.data.type === 'CHECK_INSTALL_STATUS') {
+    const clients = await self.clients.matchAll();
+    let isInstalled = false;
+    for (const client of clients) {
+      if (client.url && (client.url.includes('/myshop/') || client.url.includes('stocksalesapp'))) {
+        isInstalled = true;
+        break;
+      }
+    }
+    event.source.postMessage({ type: 'INSTALL_STATUS', installed: isInstalled });
+  }
+});

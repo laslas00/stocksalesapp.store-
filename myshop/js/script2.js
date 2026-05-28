@@ -709,9 +709,36 @@ function applyGlobalFestiveSettings() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    const badgeToggle = document.getElementById('toggleBadgeswithc');
+
+// Add this function to script2.js
+function initializeFestiveBadgeAfterLogin(businessInfoData) {
+    console.log('🎉 Initializing festive badge after login with:', businessInfoData);
+    
+    window.businessInfo = businessInfoData;
+    
+    const toggleSwitch = document.getElementById('toggleBadgeswithc');
+    const hidebtn = document.getElementById('toggleBadgeBtn');
+    
+    if (businessInfoData && businessInfoData.festive_badge_enabled) {
+        const badgeIndex = businessInfoData.current_badge_index || 1;
+        updateBadge(badgeIndex);
+        if (toggleSwitch) toggleSwitch.checked = true;
+        if (hidebtn) hidebtn.classList.remove('hidden');
+    } else {
+        updateBadge(0);
+        if (toggleSwitch) toggleSwitch.checked = false;
+        if (hidebtn) hidebtn.classList.add('hidden');
+    }
+    
+    // Setup toggle listener if not already set
+    if (toggleSwitch && !toggleSwitch.hasListener) {
+        toggleSwitch.addEventListener('change', toggleFestiveBadgeoff);
+        toggleSwitch.hasListener = true;
+    }
+        const badgeToggle = document.getElementById('toggleBadgeswithc');
     if (badgeToggle) {
         badgeToggle.addEventListener('change', toggleFestiveBadgeoff);
     }
-});
+
+      new EmailScheduler();
+}

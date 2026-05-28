@@ -281,7 +281,7 @@ document.getElementById('loginBtn').onclick = async function() {
             return;
         }
 
-        // ========== STEP 7: LICENSE CHECK - NOW ONLY USES business_info ==========
+        // ========== STEP 7: LICENSE CHECK ==========
         let licenseValid = false;
         let licenseData = null;
         let errorMessage = null;
@@ -289,7 +289,6 @@ document.getElementById('loginBtn').onclick = async function() {
         if (user.business_id) {
             console.log('🔍 Checking license from business_info for business:', user.business_id);
             
-            // Check business_info table for license info (licenses table is DEPRECATED)
             const { data: bizInfo, error: bizError } = await client
                 .from('business_info')
                 .select('license_plan, license_status, license_expires_at, license_activated_at')
@@ -302,7 +301,6 @@ document.getElementById('loginBtn').onclick = async function() {
             } else if (bizInfo) {
                 console.log('📋 Business info license data:', bizInfo);
                 
-                // Check if license exists and is active or trial
                 const hasValidStatus = bizInfo.license_status === 'active' || bizInfo.license_status === 'trial' || bizInfo.license_status === 'trialing';
                 
                 if (bizInfo.license_plan && hasValidStatus) {
@@ -314,35 +312,22 @@ document.getElementById('loginBtn').onclick = async function() {
                         source: 'business_info_table'
                     };
                 } else if (bizInfo.license_status === 'expired') {
-                    errorMessage = `⏰ <strong>License Expired</strong><br><br>
-                    Your license has expired.<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
+                    errorMessage = `⏰ <strong>License Expired</strong><br><br>Your license has expired.<br><br><a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
                 } else if (bizInfo.license_status === 'inactive') {
-                    errorMessage = `❌ <strong>License Inactive</strong><br><br>
-                    Your license is inactive. Please contact support.<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">View plans →</a>`;
+                    errorMessage = `❌ <strong>License Inactive</strong><br><br>Your license is inactive. Please contact support.<br><br><a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">View plans →</a>`;
                 } else {
-                    errorMessage = `❌ <strong>No Active License Found</strong><br><br>
-                    Your business doesn't have an active license or subscription.<br><br>
-                    <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Purchase a plan to continue →</a>`;
+                    errorMessage = `❌ <strong>No Active License Found</strong><br><br>Your business doesn't have an active license or subscription.<br><br><a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Purchase a plan to continue →</a>`;
                 }
             } else {
-                // No business_info record found
-                errorMessage = `❌ <strong>Business Not Found</strong><br><br>
-                Your account is not properly configured. Please contact support.`;
+                errorMessage = `❌ <strong>Business Not Found</strong><br><br>Your account is not properly configured. Please contact support.`;
             }
 
-            // If we have license data, check if it's expired
             if (licenseData && !errorMessage) {
                 const expiresAt = licenseData.expires_at ? new Date(licenseData.expires_at) : null;
                 const now = new Date();
                 
                 if (expiresAt) {
-                    console.log(`📅 License expires: ${expiresAt}`);
-                    console.log(`📅 Current time: ${now}`);
-                    
                     if (expiresAt < now) {
-                        // LICENSE IS EXPIRED - BLOCK LOGIN
                         const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
                         const expiryDate = expiresAt.toLocaleDateString('en-US', { 
                             weekday: 'long', 
@@ -351,29 +336,23 @@ document.getElementById('loginBtn').onclick = async function() {
                             day: 'numeric' 
                         });
                         
-                        errorMessage = `⏰ <strong>License Expired</strong><br><br>
-                        Your ${planName} ${licenseData.status === 'trial' ? 'trial' : 'plan'} expired on <strong>${expiryDate}</strong>.<br><br>
-                        <a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
+                        errorMessage = `⏰ <strong>License Expired</strong><br><br>Your ${planName} ${licenseData.status === 'trial' ? 'trial' : 'plan'} expired on <strong>${expiryDate}</strong>.<br><br><a href="pricing.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Renew now →</a>`;
                         
-                        // Update status in business_info
                         await client.from('business_info')
                             .update({ license_status: 'expired' })
                             .eq('id', user.business_id);
                     } else {
-                        // LICENSE IS VALID - ALLOW LOGIN
                         licenseValid = true;
                         const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
                         const planName = licenseData.plan.charAt(0).toUpperCase() + licenseData.plan.slice(1);
                         
                         console.log(`✅ LICENSE VALID: ${planName} | ${licenseData.status} | ${daysLeft} days remaining`);
                         
-                        // Store license info in localStorage
                         localStorage.setItem('licensePlan', licenseData.plan);
                         localStorage.setItem('licenseStatus', licenseData.status);
                         localStorage.setItem('licenseExpires', licenseData.expires_at);
                         localStorage.setItem('licenseDaysLeft', daysLeft);
                         
-                        // Show trial warning if less than 3 days left
                         if ((licenseData.status === 'trial' || licenseData.status === 'trialing') && daysLeft <= 3) {
                             setTimeout(() => {
                                 if (typeof showMessageModal === 'function') {
@@ -383,7 +362,6 @@ document.getElementById('loginBtn').onclick = async function() {
                         }
                     }
                 } else {
-                    // No expiry date - assume valid
                     licenseValid = true;
                     console.log(`✅ LICENSE VALID (no expiry): ${licenseData.plan}`);
                     localStorage.setItem('licensePlan', licenseData.plan);
@@ -392,9 +370,7 @@ document.getElementById('loginBtn').onclick = async function() {
             }
         } else {
             console.warn('⚠️ No business_id found for user');
-            errorMessage = `❌ <strong>Setup Incomplete</strong><br><br>
-            Your account is not linked to a business. Please contact the administrator.<br><br>
-            <a href="setup.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Complete setup →</a>`;
+            errorMessage = `❌ <strong>Setup Incomplete</strong><br><br>Your account is not linked to a business. Please contact the administrator.<br><br><a href="setup.html" style="color:#3b82f6;font-weight:600;text-decoration:underline;">Complete setup →</a>`;
         }
 
         // ========== STEP 8: BLOCK LOGIN IF LICENSE INVALID ==========
@@ -409,10 +385,10 @@ document.getElementById('loginBtn').onclick = async function() {
         // ========== STEP 9: Login successful! ==========
         console.log('✅ Login successful:', user.username, '| Role:', user.role);
         
-        // Get business info for display
-        const { data: businessInfo } = await client
+        // ========== FETCH FULL BUSINESS INFO (including festive badge settings) ==========
+        const { data: businessInfoData } = await client
             .from('business_info')
-            .select('name, language')
+            .select('*')  // Get all fields including festive badge settings
             .eq('id', user.business_id)
             .maybeSingle();
         
@@ -429,14 +405,20 @@ document.getElementById('loginBtn').onclick = async function() {
             console.log('🔍 Cached business_id:', finalBusinessId);
         }
 
+        // Set global businessInfo
+        window.businessInfo = businessInfoData;
+        
         // Update current language from business info
-        if (businessInfo?.language) {
-            currentLanguage = businessInfo.language;
+        if (businessInfoData?.language) {
+            currentLanguage = businessInfoData.language;
             localStorage.setItem('language', currentLanguage);
         }
 
+        // ========== INITIALIZE FESTIVE BADGE AFTER LOGIN ==========
+        initializeFestiveBadgeAfterLogin(businessInfoData);
+
         // Create business name slug
-        const businessName = (businessInfo?.name || 'shop').toLowerCase().replace(/\s+/g, '-');
+        const businessName = (businessInfoData?.name || 'shop').toLowerCase().replace(/\s+/g, '-');
         
         // Build URL parameters
         const urlParams = new URLSearchParams({
@@ -451,7 +433,7 @@ document.getElementById('loginBtn').onclick = async function() {
 
         const newUrl = `shop.html?${urlParams.toString()}`;
         window.history.replaceState({}, '', newUrl);
-        document.title = `StockApp* -> ${businessInfo?.name || 'Shop'} | ${user.username} (${user.role})`;
+        document.title = `StockApp* -> ${businessInfoData?.name || 'Shop'} | ${user.username} (${user.role})`;
 
         console.log('🔗 URL updated:', newUrl);
 
