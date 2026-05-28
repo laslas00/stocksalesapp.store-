@@ -838,4 +838,35 @@ async function initializeFestiveBadgeAfterLogin(businessInfoData) {
     if (sub) {
         console.log('✅ Push notification system ready!');
     }
+    const maxAttempts = 10;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+        const businessId = localStorage.getItem('businessId') || 
+                          (typeof businessInfo !== 'undefined' && businessInfo?.id) ||
+                          (typeof currentUser !== 'undefined' && currentUser?.business_id);
+        
+        if (businessId) {
+            console.log('✅ Business ID found:', businessId);
+            
+            // Initialize push notifications
+            await initializePushAfterLogin();
+            
+            // Connect realtime
+            connectWebSocket();
+            
+            // Run diagnostic
+            console.log('🧪 Running realtime diagnostic...');
+            await testRealtimeTriggers();
+            
+            return true;
+        }
+        
+        console.log(`⏳ Waiting for authentication... (attempt ${attempts + 1}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+    }
+    
+    console.error('❌ Failed to initialize realtime - no business ID found');
+    return false;
 }
