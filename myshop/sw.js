@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER - CORRECTED VERSION
 // ========================================
-const APP_VERSION = '2.0.71';
+const APP_VERSION = '2.0.72';
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 
 console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
