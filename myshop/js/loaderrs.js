@@ -58,64 +58,6 @@ function scheduleSalesYearRefresh(delay = 1500) {
 }
 
 
-
-// ========================================
-// SUPABASE CLIENT
-// ========================================
-
-function getSB() {
-    if (setupDB && setupDB.from) {
-        return setupDB;
-    }
-    
-    if (!window.supabase || !window.supabase.createClient) {
-        console.error('❌ Supabase CDN library not loaded yet. Retrying...');
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (window.supabase && window.supabase.createClient) {
-                    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
-                    console.log('✅ Setup Supabase client created (retry)');
-                    resolve(setupDB);
-                } else {
-                    console.error('❌ Supabase CDN still not available');
-                    resolve(null);
-                }
-            }, 1000);
-        });
-    }
-    
-    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
-    console.log('✅ Setup Supabase client created');
-    return setupDB;
-}
-
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
-
-function translate(key, fallback = key) {
-    const translations = {
-        'product': 'Product',
-        'sales_for_year': 'sales for the year',
-        'loaded_sales_year': '✅ Loaded',
-        'loading_data_for_year': '📅 Loading data for year',
-        'all_data_loaded': 'All data successfully loaded for',
-        'failed_to_load_some_data': 'Failed to load some data',
-        'error_loading_stock': 'Error loading stock',
-        'error_loading_credit_sales': 'Error loading credit sales',
-        'loaded_loans': 'Loans loaded:',
-        'full_error_loading_loans': 'Error loading loans:',
-        'using_local_data': 'Using cached local data',
-        'error': 'Error',
-        'offline_using_cached': 'Offline mode - using cached stock data',
-        'storage_full_warning': 'Could not cache stock data',
-        'attempting_load_stock': 'Attempting to load stock from Supabase...',
-        'invalid_date': 'Invalid Date'
-    };
-    return translations[key] || fallback;
-}
-
-
 function scheduleSalesYearRefresh(delay = 1500) {
     if (salesRefreshTimer) clearTimeout(salesRefreshTimer);
     salesRefreshTimer = setTimeout(async () => {
@@ -436,8 +378,8 @@ function connectWebSocket() {
     
     if (realtimeSubscription) realtimeSubscription.unsubscribe();
     
-realtimeSubscription = client
-    .channel('sales-realtime-channel')  // ← Any unique name works
+        realtimeSubscription = client
+            .channel('sales-channel') 
         // FIXED: Added 'async' to callback
         .on('postgres_changes', 
             { event: 'INSERT', schema: 'public', table: 'sales', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
