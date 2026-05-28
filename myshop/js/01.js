@@ -346,3 +346,84 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 PWA System Ready - Uninstall detection active');
     
 }); // ← This closes the DOMContentLoaded event listener (ONLY ONE!)
+
+
+// Mobile-specific push initialization
+async function initMobilePush() {
+    // Detect if on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (isMobile && isPWA) {
+        console.log('📱 Mobile PWA detected - setting up push...');
+        
+        // Force service worker registration
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Check if already subscribed
+            let subscription = await registration.pushManager.getSubscription();
+            
+            if (!subscription && Notification.permission === 'granted') {
+                console.log('📱 Creating push subscription for mobile...');
+                
+                const VAPID_PUBLIC_KEY = 'BCqU66A4QXNDI5gSketfQ37RXpiZszkNtRAZ6SikdBwiJCAQqdFa25tsOrbewdanquyxJ9tuRqLoCe_1KSU0FUI';
+                
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                }
+                
+                try {
+                    subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                    
+                    console.log('✅ Mobile push subscription created');
+                    
+                    // Save to Supabase
+                    const client = getSB();
+                    if (client) {
+                        const businessId = localStorage.getItem('businessId');
+                        const userId = localStorage.getItem('userId');
+                        
+                        function arrayBufferToBase64(buffer) {
+                            if (!buffer) return '';
+                            let binary = '';
+                            const bytes = new Uint8Array(buffer);
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            return window.btoa(binary);
+                        }
+                        
+                        await client.from('push_subscriptions').upsert({
+                            business_id: businessId,
+                            user_id: userId,
+                            endpoint: subscription.endpoint,
+                            p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                            auth: arrayBufferToBase64(subscription.getKey('auth')),
+                            user_agent: navigator.userAgent
+                        }, { onConflict: 'endpoint' });
+                    }
+                } catch (err) {
+                    console.error('Mobile push subscription failed:', err);
+                }
+            }
+        }
+    }
+}
+
+// Call on load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobilePush);
+} else {
+    initMobilePush();
+}
