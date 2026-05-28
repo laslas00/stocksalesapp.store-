@@ -416,6 +416,7 @@ document.getElementById('loginBtn').onclick = async function() {
 
         // ========== INITIALIZE FESTIVE BADGE AFTER LOGIN ==========
         initializeFestiveBadgeAfterLogin(businessInfoData);
+          await initializePushAfterLogin();
 
         // Create business name slug
         const businessName = (businessInfoData?.name || 'shop').toLowerCase().replace(/\s+/g, '-');
