@@ -426,7 +426,7 @@ async function recordSale() {
             // ========== 8. SUCCESS ==========
             showMessageModal(translations[currentLanguage]?.sale_recorded_success || 'Sale recorded successfully!');
             document.title = `StockApp* -> Sale recorded!`;
-
+             sendSalePushNotification(savedSale, username, productName, price);
             if (typeof trackAppEvent === 'function') trackAppEvent('sale_recorded', {}, username);
             if (typeof window.onSaleRecorded === 'function') window.onSaleRecorded();
 
