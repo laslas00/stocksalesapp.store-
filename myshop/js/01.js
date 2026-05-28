@@ -20,7 +20,10 @@ if (!sessionStorage.getItem('cameFromSplash') && !isFromSplash) {
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Register Service Worker
+    // ========================================
+    // NOTIFICATION FUNCTIONS
+    // ========================================
+    
     async function askNotificationPermission() {
         if (!('Notification' in window)) {
             console.log('Notifications are not supported by this browser.');
@@ -82,15 +85,19 @@ document.addEventListener('DOMContentLoaded', function() {
     window.sendLocalNotification = sendLocalNotification;
     window.askNotificationPermission = askNotificationPermission;
 
+    // ========================================
+    // SERVICE WORKER REGISTRATION (ONLY ONCE)
+    // ========================================
+    
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
+        window.addEventListener('load', function() {
             navigator.serviceWorker.register('sw.js')
-                .then(function (registration) {
-                    console.log('Service worker registered with scope:', registration.scope);
+                .then(function(registration) {
+                    console.log('✅ Service worker registered with scope:', registration.scope);
                     askNotificationPermission();
                 })
-                .catch(function (error) {
-                    console.error('Service worker registration failed:', error);
+                .catch(function(error) {
+                    console.error('❌ Service worker registration failed:', error);
                 });
         });
     }
@@ -235,8 +242,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const pwaInstallBtn = document.getElementById('pwaInstallBtn');
     const pwaInstallCloseBtn = document.getElementById('pwaInstallCloseBtn');
     
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+    
     if (shouldShowBanner()) {
-        window.addEventListener('beforeinstallprompt', function (event) {
+        window.addEventListener('beforeinstallprompt', function(event) {
             event.preventDefault();
             deferredInstallPrompt = event;
             if (shouldShowBanner() && !isAppInstalled()) {
@@ -246,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    pwaInstallBtn?.addEventListener('click', async function () {
+    pwaInstallBtn?.addEventListener('click', async function() {
         if (!deferredInstallPrompt) {
             if (isIOS()) {
                 alert('To install: Tap the Share button (box with arrow) then select "Add to Home Screen"');
@@ -270,14 +281,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    pwaInstallCloseBtn?.addEventListener('click', function () {
+    pwaInstallCloseBtn?.addEventListener('click', function() {
         pwaInstallBanner?.classList.remove('show');
         localStorage.setItem(BANNER_DISMISSAL_KEY, 'true');
         localStorage.setItem(BANNER_DISMISSAL_TIME_KEY, Date.now().toString());
         console.log('📱 User dismissed banner for', BANNER_DISMISSAL_DAYS, 'days');
     });
     
-    window.addEventListener('appinstalled', function () {
+    window.addEventListener('appinstalled', function() {
         deferredInstallPrompt = null;
         pwaInstallBanner?.classList.remove('show');
         localStorage.setItem('pwaInstalled', 'true');
@@ -290,10 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-    
+    // iOS specific banner
     if (isIOS() && !isAppInstalled() && shouldShowBanner()) {
         setTimeout(() => {
             if (pwaInstallBanner && !pwaInstallBanner.classList.contains('show')) {
@@ -309,8 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 1000);
     }
-    
-    console.log('🚀 PWA System Ready - Uninstall detection active');
     
     // ========================================
     // FORCE SERVICE WORKER UPDATE CHECKER
@@ -337,17 +343,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Call the force update checker
     forceServiceWorkerUpdate();
     
-}); // ← This closes the DOMContentLoaded event listener
-
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-            navigator.serviceWorker.register('sw.js')
-                .then(function (registration) {
-                    console.log('Service worker registered with scope:', registration.scope);
-                })
-                .catch(function (error) {
-                    console.error('Service worker registration failed:', error);
-                });
-        });
-    }
+    console.log('🚀 PWA System Ready - Uninstall detection active');
+    
+}); // ← This closes the DOMContentLoaded event listener (ONLY ONE!)
