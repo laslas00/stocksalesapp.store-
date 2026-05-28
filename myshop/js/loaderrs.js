@@ -337,6 +337,14 @@ function connectWebSocket() {
         console.warn('Supabase not available for realtime');
         return;
     }
+  // ✅ ADD THIS FUNCTION (it's missing)
+    function playNotificationSound() {
+        if (notificationSound && !localStorage.getItem('muteNotifications')) {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(e => console.log('Sound play prevented:', e));
+        }
+    }
+
 
     // Get current business ID for filtering
     const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
@@ -353,7 +361,7 @@ function connectWebSocket() {
                 table: 'sales',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            (payload) => {
+            async (payload) => {
                 const sale = payload.new;
                 
                 // Double-check business match
@@ -373,6 +381,23 @@ function connectWebSocket() {
                         { sale: sale, user: saleUser }
                     );
                 }
+                
+                const productName = sale.productName || sale.product_name || 'a product';
+                const amount = sale.price || sale.total_amount || 0;
+                const formattedAmount = typeof formatCurrency === 'function' ? formatCurrency(amount) : amount;
+                
+                await triggerPushNotification(
+                    '💰 New Sale!',
+                    `${saleUser?.username || 'Someone'} sold ${productName} for ${formattedAmount}`,
+                    'sale',
+                    {
+                        saleId: sale.id,
+                        saleData: sale,
+                        url: window.location.href,
+                        tag: `sale-${sale.id}`,
+                        requireInteraction: true
+                    }
+                );
             }
         )
         // Listen for new tasks (filtered by business)
@@ -383,7 +408,7 @@ function connectWebSocket() {
                 table: 'tasks',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            (payload) => {
+            async (payload) => {
                 const task = payload.new;
                 
                 if (currentBusinessId && task.business_id !== currentBusinessId) {
@@ -392,6 +417,13 @@ function connectWebSocket() {
                 
                 if (typeof showTaskNotificationBar === 'function') showTaskNotificationBar(task);
                 if (typeof loadTasks === 'function') loadTasks();
+                
+                await triggerPushNotification(
+                    '📋 New Task',
+                    `${task.title || 'New task'} - ${task.description || 'Click to view'}`,
+                    'task',
+                    { taskId: task.id, taskData: task, url: window.location.href, tag: `task-${task.id}` }
+                );
             }
         )
         // Listen for stock changes - low stock (filtered by business)
@@ -402,7 +434,7 @@ function connectWebSocket() {
                 table: 'stock',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            (payload) => {
+            async (payload) => {
                 const item = payload.new;
                 
                 if (currentBusinessId && item.business_id !== currentBusinessId) {
@@ -416,7 +448,36 @@ function connectWebSocket() {
                             { itemName: item.name, quantity: item.quantity }
                         );
                     }
+                    
+                    await triggerPushNotification(
+                        '⚠️ Low Stock Alert',
+                        `${item.name} has only ${item.quantity} left!`,
+                        'low_stock',
+                        { itemId: item.id, itemData: item, url: window.location.href, tag: `stock-${item.id}`, requireInteraction: true }
+                    );
                 }
+            }
+        )
+        // Listen for new reminders
+        .on('postgres_changes',
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'reminders',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
+            async (payload) => {
+                const reminder = payload.new;
+                if (currentBusinessId && reminder.business_id !== currentBusinessId) return;
+                
+                playNotificationSound();
+                
+                await triggerPushNotification(
+                    '🔔 Reminder',
+                    reminder.title || reminder.message || 'You have a new reminder',
+                    'reminder',
+                    { reminderId: reminder.id, reminderData: reminder, url: window.location.href, tag: `reminder-${reminder.id}` }
+                );
             }
         )
         .subscribe((status) => {
