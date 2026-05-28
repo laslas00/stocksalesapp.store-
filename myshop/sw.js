@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER - CORRECTED VERSION
 // ========================================
-const APP_VERSION = '2.0.75';
+const APP_VERSION = '2.0.80';
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 
 console.log(`🚀 Service Worker v${APP_VERSION} loading...`);
@@ -88,7 +88,9 @@ const ASSETS_TO_CACHE = [
   'js/onclick.JS',
   'js/upadte.js',
   'js/daily-dashboard.js',
-  'js/navbar.js'
+  'js/navbar.js',
+  'translations.js',
+  
 ];
 
 

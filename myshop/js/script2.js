@@ -789,91 +789,9 @@ async function createPushSubscription() {
         return null;
     }
 }
-async function saveExistingSubscription() {
-    console.log('💾 Saving existing subscription to Supabase...');
-    
-    try {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        
-        if (!subscription) {
-            console.log('❌ No subscription found');
-            return false;
-        }
-        
-        console.log('📝 Found subscription, saving to Supabase...');
-        console.log('Endpoint:', subscription.endpoint.substring(0, 80) + '...');
-        
-        const client = getSB();
-        if (!client) {
-            console.error('❌ Could not get Supabase client');
-            return false;
-        }
-        
-        function arrayBufferToBase64(buffer) {
-            if (!buffer) return '';
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return window.btoa(binary);
-        }
-        
-        const businessId = localStorage.getItem('businessId');
-        const userId = localStorage.getItem('userId');
-        
-        const p256dh = subscription.getKey('p256dh');
-        const auth = subscription.getKey('auth');
-        
-        const payload = {
-            business_id: businessId,
-            user_id: userId,
-            endpoint: subscription.endpoint,
-            p256dh: p256dh ? arrayBufferToBase64(p256dh) : '',
-            auth: auth ? arrayBufferToBase64(auth) : '',
-            user_agent: navigator.userAgent
-        };
-        
-        console.log('📤 Saving payload:', {
-            business_id: payload.business_id,
-            user_id: payload.user_id,
-            endpoint_preview: payload.endpoint.substring(0, 50) + '...',
-            has_p256dh: !!payload.p256dh,
-            has_auth: !!payload.auth
-        });
-        
-        const { data, error } = await client
-            .from('push_subscriptions')
-            .upsert(payload, { onConflict: 'endpoint' });
-        
-        if (error) {
-            console.error('❌ Failed to save:', error);
-            return false;
-        }
-        
-        console.log('✅ Subscription saved to Supabase!');
-        
-        // Verify it was saved
-        const { count, error: countError } = await client
-            .from('push_subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('endpoint', subscription.endpoint);
-        
-        if (!countError && count > 0) {
-            console.log(`✅ Verified: ${count} subscription(s) in database`);
-        }
-        
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        return false;
-    }
-}
 
 
-// Add this function to script2.js
+
 async function initializeFestiveBadgeAfterLogin(businessInfoData) {
     console.log('🎉 Initializing festive badge after login with:', businessInfoData);
     
@@ -898,12 +816,26 @@ async function initializeFestiveBadgeAfterLogin(businessInfoData) {
         toggleSwitch.addEventListener('change', toggleFestiveBadgeoff);
         toggleSwitch.hasListener = true;
     }
-        const badgeToggle = document.getElementById('toggleBadgeswithc');
+    
+    const badgeToggle = document.getElementById('toggleBadgeswithc');
     if (badgeToggle) {
         badgeToggle.addEventListener('change', toggleFestiveBadgeoff);
     }
-
-      new EmailScheduler();
-      await createPushSubscription();
-      await saveExistingSubscription();
+      if (Notification.permission === 'granted') {
+        await createPushSubscription();
+    } else {
+        console.log('⚠️ Cannot create push subscription - permission not granted');
+    }
+    
+    new EmailScheduler();
+    
+    // ✅ ONLY CALL ONE - This creates AND saves subscription
+    await createPushSubscription();
+    
+    // ✅ Optionally verify it worked
+    const registration = await navigator.serviceWorker.ready;
+    const sub = await registration.pushManager.getSubscription();
+    if (sub) {
+        console.log('✅ Push notification system ready!');
+    }
 }

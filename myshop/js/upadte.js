@@ -139,10 +139,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         initializeTaskEventListeners();
     }
 
-    // Block 3: Festive badge toggle
- 
-
-    // Block 4: Notifications permission, secret click, reminders button
     {
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
