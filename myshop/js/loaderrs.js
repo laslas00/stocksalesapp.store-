@@ -58,21 +58,6 @@ function scheduleSalesYearRefresh(delay = 1500) {
 }
 
 
-function scheduleSalesYearRefresh(delay = 1500) {
-    if (salesRefreshTimer) clearTimeout(salesRefreshTimer);
-    salesRefreshTimer = setTimeout(async () => {
-        salesRefreshTimer = null;
-        if (typeof loadSalesForYear === 'function') {
-            try {
-                await loadSalesForYear(new Date().getFullYear());
-                if (typeof renderSales === 'function') renderSales();
-            } catch (refreshError) {
-                console.error('Failed to refresh sales:', refreshError);
-            }
-        }
-    }, delay);
-}
-
 // ========================================
 // NATIVE PUSH NOTIFICATIONS
 // ========================================
@@ -378,11 +363,15 @@ function connectWebSocket() {
     
     if (realtimeSubscription) realtimeSubscription.unsubscribe();
     
-        realtimeSubscription = client
-            .channel('sales-channel') 
-        // FIXED: Added 'async' to callback
+         realtimeSubscription = client
+        .channel('public-sales')
         .on('postgres_changes', 
-            { event: 'INSERT', schema: 'public', table: 'sales', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'sales',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
             async (payload) => {  // ← ADDED async
                 const sale = payload.new;
                 if (currentBusinessId && sale.business_id !== currentBusinessId) return;
@@ -394,8 +383,7 @@ function connectWebSocket() {
                 const productName = sale.productName || sale.product_name || 'a product';
                 const amount = sale.price || sale.total_amount || 0;
                 const formattedAmount = typeof formatCurrency === 'function' ? formatCurrency(amount) : amount;
-                
-                // FIXED: Correct parameter order - triggerPushNotification expects (title, body, type, data)
+            
                 await triggerPushNotification(
                     '💰 New Sale!',
                     `${saleUser?.username || 'Someone'} sold ${productName} for ${formattedAmount}`,
@@ -415,8 +403,13 @@ function connectWebSocket() {
             }
         )
         // FIXED: Tasks handler with async
-        .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'tasks', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
+             .on('postgres_changes',
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'tasks',
+                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
+            },
             async (payload) => {  // ← ADDED async
                 const task = payload.new;
                 if (currentBusinessId && task.business_id !== currentBusinessId) return;
