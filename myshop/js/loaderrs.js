@@ -436,8 +436,8 @@ function connectWebSocket() {
     
     if (realtimeSubscription) realtimeSubscription.unsubscribe();
     
-    realtimeSubscription = client
-        .channel('public-sales')
+realtimeSubscription = client
+    .channel('sales-realtime-channel')  // ← Any unique name works
         // FIXED: Added 'async' to callback
         .on('postgres_changes', 
             { event: 'INSERT', schema: 'public', table: 'sales', filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined },
