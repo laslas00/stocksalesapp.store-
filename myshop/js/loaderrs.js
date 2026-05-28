@@ -338,46 +338,10 @@ function connectWebSocket() {
         return;
     }
 
-    // ✅ Play notification sound function
-    function playNotificationSound() {
-        if (notificationSound && !localStorage.getItem('muteNotifications')) {
-            notificationSound.currentTime = 0;
-            notificationSound.play().catch(e => console.log('Sound play prevented:', e));
-        }
-    }
-
     // Get current business ID for filtering
     const currentBusinessId = currentUser?.business_id || businessInfo?.id || localStorage.getItem('businessId') || null;
     
     console.log('🔍 Realtime filtering by business_id:', currentBusinessId);
-
-    // ✅ REMOVE old subscription before creating new one
-    if (realtimeSubscription) {
-        console.log('🔄 Removing old realtime subscription');
-        realtimeSubscription.unsubscribe();
-        realtimeSubscription = null;
-    }
-
-    // ✅ SAFE push notification trigger with error handling
-    async function safeTriggerPush(title, body, type, data = {}) {
-        try {
-            const result = await triggerPushNotification(title, body, type, data);
-            console.log(`📱 Push sent successfully: "${title}"`, result);
-            return result;
-        } catch (error) {
-            console.error(`❌ Failed to send push "${title}":`, error);
-            // Fallback to native notification if push fails
-            if (Notification.permission === 'granted') {
-                new Notification(title, { 
-                    body: body, 
-                    icon: '/image/logo.jpg',
-                    tag: data.tag || 'fallback',
-                    requireInteraction: data.requireInteraction || false
-                });
-            }
-            return null;
-        }
-    }
 
     // Listen for new sales (filtered by business)
     realtimeSubscription = client
@@ -389,67 +353,26 @@ function connectWebSocket() {
                 table: 'sales',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            async (payload) => {
-                console.log('🔔 NEW SALE DETECTED:', payload);
+            (payload) => {
                 const sale = payload.new;
                 
                 // Double-check business match
                 if (currentBusinessId && sale.business_id !== currentBusinessId) {
-                    console.log('⏭️ Skipping - different business');
-                    return;
+                    return; // Skip - different business
                 }
                 
-                // ✅ FIXED: Properly get sale user with fallback
-                const saleUser = (typeof users !== 'undefined' && Array.isArray(users) 
-                    ? users.find(u => u.username === sale.username) 
-                    : null) || currentUser || { username: sale.username || 'Someone' };
+                const saleUser = (typeof users !== 'undefined' ? users.find(u => u.username === sale.username) : null) || currentUser;
                 
-                console.log('👤 Sale user:', saleUser);
-                
-                // Refresh sales data if functions exist
                 if (typeof loadSalesForYear === 'function') {
-                    try {
-                        await loadSalesForYear(new Date().getFullYear());
-                        if (typeof renderSales === 'function') {
-                            renderSales();
-                        }
-                    } catch (refreshError) {
-                        console.error('Failed to refresh sales:', refreshError);
-                    }
+                    loadSalesForYear(new Date().getFullYear()).then(renderSales);
                 }
                 
-                // Show notification bar if function exists
                 if (typeof enqueueNotification === 'function') {
                     enqueueNotification(
-                        (data, done) => {
-                            if (typeof showSaleNotificationBar === 'function') {
-                                showSaleNotificationBar(data.sale, data.user, done);
-                            }
-                        },
+                        (data, done) => showSaleNotificationBar(data.sale, data.user, done),
                         { sale: sale, user: saleUser }
                     );
                 }
-                
-                // Prepare notification content
-                const productName = sale.productName || sale.product_name || 'a product';
-                const amount = sale.price || sale.total_amount || 0;
-                const formattedAmount = typeof formatCurrency === 'function' 
-                    ? formatCurrency(amount) 
-                    : amount;
-                
-                // ✅ FIXED: Use safe trigger with proper error handling
-                safeTriggerPush(
-                    '💰 New Sale!',
-                    `${saleUser.username || 'Someone'} sold ${productName} for ${formattedAmount}`,
-                    'sale',
-                    {
-                        saleId: sale.id,
-                        saleData: sale,
-                        url: window.location.href,
-                        tag: `sale-${sale.id}`,
-                        requireInteraction: true
-                    }
-                );
             }
         )
         // Listen for new tasks (filtered by business)
@@ -460,39 +383,15 @@ function connectWebSocket() {
                 table: 'tasks',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            async (payload) => {
-                console.log('📋 NEW TASK DETECTED:', payload);
+            (payload) => {
                 const task = payload.new;
                 
                 if (currentBusinessId && task.business_id !== currentBusinessId) {
-                    console.log('⏭️ Skipping - different business');
                     return;
                 }
                 
-                // Update UI if functions exist
-                if (typeof showTaskNotificationBar === 'function') {
-                    showTaskNotificationBar(task);
-                }
-                if (typeof loadTasks === 'function') {
-                    try {
-                        await loadTasks();
-                    } catch (taskError) {
-                        console.error('Failed to refresh tasks:', taskError);
-                    }
-                }
-                
-                // ✅ FIXED: Use safe trigger
-                safeTriggerPush(
-                    '📋 New Task',
-                    `${task.title || 'New task'} - ${task.description || 'Click to view'}`,
-                    'task',
-                    { 
-                        taskId: task.id, 
-                        taskData: task, 
-                        url: window.location.href, 
-                        tag: `task-${task.id}` 
-                    }
-                );
+                if (typeof showTaskNotificationBar === 'function') showTaskNotificationBar(task);
+                if (typeof loadTasks === 'function') loadTasks();
             }
         )
         // Listen for stock changes - low stock (filtered by business)
@@ -503,112 +402,30 @@ function connectWebSocket() {
                 table: 'stock',
                 filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
             },
-            async (payload) => {
-                console.log('📦 STOCK UPDATE DETECTED:', payload);
+            (payload) => {
                 const item = payload.new;
                 
                 if (currentBusinessId && item.business_id !== currentBusinessId) {
-                    console.log('⏭️ Skipping - different business');
                     return;
                 }
                 
                 if (item.quantity < 3) {
-                    console.log('⚠️ LOW STOCK:', item.name, 'quantity:', item.quantity);
-                    
-                    // Show notification bar if function exists
                     if (typeof enqueueNotification === 'function') {
                         enqueueNotification(
-                            (data, done) => {
-                                if (typeof showLowStockNotificationBar === 'function') {
-                                    showLowStockNotificationBar(data);
-                                }
-                            },
+                            showLowStockNotificationBar,
                             { itemName: item.name, quantity: item.quantity }
                         );
                     }
-                    
-                    // ✅ FIXED: Use safe trigger
-                    safeTriggerPush(
-                        '⚠️ Low Stock Alert',
-                        `${item.name} has only ${item.quantity} left!`,
-                        'low_stock',
-                        { 
-                            itemId: item.id, 
-                            itemData: item, 
-                            url: window.location.href, 
-                            tag: `stock-${item.id}`, 
-                            requireInteraction: true 
-                        }
-                    );
                 }
-            }
-        )
-        // Listen for new reminders
-        .on('postgres_changes',
-            { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'reminders',
-                filter: currentBusinessId ? `business_id=eq.${currentBusinessId}` : undefined
-            },
-            async (payload) => {
-                console.log('🔔 NEW REMINDER DETECTED:', payload);
-                const reminder = payload.new;
-                
-                if (currentBusinessId && reminder.business_id !== currentBusinessId) {
-                    console.log('⏭️ Skipping - different business');
-                    return;
-                }
-                
-                // Play sound for reminders
-                playNotificationSound();
-                
-                // ✅ FIXED: Use safe trigger
-                safeTriggerPush(
-                    '🔔 Reminder',
-                    reminder.title || reminder.message || 'You have a new reminder',
-                    'reminder',
-                    { 
-                        reminderId: reminder.id, 
-                        reminderData: reminder, 
-                        url: window.location.href, 
-                        tag: `reminder-${reminder.id}` 
-                    }
-                );
             }
         )
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
                 console.log('✅ Supabase Realtime connected (business:', currentBusinessId || 'all', ')');
-            } else if (status === 'CHANNEL_ERROR') {
-                console.error('❌ Realtime channel error - will retry in 5 seconds');
-                // Auto-reconnect on error
-                setTimeout(() => {
-                    console.log('🔄 Attempting to reconnect...');
-                    connectWebSocket();
-                }, 5000);
             } else {
                 console.log('🔄 Realtime status:', status);
             }
         });
-
-    // ✅ ADDED: Periodic health check to ensure connection stays alive
-    if (window.realtimeHealthCheck) {
-        clearInterval(window.realtimeHealthCheck);
-    }
-    
-    window.realtimeHealthCheck = setInterval(() => {
-        if (realtimeSubscription) {
-            const state = realtimeSubscription.state;
-            if (state !== 'SUBSCRIBED') {
-                console.log(`⚠️ Realtime state: ${state} - reconnecting...`);
-                connectWebSocket();
-            }
-        } else {
-            console.log('⚠️ No realtime subscription - reconnecting...');
-            connectWebSocket();
-        }
-    }, 30000); // Check every 30 seconds
 }
 function disconnectRealtime() {
     if (realtimeSubscription) {
