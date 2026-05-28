@@ -708,10 +708,91 @@ function applyGlobalFestiveSettings() {
     }
 }
 
+// Run this to manually create the push subscription
+async function createPushSubscription() {
+    console.log('🔧 Manually creating push subscription...');
+    
+    // Your VAPID public key
+    const VAPID_PUBLIC_KEY = 'BCqU66A4QXNDI5gSketfQ37RXpiZszkNtRAZ6SikdBwiJCAQqdFa25tsOrbewdanquyxJ9tuRqLoCe_1KSU0FUI';
+    
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+    
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Check if already subscribed
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            console.log('📝 No subscription found, creating one...');
+            
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+            
+            console.log('✅ Subscription created!');
+            console.log('Endpoint:', subscription.endpoint.substring(0, 100) + '...');
+            
+            // Save to Supabase
+            const businessId = localStorage.getItem('businessId');
+            const userId = localStorage.getItem('userId');
+            
+            // Get keys
+            const p256dh = subscription.getKey('p256dh');
+            const auth = subscription.getKey('auth');
+            
+            function arrayBufferToBase64(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return window.btoa(binary);
+            }
+            
+            // Save to Supabase
+            const { data, error } = await supabase
+                .from('push_subscriptions')
+                .upsert({
+                    business_id: businessId,
+                    user_id: userId,
+                    endpoint: subscription.endpoint,
+                    p256dh: p256dh ? arrayBufferToBase64(p256dh) : '',
+                    auth: auth ? arrayBufferToBase64(auth) : '',
+                    user_agent: navigator.userAgent
+                }, { onConflict: 'endpoint' });
+            
+            if (error) {
+                console.error('Failed to save to Supabase:', error);
+            } else {
+                console.log('✅ Subscription saved to Supabase!');
+            }
+            
+            return subscription;
+        } else {
+            console.log('✅ Already have a subscription!');
+            return subscription;
+        }
+    } catch (error) {
+        console.error('❌ Failed to create subscription:', error);
+        return null;
+    }
+}
+
 
 
 // Add this function to script2.js
-function initializeFestiveBadgeAfterLogin(businessInfoData) {
+async function initializeFestiveBadgeAfterLogin(businessInfoData) {
     console.log('🎉 Initializing festive badge after login with:', businessInfoData);
     
     window.businessInfo = businessInfoData;
@@ -741,4 +822,6 @@ function initializeFestiveBadgeAfterLogin(businessInfoData) {
     }
 
       new EmailScheduler();
+      // Run it
+const sub = await createPushSubscription();
 }
