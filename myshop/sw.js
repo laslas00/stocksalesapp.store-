@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER - CORRECTED VERSION
 // ========================================
-const APP_VERSION = '3.0.89';
+const APP_VERSION = '3.1.17';
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 const ENGAGEMENT_CHANNEL = new BroadcastChannel('engagement-updates');
 
@@ -181,7 +181,7 @@ self.addEventListener('notificationclick', event => {
 
   const notificationData = event.notification.data || {};
   // USE ABSOLUTE PATH
-  const urlToOpen = notificationData.url || '/shop.html?from=notification&skip=main';
+  const urlToOpen = notificationData.url || '/myshop/shop.html?from=notification&skip=main';
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
@@ -221,7 +221,7 @@ self.addEventListener('push', event => {
     icon: '/myshop/image/logo.jpg',
     badge: '/myshop/image/200.png',
     vibrate: [200, 100, 200],
-    data: { url: data.url || '/shop.html?from=notification&skip=main', type: data.type || 'push' },
+    data: { url: data.url || '/myshop/shop.html?from=notification&skip=main', type: data.type || 'push' },
     requireInteraction: data.requireInteraction || false
   };
   
@@ -379,7 +379,7 @@ async function sendEngagementNotification(type) {
     tag: `engagement-${type}-${Date.now()}`,
     data: { 
       type: type,
-      url: '/shop.html?from=notification&skip=main',
+      url: '/myshop/shop.html?from=notification&skip=main',
       timestamp: Date.now()
     },
     requireInteraction: type === 'inactive_alert',
@@ -625,7 +625,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   
-  const urlToOpen = event.notification.data?.url || '/shop.html';
+  const urlToOpen = event.notification.data?.url || '/myshop/shop.html';
   
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(windowClients => {
