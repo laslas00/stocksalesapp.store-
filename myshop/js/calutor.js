@@ -373,5 +373,3 @@ window.initCalculator = function() {
     }
 };
 
-// Start everything
-window.initCalculator();

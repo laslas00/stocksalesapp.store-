@@ -304,9 +304,34 @@ const EngagementBuilder = {
     },
     
     updateActivity() {
-        localStorage.setItem('lastAppActivity', Date.now().toString());
+        const timestamp = Date.now();
+        localStorage.setItem('lastAppActivity', timestamp.toString());
+        
+        // Notify service worker
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'UPDATE_ACTIVITY'
+            });
+        }
     },
     
+    // FIXED: Missing comma after previous method
+    // Get local stock items
+    getLocalStockItems() {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('stock_item_')) {
+                try {
+                    const item = JSON.parse(localStorage.getItem(key));
+                    if (item) items.push(item);
+                } catch (e) {}
+            }
+        }
+        return items;
+    },
+    
+    // FIXED: Missing comma after previous method
     addEngagementButton() {
         if (document.getElementById('engagementFloatingBtn')) return;
         
@@ -319,7 +344,7 @@ const EngagementBuilder = {
             background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
             color: 'white', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '24px', cursor: 'pointer',
-            zIndex: '9999', border: 'none'
+            zIndex: '9999', border: 'none',display: 'none', // Start hidden
         });
         
         btn.onclick = async () => {
@@ -340,29 +365,87 @@ const EngagementBuilder = {
         
         this.updateActivity();
         
+        // Track activity
         const events = ['click', 'touchstart', 'keydown'];
         events.forEach(event => {
             document.addEventListener(event, () => this.updateActivity());
         });
         
+        // Request notification permission
         if (Notification.permission === 'default') {
-            const askPermission = async () => {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    console.log('📢 Notification permission granted!');
-                    this.scheduleNotifications();
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('📢 Notification permission granted!');
+            }
+        }
+        
+        // Register background sync
+        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                
+                // Register periodic sync if available (Chrome)
+                if ('periodicSync' in registration) {
+                    try {
+                        await registration.periodicSync.register('engagement-sync', {
+                            minInterval: 60 * 60 * 1000 // 1 hour
+                        });
+                        console.log('✅ Periodic background sync registered');
+                    } catch (error) {
+                        console.log('Periodic sync not available, using regular sync');
+                    }
                 }
-                events.forEach(event => {
-                    document.removeEventListener(event, askPermission);
-                });
-            };
-            document.addEventListener('click', askPermission, { once: true });
-        } else if (Notification.permission === 'granted') {
-            this.scheduleNotifications();
+                
+                // Register regular background sync
+                await registration.sync.register('engagement-check');
+                console.log('✅ Background sync registered');
+                
+                // Tell service worker to initialize engagement system
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'INIT_ENGAGEMENT_SYSTEM'
+                    });
+                }
+            } catch (error) {
+                console.warn('⚠️ Background sync not available:', error);
+            }
+        }
+        
+        // Update stock data in service worker
+        this.syncStockData();
+        
+        // Send activity update to service worker
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'UPDATE_ACTIVITY'
+            });
         }
         
         this.addEngagementButton();
+        this.scheduleNotifications(); // FIXED: Added missing schedule notifications call
+    },
+    
+    // FIXED: Missing comma and proper method structure
+    async syncStockData() {
+        if (!navigator.serviceWorker.controller) return;
+        
+        const stockItems = this.getLocalStockItems();
+        if (stockItems.length > 0) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'UPDATE_STOCK',
+                items: stockItems
+            });
+        }
     }
+};
+
+// Helper for week number
+Date.prototype.getWeek = function() {
+    const date = new Date(this.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 };
 
 // FIXED: Proper DOM ready check
@@ -375,12 +458,3 @@ if (document.readyState === 'loading') {
 }
 
 window.EngagementBuilder = EngagementBuilder;
-
-// Helper for week number
-Date.prototype.getWeek = function() {
-    const date = new Date(this.getTime());
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-    const week1 = new Date(date.getFullYear(), 0, 4);
-    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-};

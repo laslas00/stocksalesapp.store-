@@ -284,10 +284,3 @@ function initCurrencySystem() {
     }
 }
 
-// Call on page load
-document.addEventListener('DOMContentLoaded', initCurrencySystem);
-
-// Export for global use
-window.formatCurrency = formatCurrency;
-window.getCurrencySymbol = getCurrencySymbol;
-window.updateCurrencyLabels = updateCurrencyLabels;

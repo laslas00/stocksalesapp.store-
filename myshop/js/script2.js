@@ -818,25 +818,119 @@ async function initializeFestiveBadgeAfterLogin(businessInfoData) {
         toggleSwitch.hasListener = true;
     }
     
-    const badgeToggle = document.getElementById('toggleBadgeswithc');
-    if (badgeToggle) {
-        badgeToggle.addEventListener('change', toggleFestiveBadgeoff);
-    }
-      if (Notification.permission === 'granted') {
+    // FIXED: Removed duplicate badge toggle listener
+    // The toggleSwitch already has the listener from above
+    
+    // FIXED: Only create push subscription once
+    if (Notification.permission === 'granted') {
         await createPushSubscription();
     } else {
         console.log('⚠️ Cannot create push subscription - permission not granted');
     }
     
-    new EmailScheduler();
+    // FIXED: Removed duplicate EmailScheduler and createPushSubscription calls
     
-    // ✅ ONLY CALL ONE - This creates AND saves subscription
-    await createPushSubscription();
+    // FIXED: Verify subscription only if permission was granted
+    if (Notification.permission === 'granted') {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const sub = await registration.pushManager.getSubscription();
+            if (sub) {
+                console.log('✅ Push notification system ready!');
+            }
+        } catch (error) {
+            console.warn('Could not verify push subscription:', error);
+        }
+    }
+
+    // FIXED: Moved urlParams declaration to top and removed duplicate
+    const urlParams = new URLSearchParams(window.location.search);
     
-    // ✅ Optionally verify it worked
-    const registration = await navigator.serviceWorker.ready;
-    const sub = await registration.pushManager.getSubscription();
-    if (sub) {
-        console.log('✅ Push notification system ready!');
+    const urlUser = urlParams.get('user');
+    const urlRole = urlParams.get('role');
+    const urlBusiness = urlParams.get('business');
+    const urlLang = urlParams.get('lang');
+
+    if (urlLang) {
+        // FIXED: Made sure currentLanguage is defined or use window.currentLanguage
+        if (typeof currentLanguage !== 'undefined') {
+            currentLanguage = urlLang;
+        } else {
+            window.currentLanguage = urlLang;
+        }
+        localStorage.setItem('language', urlLang);
+    }
+
+    console.log('🔗 URL params:', {
+        user: urlUser,
+        role: urlRole,
+        business: urlBusiness,
+        lang: urlLang
+    });
+    
+    // Start everything
+    if (typeof window.initCalculator === 'function') {
+        window.initCalculator();
+    }
+    
+    // FIXED: Call initCurrencySystem if it exists
+    if (typeof initCurrencySystem === 'function') {
+        initCurrencySystem();
+    }
+
+    // FIXED: Make sure these functions exist before exporting
+    if (typeof formatCurrency === 'function') {
+        window.formatCurrency = formatCurrency;
+    }
+    if (typeof getCurrencySymbol === 'function') {
+        window.getCurrencySymbol = getCurrencySymbol;
+    }
+    if (typeof updateCurrencyLabels === 'function') {
+        window.updateCurrencyLabels = updateCurrencyLabels;
+    }
+    
+    const dateInput = document.getElementById('customReceiptDateFilter');
+    if (dateInput && !dateInput.value) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+    
+    // FIXED: Check if loadCustomerReceipts exists before calling
+    if (typeof loadCustomerReceipts === 'function') {
+        loadCustomerReceipts();
+    }
+    
+    // FIXED: Handle receipt from URL if parameter exists
+    if (urlParams.has('receipt')) {
+        // Wait for page to fully load, then show receipt
+        setTimeout(() => {
+            if (typeof handleReceiptFromUrl === 'function') {
+                handleReceiptFromUrl();
+            }
+        }, 1500);
+    }
+    
+    // FIXED: Check if initMobilePush exists before calling
+    if (typeof initMobilePush === 'function') {
+        initMobilePush();
+    }
+     if ('Notification' in window && Notification.permission === 'default') {
+        // Show a friendly prompt first
+        const shouldAsk = confirm(translate("Wouldyouliketoreceivestockalertsandreminders?"));
+        if (shouldAsk) {
+            const permission = await Notification.requestPermission();
+            console.log('Notification permission:', permission);
+        }
+    }
+    // FIXED: Initialize EmailScheduler only once and only if it exists
+    if (typeof EmailScheduler !== 'undefined' && typeof EmailScheduler === 'function') {
+        try {
+            new EmailScheduler();
+        } catch (error) {
+            console.warn('Failed to initialize EmailScheduler:', error);
+        }
     }
 }

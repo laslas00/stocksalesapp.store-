@@ -3909,7 +3909,7 @@ async function loadCustomerReceipts() {
         console.error('Error loading customer receipts:', error);
     }
 }
-document.addEventListener('DOMContentLoaded', loadCustomerReceipts);
+
 
 
 
@@ -4731,12 +4731,4 @@ async function handleReceiptFromUrl() {
 // ============================================
 // CHECK URL ON PAGE LOAD
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if URL has receipt parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('receipt')) {
-        // Wait for page to fully load, then show receipt
-        setTimeout(() => handleReceiptFromUrl(), 1500);
-    }
-});
 

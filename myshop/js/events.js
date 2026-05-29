@@ -1866,26 +1866,7 @@ function copyAdminInfo() {
 
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    const urlUser = urlParams.get('user');
-    const urlRole = urlParams.get('role');
-    const urlBusiness = urlParams.get('business');
-    const urlLang = urlParams.get('lang');
 
-    if (urlLang) {
-        currentLanguage = urlLang;
-        localStorage.setItem('language', urlLang);
-    }
-
-    console.log('🔗 URL params:', {
-        user: urlUser,
-        role: urlRole,
-        business: urlBusiness,
-        lang: urlLang
-    });
-});
 function logoutAndRedirect(event) {
     // Prevent immediate navigation to let storage clear completely
     event.preventDefault(); 

@@ -1,12 +1,21 @@
-const urlParams = new URLSearchParams(window.location.search);
-const isFromSplash = urlParams.get('splash') === 'true';
 
-if (!sessionStorage.getItem('cameFromSplash') && !isFromSplash) {
-    // First time - set flag and redirect to splash
-    sessionStorage.setItem('cameFromSplash', 'true');
-    window.location.href = "main.html";
-} else {
-    // Already came from splash or was redirected
+
+
+document.addEventListener('DOMContentLoaded', function() {
+       const urlParams = new URLSearchParams(window.location.search);
+    const isFromSplash = urlParams.get('splash') === 'true';
+    
+    // FIXED: Only redirect if NOT on shop.html and NOT already from splash
+    const isShopPage = window.location.pathname.includes('shop.html');
+    
+    if (!isShopPage && !sessionStorage.getItem('cameFromSplash') && !isFromSplash) {
+        // First time - set flag and redirect to splash
+        sessionStorage.setItem('cameFromSplash', 'true');
+        window.location.href = "main.html";
+        return; // Stop execution
+    }
+    
+    // Already came from splash or on shop page
     sessionStorage.removeItem('cameFromSplash');
     
     // Remove splash param from URL if present
@@ -14,11 +23,7 @@ if (!sessionStorage.getItem('cameFromSplash') && !isFromSplash) {
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
     }
-}
-
-
-
-document.addEventListener('DOMContentLoaded', function() {
+    
     
     // ========================================
     // NOTIFICATION FUNCTIONS
@@ -325,6 +330,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function forceServiceWorkerUpdate() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(registration => {
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'INIT_ENGAGEMENT_SYSTEM'
+                    });
+                }
+                
+                // FIXED: Moved syncStockToServiceWorker inside the then block
+                syncStockToServiceWorker();
+                
                 // Check for updates every minute
                 setInterval(() => {
                     registration.update();
@@ -337,6 +351,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🔄 New Service Worker activated! Reloading...');
                 window.location.reload();
             });
+        }
+    }
+    
+    // FIXED: Added missing syncStockToServiceWorker function
+    function syncStockToServiceWorker() {
+        if (!navigator.serviceWorker.controller) return;
+        
+        // Get local stock items
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('stock_item_')) {
+                try {
+                    const item = JSON.parse(localStorage.getItem(key));
+                    if (item) items.push(item);
+                } catch (e) {
+                    console.warn('Error parsing stock item:', key);
+                }
+            }
+        }
+        
+        if (items.length > 0 && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'UPDATE_STOCK',
+                items: items
+            });
+            console.log('📦 Synced', items.length, 'stock items to service worker');
         }
     }
     
@@ -388,8 +429,8 @@ async function initMobilePush() {
                     
                     console.log('✅ Mobile push subscription created');
                     
-                    // Save to Supabase
-                    const client = getSB();
+                    // FIXED: Added getSB function or check if it exists
+                    const client = typeof getSB === 'function' ? getSB() : null;
                     if (client) {
                         const businessId = localStorage.getItem('businessId');
                         const userId = localStorage.getItem('userId');
@@ -412,6 +453,8 @@ async function initMobilePush() {
                             auth: arrayBufferToBase64(subscription.getKey('auth')),
                             user_agent: navigator.userAgent
                         }, { onConflict: 'endpoint' });
+                    } else {
+                        console.warn('Supabase client (getSB) not available');
                     }
                 } catch (err) {
                     console.error('Mobile push subscription failed:', err);
@@ -421,9 +464,3 @@ async function initMobilePush() {
     }
 }
 
-// Call on load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMobilePush);
-} else {
-    initMobilePush();
-}
