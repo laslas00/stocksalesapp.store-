@@ -1204,7 +1204,7 @@ async function sendSalePushNotification(saleData) {
     const productName = saleData.product_name || saleData.productName || 'a product';
     const amount = saleData.price || saleData.total_amount || 0;
     
-    // Call edge function
+    // ✅ NEW: Send raw data, NOT pre-formatted title/body
     const response = await fetch(
       'https://zexxdoxuzvkovszfqcio.supabase.co/functions/v1/NOTIFYME',
       {
@@ -1214,16 +1214,21 @@ async function sendSalePushNotification(saleData) {
           'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleHhkb3h1enZrb3ZzemZxY2lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg5MjYzMDAsImV4cCI6MjAzNDUwMjMwMH0.2dGZQn0XFxPxGWZQn0XFxPxG'
         },
         body: JSON.stringify({
-          title: '💰 New Sale!',
-          body: `${username} sold ${productName} for ${amount} CFA`,
+          // ✅ Don't send title and body - let edge function format them
           type: 'sale',
           business_id: businessId,
-          data: { saleId: saleData.id }
+          data: { 
+            saleId: saleData.id,
+            username: username,
+            productName: productName,
+            amount: amount
+          }
         })
       }
     );
     
-    console.log('📱 Push notification result:', await response.json());
+    const result = await response.json();
+    console.log('📱 Push notification result:', result);
   } catch (error) {
     // Don't block the sale if push fails
     console.log('Push notification failed (non-critical):', error.message);

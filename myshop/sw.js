@@ -285,7 +285,7 @@ self.addEventListener('notificationclick', event => {
 
   const notificationData = event.notification.data || {};
   // USE ABSOLUTE PATH
-  const urlToOpen = notificationData.url || '/myshop/shop.html?from=notification&skip=main';
+  const urlToOpen = notificationData.url || '/shop.html?from=notification&skip=main';
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
@@ -325,7 +325,7 @@ self.addEventListener('push', event => {
     icon: '/myshop/image/logo.jpg',
     badge: '/myshop/image/200.png',
     vibrate: [200, 100, 200],
-    data: { url: data.url || '/myshop/shop.html?from=notification&skip=main', type: data.type || 'push' },
+    data: { url: data.url || '/shop.html?from=notification&skip=main', type: data.type || 'push' },
     requireInteraction: data.requireInteraction || false
   };
   
@@ -336,7 +336,7 @@ self.addEventListener('push', event => {
 
 // ========================================
 // MESSAGE HANDLER (NO localStorage!)
-// ========================================
+
 self.addEventListener('message', async function(event) {
   if (event.data && event.data.type === 'CHECK_INSTALL_STATUS') {
     const clients = await self.clients.matchAll();
@@ -354,7 +354,6 @@ self.addEventListener('message', async function(event) {
 // BACKGROUND SYNC FOR ENGAGEMENT
 // ========================================
 self.addEventListener('sync', function(event) {
-  console.log('🔄 Background Sync triggered:', event.tag);
   
   if (event.tag === 'engagement-check') {
     event.waitUntil(checkAndSendEngagements());
@@ -398,137 +397,356 @@ self.addEventListener('periodicsync', function(event) {
   }
 });
 
-// Main engagement checker
-async function checkAndSendEngagements() {
-  console.log('📋 Checking engagement schedule...');
-  
-  const now = new Date();
-  const hour = now.getHours();
-  const day = now.getDay();
-  const today = now.toDateString();
-  
-  // Get stored schedule data
-  const engagementData = await getEngagementData();
-  
-  // Morning check (6-9 AM)
-  if (hour >= 6 && hour <= 9) {
-    const lastMorning = engagementData.lastMorningCheck;
-    if (lastMorning !== today) {
-      await sendEngagementNotification('morning');
-      await updateEngagementData({ lastMorningCheck: today });
-    }
-  }
-  
-  // Mid-day check (12-2 PM)
-  if (hour >= 12 && hour <= 14) {
-    const lastMidday = engagementData.lastMiddayCheck;
-    if (lastMidday !== today) {
-      await checkMiddayEngagements();
-      await updateEngagementData({ lastMiddayCheck: today });
-    }
-  }
-  
-  // Evening check (6-9 PM)
-  if (hour >= 18 && hour <= 21) {
-    const lastEvening = engagementData.lastEveningCheck;
-    if (lastEvening !== today) {
-      await sendEngagementNotification('evening');
-      await updateEngagementData({ lastEveningCheck: today });
-    }
-  }
-  
-  // Weekly checks
-  if (day === 1) { // Monday
-    const weekNum = getWeekNumber(now);
-    const lastMondayMotivation = engagementData.lastMondayMotivation;
-    if (lastMondayMotivation !== weekNum && hour >= 8 && hour <= 12) {
-      await sendEngagementNotification('monday_motivation');
-      await updateEngagementData({ lastMondayMotivation: weekNum });
-    }
-  }
-  
-  if (day === 3) { // Wednesday
-    const weekNum = getWeekNumber(now);
-    const lastWednesdayTip = engagementData.lastWednesdayTip;
-    if (lastWednesdayTip !== weekNum && hour >= 10 && hour <= 14) {
-      await sendEngagementNotification('business_tip');
-      await updateEngagementData({ lastWednesdayTip: weekNum });
-    }
-  }
-  
-  // Check low stock daily
-  await checkLowStockAlert();
-  
-  // Check inactivity
-  await checkUserInactivity();
-  
-  // Schedule next check
-  await scheduleNextEngagementCheck();
-}
 
 // Send engagement notification with appropriate message
 async function sendEngagementNotification(type) {
-  const messages = getEngagementMessages(type);
-  if (!messages) return;
-  
-  const message = Array.isArray(messages) ? 
-    messages[Math.floor(Math.random() * messages.length)] : 
-    messages;
-  
-  await self.registration.showNotification(message.title, {
-    body: message.body,
-    icon: '/myshop/image/logo.jpg',
-    badge: '/myshop/image/200.png',
-    vibrate: [200, 100, 200],
-    tag: `engagement-${type}-${Date.now()}`,
-    data: { 
-      type: type,
-      url: '/myshop/shop.html?from=notification&skip=main',
-      timestamp: Date.now()
-    },
-    requireInteraction: type === 'inactive_alert',
-    actions: [
-      {
-        action: 'open',
-        title: 'Open App'
-      }
-    ]
-  });
+    try {
+        // Get user's language preference
+        const userLang = await getUserLanguage();
+        const messages = getEngagementMessages(type, userLang);
+        
+        if (!messages || messages.length === 0) return;
+        
+        const message = Array.isArray(messages) ? 
+            messages[Math.floor(Math.random() * messages.length)] : 
+            messages;
+        
+        await self.registration.showNotification(message.title, {
+            body: message.body,
+            icon: '/myshop/image/logo.jpg',
+            badge: '/myshop/image/200.png',
+            vibrate: [200, 100, 200],
+            tag: `engagement-${type}-${Date.now()}`,
+            data: { 
+                type: type,
+                url: '/shop.html?from=notification&skip=main',
+                timestamp: Date.now(),
+                language: userLang
+            },
+            requireInteraction: type === 'inactive_alert',
+            actions: [
+                {
+                    action: 'open',
+                    title: userLang === 'en' ? 'Open App' : 
+                          userLang === 'es' ? 'Abrir App' :
+                          userLang === 'fr' ? 'Ouvrir l\'app' :
+                          userLang === 'sw' ? 'Fungua App' :
+                          userLang === 'hi' ? 'ऐप खोलें' :
+                          userLang === 'ms' ? 'Buka App' :
+                          userLang === 'ar' ? 'فتح التطبيق' :
+                          userLang === 'zh-CN' ? '打开应用' : 'Open App'
+                }
+            ]
+        });
+    } catch (error) {
+        console.error('Error sending notification:', error);
+    }
 }
-
+async function getUserLanguage() {
+    try {
+        const db = await openEngagementDB();
+        
+        return await new Promise((resolve) => {
+            const transaction = db.transaction(['engagements'], 'readonly');
+            const store = transaction.objectStore('engagements');
+            const request = store.get('userLanguage');
+            
+            request.onsuccess = () => {
+                // The result is {id: 'userLanguage', language: 'fr'}
+                const language = request.result?.language;
+                
+                if (language && typeof language === 'string') {
+                    console.log('✅ Retrieved language from DB:', language);
+                    resolve(language);
+                } else {
+                    console.log('⚠️ No valid language found, using default: en');
+                    resolve('en');
+                }
+            };
+            
+            request.onerror = () => {
+                console.warn('Error reading language, using default: en');
+                resolve('en');
+            };
+        });
+        
+    } catch (error) {
+        console.error('getUserLanguage error:', error);
+        return 'en';
+    }
+}
 // Get messages based on type 
-function getEngagementMessages(type) {
-  const messages = {
-    morning: [
-      { title: '🌅 Good Morning!', body: 'Start your day by checking stock levels!' },
-      { title: '☀️ Rise and Shine!', body: 'Your business awaits! Check inventory now.' }
-    ],
-    midday_reminder: [  // ADD THIS SECTION
-      { title: '☀️ Afternoon Check', body: 'How are your sales going today?' },
-      { title: '📊 Midday Update', body: 'Time to check your stock levels and sales!' },
-      { title: '💼 Business Check', body: 'Review your morning sales and plan for the afternoon!' }
-    ],
-    evening: [
-      { title: '🌙 Evening Check-in', body: 'Record all sales before closing!' },
-      { title: '📝 End of Day', body: 'Don\'t forget to update your stock!' }
-    ],
-    monday_motivation: [
-      { title: '💪 New Week, New Goals!', body: 'Make this week amazing for your business!' },
-      { title: '🚀 Week Ahead!', body: 'Plan your stock management for success!' }
-    ],
-    business_tip: [
-      { title: '💡 Business Tip', body: 'Review your top 10 products for better insights!' },
-      { title: '📊 Smart Management', body: 'Check profit margins on bestsellers!' }
-    ],
-    inactive_alert: [
-      { title: '👋 We Miss You!', body: 'You haven\'t checked your stock in {days} days!' }
-    ],
-    low_stock: [
-      { title: '⚠️ Low Stock Alert', body: '{count} items need restocking!' }
-    ]
-  };
-  
-  return messages[type];
+function getEngagementMessages(type, language = 'en') {
+    const messages = {
+        en: {
+            morning: [
+                { title: '🌅 Good Morning!', body: 'Start your day by checking stock levels!' },
+                { title: '☀️ Rise and Shine!', body: 'Your business awaits! Check inventory now.' },
+                { title: '📈 Morning Update', body: 'Ready to manage your stock today?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ Afternoon Check', body: 'How are your sales going today?' },
+                { title: '📊 Midday Update', body: 'Time to check your stock levels and sales!' },
+                { title: '💼 Business Check', body: 'Review your morning sales and plan for the afternoon!' }
+            ],
+            evening: [
+                { title: '🌙 Evening Check-in', body: 'Record all sales before closing!' },
+                { title: '📝 End of Day', body: 'Don\'t forget to update your stock!' },
+                { title: '✅ Daily Summary', body: 'Review today\'s sales and stock changes!' }
+            ],
+            monday_motivation: [
+                { title: '💪 New Week, New Goals!', body: 'Make this week amazing for your business!' },
+                { title: '🚀 Week Ahead!', body: 'Plan your stock management for success!' },
+                { title: '🎯 Monday Motivation', body: 'Set your weekly targets today!' }
+            ],
+            business_tip: [
+                { title: '💡 Business Tip', body: 'Review your top 10 products for better insights!' },
+                { title: '📊 Smart Management', body: 'Check profit margins on bestsellers!' },
+                { title: '🎓 Pro Tip', body: 'Regular stock audits prevent losses!' }
+            ],
+            inactive_alert: [
+                { title: '👋 We Miss You!', body: 'You haven\'t checked your stock in {days} days!' }
+            ],
+            low_stock: [
+                { title: '⚠️ Low Stock Alert', body: '{count} items need restocking!' }
+            ]
+        },
+        fr: {
+            morning: [
+                { title: '🌅 Bonjour!', body: 'Commencez votre journée en vérifiant les niveaux de stock!' },
+                { title: '☀️ Levez-vous et brillez!', body: 'Votre entreprise vous attend! Vérifiez l\'inventaire maintenant.' },
+                { title: '📈 Mise à jour matinale', body: 'Prêt à gérer votre stock aujourd\'hui?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ Vérification après-midi', body: 'Comment se passent vos ventes aujourd\'hui?' },
+                { title: '📊 Mise à jour de mi-journée', body: 'Il est temps de vérifier vos niveaux de stock et vos ventes!' },
+                { title: '💼 Vérification commerciale', body: 'Examinez vos ventes matinales et planifiez l\'après-midi!' }
+            ],
+            evening: [
+                { title: '🌙 Vérification du soir', body: 'Enregistrez toutes les ventes avant la fermeture!' },
+                { title: '📝 Fin de journée', body: 'N\'oubliez pas de mettre à jour votre stock!' },
+                { title: '✅ Résumé quotidien', body: 'Examinez les ventes et les changements de stock d\'aujourd\'hui!' }
+            ],
+            monday_motivation: [
+                { title: '💪 Nouvelle semaine, nouveaux objectifs!', body: 'Faites de cette semaine une réussite pour votre entreprise!' },
+                { title: '🚀 Semaine à venir!', body: 'Planifiez votre gestion de stock pour réussir!' },
+                { title: '🎯 Motivation du lundi', body: 'Fixez vos objectifs hebdomadaires aujourd\'hui!' }
+            ],
+            business_tip: [
+                { title: '💡 Conseil commercial', body: 'Examinez vos 10 meilleurs produits pour de meilleures informations!' },
+                { title: '📊 Gestion intelligente', body: 'Vérifiez les marges bénéficiaires sur les meilleures ventes!' },
+                { title: '🎓 Conseil pro', body: 'Des audits de stock réguliers évitent les pertes!' }
+            ],
+            inactive_alert: [
+                { title: '👋 Vous nous manquez!', body: 'Vous n\'avez pas vérifié votre stock depuis {days} jours!' }
+            ],
+            low_stock: [
+                { title: '⚠️ Alerte stock faible', body: '{count} articles doivent être réapprovisionnés!' }
+            ]
+        },
+        sw: {
+            morning: [
+                { title: '🌅 Habari za Asubuhi!', body: 'Anza siku yako kwa kuangalia viwango vya bidhaa!' },
+                { title: '☀️ Amka na Uangaze!', body: 'Biashara yako inakusubiri! Angalia orodha ya bidhaa sasa.' },
+                { title: '📈 Sasisho la Asubuhi', body: 'Uko tayari kusimamia bidhaa zako leo?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ Ukaguzi wa Mchana', body: 'Mauzo yako yanaendeleaje leo?' },
+                { title: '📊 Sasisho la Kati ya Siku', body: 'Wakati wa kuangalia viwango vya bidhaa na mauzo yako!' },
+                { title: '💼 Ukaguzi wa Biashara', body: 'Kagua mauzo yako ya asubuhi na kupanga mchana!' }
+            ],
+            evening: [
+                { title: '🌙 Ukaguzi wa Jioni', body: 'Rekodi mauzo yote kabla ya kufunga!' },
+                { title: '📝 Mwisho wa Siku', body: 'Usisahau kusasisha bidhaa zako!' },
+                { title: '✅ Muhtasari wa Siku', body: 'Kagua mauzo na mabadiliko ya bidhaa ya leo!' }
+            ],
+            monday_motivation: [
+                { title: '💪 Wiki Mpya, Malengo Mapya!', body: 'Ifanye wiki hii iwe nzuri kwa biashara yako!' },
+                { title: '🚀 Wiki Ijayo!', body: 'Panga usimamizi wako wa bidhaa kwa mafanikio!' },
+                { title: '🎯 Motisha ya Jumatatu', body: 'Weka malengo yako ya wiki leo!' }
+            ],
+            business_tip: [
+                { title: '💡 Ushauri wa Biashara', body: 'Kagua bidhaa zako 10 bora kwa ufahamu bora!' },
+                { title: '📊 Usimamizi Mwerevu', body: 'Angalia mapato kwenye bidhaa zinazouzwa zaidi!' },
+                { title: '🎓 Ushauri wa Kitaalamu', body: 'Ukaguzi wa mara kwa mara wa bidhaa huzuia hasara!' }
+            ],
+            inactive_alert: [
+                { title: '👋 Tumekukumbuka!', body: 'Hujaangalia bidhaa zako kwa siku {days}!' }
+            ],
+            low_stock: [
+                { title: '⚠️ Tahadhari ya Bidhaa Chache', body: '{count} bidhaa zinahitaji kujazwa tena!' }
+            ]
+        },
+        hi: {
+            morning: [
+                { title: '🌅 सुप्रभात!', body: 'स्टॉक स्तरों की जाँच करके अपना दिन शुरू करें!' },
+                { title: '☀️ उठिए और चमकिए!', body: 'आपका व्यवसाय इंतज़ार कर रहा है! अभी इन्वेंट्री जाँचें।' },
+                { title: '📈 सुबह का अपडेट', body: 'आज अपने स्टॉक को प्रबंधित करने के लिए तैयार हैं?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ दोपहर की जाँच', body: 'आपकी बिक्री आज कैसी चल रही है?' },
+                { title: '📊 मध्याह्न अपडेट', body: 'अपने स्टॉक स्तरों और बिक्री की जाँच करने का समय!' },
+                { title: '💼 व्यवसाय जाँच', body: 'अपनी सुबह की बिक्री की समीक्षा करें और दोपहर की योजना बनाएं!' }
+            ],
+            evening: [
+                { title: '🌙 शाम की जाँच', body: 'बंद करने से पहले सभी बिक्री रिकॉर्ड करें!' },
+                { title: '📝 दिन का अंत', body: 'अपने स्टॉक को अपडेट करना न भूलें!' },
+                { title: '✅ दैनिक सारांश', body: 'आज की बिक्री और स्टॉक परिवर्तनों की समीक्षा करें!' }
+            ],
+            monday_motivation: [
+                { title: '💪 नया सप्ताह, नए लक्ष्य!', body: 'इस सप्ताह को अपने व्यवसाय के लिए अद्भुत बनाएं!' },
+                { title: '🚀 आगामी सप्ताह!', body: 'सफलता के लिए अपने स्टॉक प्रबंधन की योजना बनाएं!' },
+                { title: '🎯 सोमवार प्रेरणा', body: 'आज अपने साप्ताहिक लक्ष्य निर्धारित करें!' }
+            ],
+            business_tip: [
+                { title: '💡 व्यापार टिप', body: 'बेहतर जानकारी के लिए अपने शीर्ष 10 उत्पादों की समीक्षा करें!' },
+                { title: '📊 स्मार्ट प्रबंधन', body: 'बेस्टसेलर पर लाभ मार्जिन जाँचें!' },
+                { title: '🎓 प्रो टिप', body: 'नियमित स्टॉक ऑडिट नुकसान को रोकते हैं!' }
+            ],
+            inactive_alert: [
+                { title: '👋 हमें आपकी याद आती है!', body: 'आपने {days} दिनों में अपने स्टॉक की जाँच नहीं की है!' }
+            ],
+            low_stock: [
+                { title: '⚠️ कम स्टॉक अलर्ट', body: '{count} वस्तुओं को फिर से स्टॉक करने की आवश्यकता है!' }
+            ]
+        },
+        ms: {
+            morning: [
+                { title: '🌅 Selamat Pagi!', body: 'Mulakan hari anda dengan memeriksa tahap stok!' },
+                { title: '☀️ Bangkit dan Bersinar!', body: 'Perniagaan anda menanti! Semak inventori sekarang.' },
+                { title: '📈 Makluman Pagi', body: 'Bersedia untuk mengurus stok anda hari ini?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ Semakan Petang', body: 'Bagaimana jualan anda hari ini?' },
+                { title: '📊 Makluman Tengah Hari', body: 'Masa untuk memeriksa tahap stok dan jualan anda!' },
+                { title: '💼 Semakan Perniagaan', body: 'Semak jualan pagi anda dan rancang untuk petang!' }
+            ],
+            evening: [
+                { title: '🌙 Semakan Malam', body: 'Rekod semua jualan sebelum menutup!' },
+                { title: '📝 Penghujung Hari', body: 'Jangan lupa untuk mengemas kini stok anda!' },
+                { title: '✅ Ringkasan Harian', body: 'Semak jualan dan perubahan stok hari ini!' }
+            ],
+            monday_motivation: [
+                { title: '💪 Minggu Baru, Matlamat Baru!', body: 'Jadikan minggu ini hebat untuk perniagaan anda!' },
+                { title: '🚀 Minggu Hadapan!', body: 'Rancang pengurusan stok anda untuk kejayaan!' },
+                { title: '🎯 Motivasi Isnin', body: 'Tetapkan sasaran mingguan anda hari ini!' }
+            ],
+            business_tip: [
+                { title: '💡 Tip Perniagaan', body: 'Semak 10 produk teratas anda untuk pandangan yang lebih baik!' },
+                { title: '📊 Pengurusan Pintar', body: 'Semak margin keuntungan pada produk terlaris!' },
+                { title: '🎓 Tip Profesional', body: 'Audit stok berkala mencegah kerugian!' }
+            ],
+            inactive_alert: [
+                { title: '👋 Kami Rindu Anda!', body: 'Anda tidak memeriksa stok anda selama {days} hari!' }
+            ],
+            low_stock: [
+                { title: '⚠️ Tahap Stok Rendah', body: '{count} item perlu diisi semula!' }
+            ]
+        },
+        ar: {
+            morning: [
+                { title: '🌅 صباح الخير!', body: 'ابدأ يومك بفحص مستويات المخزون!' },
+                { title: '☀️ استيقظ وتألق!', body: 'عملك في انتظارك! تحقق من المخزون الآن.' },
+                { title: '📈 تحديث الصباح', body: 'مستعد لإدارة مخزونك اليوم؟' }
+            ],
+            midday_reminder: [
+                { title: '☀️ فتحة الظهيرة', body: 'كيف تسير مبيعاتك اليوم؟' },
+                { title: '📊 تحديث منتصف اليوم', body: 'الوقت لفحص مستويات المخزون والمبيعات!' },
+                { title: '💼 فحص الأعمال', body: 'راجع مبيعاتك الصباحية وخطط للظهيرة!' }
+            ],
+            evening: [
+                { title: '🌙 فحص المساء', body: 'سجل جميع المبيعات قبل الإغلاق!' },
+                { title: '📝 نهاية اليوم', body: 'لا تنس تحديث مخزونك!' },
+                { title: '✅ ملخص يومي', body: 'راجع مبيعات اليوم وتغيرات المخزون!' }
+            ],
+            monday_motivation: [
+                { title: '💪 أسبوع جديد، أهداف جديدة!', body: 'اجعل هذا الأسبوع رائعاً لعملك!' },
+                { title: '🚀 الأسبوع القادم!', body: 'خطط لإدارة مخزونك لتحقيق النجاح!' },
+                { title: '🎯 تحفيز الاثنين', body: 'حدد أهدافك الأسبوعية اليوم!' }
+            ],
+            business_tip: [
+                { title: '💡 نصيحة تجارية', body: 'راجع أفضل 10 منتجات لديك للحصول على رؤى أفضل!' },
+                { title: '📊 إدارة ذكية', body: 'تحقق من هوامش الربح على الأكثر مبيعاً!' },
+                { title: '🎓 نصيحة محترف', body: 'تدقيق المخزون المنتظم يمنع الخسائر!' }
+            ],
+            inactive_alert: [
+                { title: '👋 نحن نشتاق إليك!', body: 'لم تقم بفحص مخزونك منذ {days} أيام!' }
+            ],
+            low_stock: [
+                { title: '⚠️ تنبيه مخزون منخفض', body: '{count} عناصر تحتاج إلى إعادة تخزين!' }
+            ]
+        },
+        es: {
+            morning: [
+                { title: '🌅 ¡Buenos días!', body: '¡Comienza tu día revisando los niveles de stock!' },
+                { title: '☀️ ¡Levántate y brilla!', body: '¡Tu negocio te espera! Revisa el inventario ahora.' },
+                { title: '📈 Actualización matutina', body: '¿Listo para gestionar tu stock hoy?' }
+            ],
+            midday_reminder: [
+                { title: '☀️ Verificación de tarde', body: '¿Cómo van tus ventas hoy?' },
+                { title: '📊 Actualización de mediodía', body: '¡Es hora de revisar tus niveles de stock y ventas!' },
+                { title: '💼 Verificación de negocio', body: '¡Revisa tus ventas matutinas y planifica la tarde!' }
+            ],
+            evening: [
+                { title: '🌙 Verificación nocturna', body: '¡Registra todas las ventas antes de cerrar!' },
+                { title: '📝 Fin del día', body: '¡No olvides actualizar tu stock!' },
+                { title: '✅ Resumen diario', body: '¡Revisa las ventas y cambios de stock de hoy!' }
+            ],
+            monday_motivation: [
+                { title: '💪 ¡Nueva semana, nuevas metas!', body: '¡Haz de esta semana algo increíble para tu negocio!' },
+                { title: '🚀 ¡Semana por delante!', body: '¡Planifica la gestión de tu stock para el éxito!' },
+                { title: '🎯 Motivación para el lunes', body: '¡Establece tus objetivos semanales hoy!' }
+            ],
+            business_tip: [
+                { title: '💡 Consejo de negocio', body: '¡Revisa tus 10 productos principales para mejores perspectivas!' },
+                { title: '📊 Gestión inteligente', body: '¡Revisa los márgenes de beneficio en los más vendidos!' },
+                { title: '🎓 Consejo profesional', body: '¡Las auditorías periódicas de stock evitan pérdidas!' }
+            ],
+            inactive_alert: [
+                { title: '👋 ¡Te extrañamos!', body: '¡No has revisado tu stock en {days} días!' }
+            ],
+            low_stock: [
+                { title: '⚠️ Alerta de stock bajo', body: '¡{count} artículos necesitan reabastecimiento!' }
+            ]
+        },
+        'zh-CN': {
+            morning: [
+                { title: '🌅 早安！', body: '从检查库存水平开始新的一天！' },
+                { title: '☀️ 起床啦！', body: '您的生意在等着您！立即查看库存。' },
+                { title: '📈 早间更新', body: '准备好今天管理您的库存了吗？' }
+            ],
+            midday_reminder: [
+                { title: '☀️ 下午检查', body: '今天的销售情况如何？' },
+                { title: '📊 午间更新', body: '是时候检查您的库存水平和销售情况了！' },
+                { title: '💼 业务检查', body: '回顾早间销售，规划下午！' }
+            ],
+            evening: [
+                { title: '🌙 晚间检查', body: '关门前记录所有销售！' },
+                { title: '📝 日终总结', body: '别忘了更新您的库存！' },
+                { title: '✅ 每日总结', body: '回顾今天的销售和库存变化！' }
+            ],
+            monday_motivation: [
+                { title: '💪 新的一周，新的目标！', body: '让这周为您的生意带来精彩！' },
+                { title: '🚀 未来一周！', body: '为成功规划您的库存管理！' },
+                { title: '🎯 周一动力', body: '今天设定您的每周目标！' }
+            ],
+            business_tip: [
+                { title: '💡 商业小贴士', body: '查看您的十大产品以获得更好的洞察！' },
+                { title: '📊 智能管理', body: '检查畅销产品的利润率！' },
+                { title: '🎓 专业建议', body: '定期库存审计可防止损失！' }
+            ],
+            inactive_alert: [
+                { title: '👋 我们想您了！', body: '您已经有 {days} 天没有检查库存了！' }
+            ],
+            low_stock: [
+                { title: '⚠️ 低库存警报', body: '{count} 件商品需要补货！' }
+            ]
+        }
+    };
+    
+    // Fallback to English if language not found
+    const langMessages = messages[language] || messages.en;
+    return langMessages[type] || messages.en[type];
 }
 // Check and alert about low stock
 async function checkLowStockAlert() {
@@ -680,38 +898,47 @@ function getWeekNumber(date) {
 // MESSAGE HANDLING FROM MAIN APP
 // ========================================
 self.addEventListener('message', async function(event) {
-  if (!event.data) return;
-  
-  switch(event.data.type) {
-    case 'UPDATE_ACTIVITY':
-      const db = await openEngagementDB();
-      const transaction = db.transaction(['activity'], 'readwrite');
-      const store = transaction.objectStore('activity');
-      store.put({ id: 'lastActivity', timestamp: Date.now() });
-      break;
-      
-    case 'UPDATE_STOCK':
-      const stockDb = await openEngagementDB();
-      const stockTransaction = stockDb.transaction(['stock'], 'readwrite');
-      const stockStore = stockTransaction.objectStore('stock');
-      // Clear and update stock data
-      stockStore.clear();
-      event.data.items.forEach(item => stockStore.put(item));
-      break;
-      
-    case 'INIT_ENGAGEMENT_SYSTEM':
-      await checkAndSendEngagements();
-      await scheduleNextEngagementCheck();
-      break;
-      
-    case 'CHECK_INSTALL_STATUS':
-      const clients = await self.clients.matchAll();
-      const isInstalled = clients.some(client => 
-        client.url.includes('/myshop/') || client.url.includes('stocksalesapp')
-      );
-      event.source.postMessage({ type: 'INSTALL_STATUS', installed: isInstalled });
-      break;
-  }
+    if (!event.data) return;
+    
+    switch(event.data.type) {
+        case 'UPDATE_LANGUAGE':
+            const db = await openEngagementDB();
+            const transaction = db.transaction(['engagements'], 'readwrite');
+            const store = transaction.objectStore('engagements');
+            store.put({ id: 'userLanguage', language: event.data.language });
+            console.log('🌐 Language updated in service worker:', event.data.language);
+            break;
+            
+        case 'UPDATE_ACTIVITY':
+            const activityDb = await openEngagementDB();
+            const activityTransaction = activityDb.transaction(['activity'], 'readwrite');
+            const activityStore = activityTransaction.objectStore('activity');
+            activityStore.put({ id: 'lastActivity', timestamp: Date.now() });
+            break;
+            
+        case 'UPDATE_STOCK':
+            const stockDb = await openEngagementDB();
+            const stockTransaction = stockDb.transaction(['stock'], 'readwrite');
+            const stockStore = stockTransaction.objectStore('stock');
+            await stockStore.clear();
+            if (event.data.items) {
+                event.data.items.forEach(item => stockStore.put(item));
+            }
+            break;
+            
+        case 'INIT_ENGAGEMENT_SYSTEM':
+            await checkAndSendEngagements();
+            await scheduleNextEngagementCheck();
+            break;
+            
+        case 'CHECK_INSTALL_STATUS':
+            const clients = await self.clients.matchAll();
+            const isInstalled = clients.some(client => 
+                client.url.includes('/myshop/') || client.url.includes('stocksalesapp')
+            );
+            event.source.postMessage({ type: 'INSTALL_STATUS', installed: isInstalled });
+            break;
+    }
 });
 
 // Initialize when service worker activates
@@ -729,7 +956,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   
-  const urlToOpen = event.notification.data?.url || '/myshop/shop.html';
+  const urlToOpen = event.notification.data?.url || '/shop.html';
   
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(windowClients => {
@@ -746,7 +973,7 @@ self.addEventListener('notificationclick', event => {
 console.log('✅ Offline-First Engagement Service Worker Ready!');
 // Main engagement checker
 async function checkAndSendEngagements() {
-  console.log('📋 Checking engagement schedule...');
+  
   
   try {
     const now = new Date();
@@ -819,26 +1046,22 @@ async function checkAndSendEngagements() {
 
 // Check mid-day engagements
 async function checkMiddayEngagements() {
-  console.log('🌤️ Running mid-day engagement checks...');
-  
-  try {
-    // Check if there are any sales recorded today
-    const hasSales = await checkTodaySales();
+    console.log('🌤️ Running mid-day engagement checks...');
     
-    if (!hasSales) {
-      // If no sales yet, send a reminder
-      await sendEngagementNotification('midday_reminder');
+    try {
+        const userLang = await getUserLanguage();
+        const hasSales = await checkTodaySales();
+        
+        if (!hasSales) {
+            await sendEngagementNotification('midday_reminder');
+        }
+        
+        await checkLowStockAlert();
+        await checkPendingReminders();
+        
+    } catch (error) {
+        console.error('Error in midday engagement check:', error);
     }
-    
-    // Check stock levels at midday
-    await checkLowStockAlert();
-    
-    // Check for any pending tasks or reminders
-    await checkPendingReminders();
-    
-  } catch (error) {
-    console.error('Error in midday engagement check:', error);
-  }
 }
 
 // Check if there are sales recorded today

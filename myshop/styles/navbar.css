@@ -324,12 +324,66 @@
     color: #60a5fa;
 }
 
+.desktop-sidebar-toggle {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .desktop-sidebar-toggle {
+        display: flex;
+        position: fixed;
+        left: 262px;
+        top: 24px;
+        width: 34px;
+        height: 34px;
+        border-radius: 9999px;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        background: #ffffff;
+        color: #1f2937;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10000;
+        transition: transform 0.3s ease, left 0.3s ease, background-color 0.3s ease;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    }
+
+    .desktop-sidebar-toggle:hover {
+        background: #f8fafc;
+    }
+
+    .desktop-sidebar-toggle .toggle-icon {
+        display: inline-block;
+        font-size: 1rem;
+        line-height: 1;
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-main.sidebar-hidden {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-main.sidebar-hidden + .desktop-sidebar-toggle .toggle-icon,
+    .desktop-sidebar-toggle.collapsed .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .sidebar-main.sidebar-hidden + .desktop-sidebar-toggle,
+    .desktop-sidebar-toggle.collapsed {
+        left: 0;
+    }
+}
+
 /* Show on mobile */
 @media (max-width: 768px) {
     .sidebar-toggle {
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .desktop-sidebar-toggle {
+        display: none;
     }
 }
 

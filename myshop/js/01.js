@@ -28,7 +28,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================================
     // NOTIFICATION FUNCTIONS
     // ========================================
+async function syncLanguageToServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
     
+    // Standardized to lowercase 'language'
+    const currentLanguage = localStorage.getItem('language') || 'en';
+    
+    // SAFE FIX: Use .ready to target registration.active, bypassing the null controller race condition
+    navigator.serviceWorker.ready.then(registration => {
+        if (registration.active) {
+            registration.active.postMessage({
+                type: 'UPDATE_LANGUAGE',
+                language: currentLanguage
+            });
+            console.log('🌐 Language successfully synced to active service worker:', currentLanguage);
+        }
+    });
+}
+
     async function askNotificationPermission() {
         if (!('Notification' in window)) {
             console.log('Notifications are not supported by this browser.');
@@ -99,7 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             navigator.serviceWorker.register('sw.js')
                 .then(function(registration) {
                     console.log('✅ Service worker registered with scope:', registration.scope);
+                     syncLanguageToServiceWorker();
                     askNotificationPermission();
+
                 })
                 .catch(function(error) {
                     console.error('❌ Service worker registration failed:', error);

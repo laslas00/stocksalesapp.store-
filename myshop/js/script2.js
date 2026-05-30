@@ -919,7 +919,7 @@ async function initializeFestiveBadgeAfterLogin(businessInfoData) {
     }
      if ('Notification' in window && Notification.permission === 'default') {
         // Show a friendly prompt first
-        const shouldAsk = confirm(translate("Wouldyouliketoreceivestockalertsandreminders?"));
+        const shouldAsk = confirm(translate("Wouldyouliketoreceivestockalertsandreminders"));
         if (shouldAsk) {
             const permission = await Notification.requestPermission();
             console.log('Notification permission:', permission);
@@ -933,4 +933,5 @@ async function initializeFestiveBadgeAfterLogin(businessInfoData) {
             console.warn('Failed to initialize EmailScheduler:', error);
         }
     }
+   
 }

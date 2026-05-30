@@ -273,6 +273,9 @@
                     </button>
                 </div>
             </aside>
+            <button id="desktop-sidebar-toggle" class="desktop-sidebar-toggle" type="button" aria-label="Collapse sidebar">
+                <span class="toggle-icon">‹</span>
+            </button>
             <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" data-translate-aria-label="toggle_sidebar">
                 <i class="fas fa-bars"></i>
             </button>
@@ -424,6 +427,25 @@
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
                 if (sidebarToggle) sidebarToggle.classList.remove('active');
+            });
+        }
+
+        const desktopSidebarToggle = document.getElementById('desktop-sidebar-toggle');
+        if (desktopSidebarToggle) {
+            desktopSidebarToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                sidebar.classList.toggle('sidebar-hidden');
+                if (sidebar.classList.contains('sidebar-hidden')) {
+                    desktopSidebarToggle.classList.add('collapsed');
+                } else {
+                    desktopSidebarToggle.classList.remove('collapsed');
+                }
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    if (sidebarToggle) sidebarToggle.classList.remove('active');
+                }
+                adjustBodyPadding();
             });
         }
 
@@ -744,6 +766,10 @@
     function adjustBodyPadding() {
         const sidebar = document.querySelector('.sidebar-main');
         if (sidebar) {
+            if (sidebar.classList.contains('sidebar-hidden')) {
+                document.body.style.paddingLeft = '0';
+                return;
+            }
             const sidebarWidth = sidebar.offsetWidth || 280;
             document.body.style.paddingLeft = sidebarWidth + 'px';
         }

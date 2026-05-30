@@ -91,36 +91,64 @@ function translateUI() {
     });
 }
 
-
+async function broadcastLanguageChange(language) {
+    // Save to localStorage
+    localStorage.setItem('language', language);
+    localStorage.setItem('systemLanguage', language);
+    
+    // Update Service Worker
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'UPDATE_LANGUAGE',
+            language: language
+        });
+    }
+    
+    // Also store in IndexedDB for service worker access
+    if (window.indexedDB) {
+        const db = await openEngagementDB();
+        const transaction = db.transaction(['engagements'], 'readwrite');
+        const store = transaction.objectStore('engagements');
+        store.put({ id: 'userLanguage', language: language });
+    }
+    
+    console.log('🌐 Language changed to:', language);
+}
 // Initialize translation on page load
 document.addEventListener("DOMContentLoaded", async () => {
     await loadBusinessInfo2();
     const languageSelector = document.getElementById("languageSelector");
 
     if (languageSelector) {
-    languageSelector.value = currentLanguage;
+        languageSelector.value = currentLanguage;
 
-    languageSelector.addEventListener("change", async (e) => {
-        currentLanguage = e.target.value;
-
-        // Save user choice
-        localStorage.setItem("language", currentLanguage);
-
-        // Sync to main process
-        if (window.electronAPI?.setLanguage) {
-        await window.electronAPI.setLanguage(currentLanguage);
-        }
-
-        translateUI();
-    });
+        languageSelector.addEventListener("change", async (e) => {
+            const newLanguage = e.target.value;
+            currentLanguage = newLanguage;
+            
+            // Use the new broadcast function
+            await broadcastLanguageChange(newLanguage);
+            
+            // Sync to main process if Electron
+            if (window.electronAPI?.setLanguage) {
+                await window.electronAPI.setLanguage(currentLanguage);
+            }
+            
+            translateUI();
+        });
     }
-
- translateUI();
-   updateAllText(); 
- 
-   
     
-
+    translateUI();
+    updateAllText();
+  
+    
+    // Sync language to service worker on load
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'UPDATE_LANGUAGE',
+            language: currentLanguage
+        });
+    }
 });
 async function loadBusinessInfo2() {
   try {

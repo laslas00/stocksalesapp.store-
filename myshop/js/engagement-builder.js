@@ -54,8 +54,8 @@ const EngagementBuilder = {
         }
     },
     
-    getUserLanguage() {
-        const savedLang = localStorage.getItem('appLanguage');
+  getUserLanguage() {
+        const savedLang = localStorage.getItem('language');
         if (savedLang && this.messages[savedLang]) return savedLang;
         const browserLang = navigator.language.split('-')[0];
         if (this.messages[browserLang]) return browserLang;

@@ -55,15 +55,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-function closeFeedback() {
-    document.getElementById('feedbackModal').classList.add('hidden');
-    hideLoading(); // In case it was opened from a loading state
-}
 
-// Function to call inside checkRatingTrigger()
-function showFeedbackPrompt() {
-    document.getElementById('feedbackModal').classList.remove('hidden');
-}
 
 function checkRatingTrigger() {
     console.log("Checking if rating/feedback prompt should be shown...");
@@ -82,8 +74,8 @@ function checkRatingTrigger() {
     } 
     // 2. Feedback/Survey prompt (New!)
     else if (actionCount === 30 || actionCount === 80 || actionCount === 200 || actionCount === 400) { 
-         if (feedbackShown === 'true') return;
-        showFeedbackPrompt();
+       
+      
     }
     // 3. Share prompts
     else if (actionCount === 50 || actionCount === 150 || actionCount === 300 || actionCount === 500) {

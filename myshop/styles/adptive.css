@@ -678,47 +678,7 @@
    ======================================== */
 
 
-/* When sidebar is present, home overlay adjusts */
-@media screen and (min-width: 768px) {
-    body:not(.sidebar-collapsed) #homeOverlay {
-        width: calc(100% - 280px);
-        margin-left: 280px;
-    }
-    
-    body.sidebar-collapsed #homeOverlay {
-        width: calc(100% - 80px);
-        margin-left: 80px;
-    }
-}
 
-@media screen and (max-width: 767px) {
-    #homeOverlay {
-        width: 100%;
-        margin-left: 0;
-    }
-}
-
-/* Background Container */
-#homeOverlay .background-container {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    z-index: 0;
-}
-
-
-
-/* Main Content Wrapper - Centered */
-#homeOverlay .relative.z-10 {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 1rem;
-}
 
 /* Responsive padding */
 @media screen and (min-width: 640px) {

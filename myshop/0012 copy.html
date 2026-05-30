@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>🏚 HOME</title>
+    <link rel="icon" type="image/x-icon" href="image/icon.ico">
+
+    <link href="libs/fonts/inter.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/fontawesome-simple.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="libs/jspdf.umd.min.js"></script>
+    <script src="libs/html2canvas.min.js"></script>
+    <script src="libs/d3.v7.min.js"></script>
+      <script src="libs/d3.v7.min.js"></script>
+    <script src="libs/chart.js"></script>
+    <script src="libs/chartjs-chart-financial.js"></script>
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="libs/JsBarcode.all.min.js"></script>
+    <script src="libs/qrcode.min.js"></script>
+    <script src="libs/qrious.min.js"></script>
+    <script src="libs/zxing.min.js"></script>
+    <script src="libs/jszip.min.js"></script>
+            <script src="js/lan.js"></script>
+      <script src="translations.js"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        microsoftDark: '#111111',
+                        microsoftCard: '#1a1a1a',
+                        microsoftBorder: '#2d2d2d',
+                        microsoftTextMuted: '#a0a0a0',
+                        microsoftAccent: '#0078d4',
+                        microsoftAccentHover: '#106ebe',
+                        microsoftDanger: '#f15f5f',
+                        microsoftSuccess: '#107c41',
+                        modalBg: '#202020',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="js/curency.js"></script>
+ <link rel="stylesheet" href="styles/style.css">
+<link rel="stylesheet" href="styles/recipt.css">
+<link rel="stylesheet" href="styles/print.css">
+<link rel="stylesheet" href="styles/adptive.css">
+<link href="styles/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+
+    <main class="p-4 md:p-8">
+        
+        <div id="main-dashboard-container"></div>
+
+    </main>
+   <script src="js/env.js"></script>
+
+
+    <script>
+        
+const MYSUPABASE_URL =window.ENV?.MYSHOPSUPABASE_URL || 'https://zexxdoxuzvkovszfqcio.supabase.co';
+const MY_ANON_KEY = window.ENV?.MYSHOPSUPABASE_ANON_KEY || 'your-anon-key-here';
+
+// Create a dedicated Supabase client for setup (YOUR project, not track.js)
+let setupDB = null;
+
+let notificationSound = null;
+
+let businessInfo = null;
+
+function getSB() {
+    if (setupDB && setupDB.from) {
+        return setupDB;
+    }
+    
+    // Check if Supabase CDN is loaded
+    if (!window.supabase || !window.supabase.createClient) {
+        console.error('❌ Supabase CDN library not loaded yet. Retrying...');
+        // Wait and retry once
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (window.supabase && window.supabase.createClient) {
+                    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
+                    console.log('✅ Setup Supabase client created (retry)');
+                    resolve(setupDB);
+                } else {
+                    console.error('❌ Supabase CDN still not available');
+                    resolve(null);
+                }
+            }, 1000);
+        });
+    }
+    
+    setupDB = window.supabase.createClient(MYSUPABASE_URL, MY_ANON_KEY);
+    console.log('✅ Setup Supabase client created for YOUR project');
+    return setupDB;
+}
+
+    </script>
+  
+    <script src="js/track.js"></script>
+</body>
+</html>

@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="image/logo.jpg">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="js/env.js"></script>
         <script src="js/01.js"></script>
     <script src="js/auth-check.js"></script>
@@ -43,6 +44,7 @@
     <link rel="stylesheet" href="styles/navbar.css">
 
        <script src="js/hideme.js"></script>
+
 </head>
 <body>
     <div id="loginLoadingContainer" class="liquid-loader z-9999999999999999999999999999999999999999999999999990">
@@ -6111,31 +6113,6 @@
                     </div>
                 </div>
 
-            <div id="feedbackModal" class="modal-overlay hidden">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 data-translate="feedback_title">How is your experience?</h2>
-                        <p data-translate="feedback_subtitle">Help us make StockApp better for your first year!</p>
-                    </div>
-
-                    <div class="feedback-body">
-                        <label data-translate="feedback_feeling">How do you feel using the app?</label>
-                        <div class="sentiment-options">
-                            <button class="sentiment-btn" onclick="setSentiment('Sad')">😞</button>
-                            <button class="sentiment-btn" onclick="setSentiment('Neutral')">😐</button>
-                            <button class="sentiment-btn active" onclick="setSentiment('Happy')">😊</button>
-                        </div>
-
-                        <label data-translate="feedback_suggestion">What should we add or change?</label>
-                        <textarea id="feedbackText" placeholder="Tell us your ideas..." rows="4"></textarea>
-                    </div>
-
-                    <div>
-                        <button onclick="closeFeedback()" data-translate="close">Close</button>
-                        <button onclick="submitFeedback()" data-translate="send_feedback">Send Feedback</button>
-                    </div>
-                </div>
-            </div>
                 <div id="onboardingTour" class="onboarding-Tour hidden"> 
                     <!-- Highlight comes first so it's behind tooltip -->
                     <div id="tourHighlight" class="absolute border-2 border-blue-500 rounded-lg transition-all duration-300"></div>
