@@ -1,7 +1,7 @@
 // ========================================
 // SERVICE WORKER - CORRECTED VERSION
 // ========================================
-const APP_VERSION = '3.2.20';
+const APP_VERSION = '3.2.25';
 const CACHE_NAME = `stockapp-v${APP_VERSION}`;
 const ENGAGEMENT_CHANNEL = new BroadcastChannel('engagement-updates');
 
