@@ -9,7 +9,7 @@ printProfitLossReportBtn.addEventListener('click', printProfitLossReport);
 // Event listeners for the new date range filters
 document.getElementById('printCurrentStockBtn').onclick = async function() {
     showLoading();
-    await loadStock();
+    await loadStockTOSAVE();
     renderStock();
     const currentStockSection = document.getElementById('currentStockSection');
     
@@ -95,7 +95,7 @@ async function printProfitLossReport() {
     const yearToPrint = typeof selectedYear !== 'undefined' ? selectedYear : new Date().getFullYear();
 
     await loadSalesForYear(yearToPrint);
-    await loadStock();
+    await loadStockTOSAVE();
     await calculateProfitLoss();
 
     const profitLossContent = document.getElementById('profitLossContent');

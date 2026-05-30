@@ -90,7 +90,7 @@ if (nextWeekBtn && !nextWeekBtn.__listenerAdded) {
     // ✅ Always reload sales for this specific week
     cleanupMemory();
     await loadSales(startDate.toISOString().slice(0, 10), endDate.toISOString().slice(0, 10));
-    await loadStock();
+    await loadStockTOSAVE();
     const categoryTotals = {};
     if (typeof sales !== 'undefined' && Array.isArray(sales)) {
         sales.forEach(sale => {

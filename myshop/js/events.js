@@ -713,7 +713,7 @@ async function loadSalesForCurrentYear() {
 }
 
 stockTypeFilter.addEventListener('change', async () => {
-    await loadStock();
+    await loadStockTOSAVE();
     renderStock();
 });
 
@@ -1234,38 +1234,6 @@ async function initializeHomeOverlay() {
         console.error("Error initializing home overlay:", err);
     }
     
-    window.stock = [];
-    window.sales = [];
-    window.stockHistory = [];
-    window.creditSales = [];
-    const stockBtn = document.getElementById("stockOptionBtn");
-    const salesBtn = document.getElementById("salesOptionBtn");
-    const historyBtn = document.getElementById("historyOptionBtn");
-    const creditBtn = document.getElementById("creditBookOptionBtn");
-
-    if (stockBtn) {
-        stockBtn.addEventListener("click", async () => {
-            await loadSection("stock");
-        });
-    }
-
-    if (salesBtn) {
-        salesBtn.addEventListener("click", async () => {
-            await loadSection("sales");
-        });
-    }
-
-    if (historyBtn) {
-        historyBtn.addEventListener("click", async () => {
-            await loadSection("history");
-        });
-    }
-
-    if (creditBtn) {
-        creditBtn.addEventListener("click", async () => {
-            await loadSection("credit");
-        });
-    }
 }
 
 function cleanupMemory() {
@@ -1278,44 +1246,6 @@ function cleanupMemory() {
     stockHistory = [];
     creditSales = [];
     console.log(`✅ ${translate('memory_cleaned') || 'Memory cleaned'}`);
-}
-async function loadSection(type) {
-    cleanupMemory();
-
-    switch (type) {
-        case "stock":
-            await loadStock(300);
-            await loadSales(1000);
-            break;
-
-        case "sales":
-            await loadSales(300);
-            await loadStock();
-            break;
-
-        case "history":
-            await loadStockHistory();
-            renderStockHistory?.();
-            break;
-
-        case "credit":
-            await loadCreditSales();
-            renderCreditSales?.();
-            break;
-
-        default:
-            console.warn("Unknown section:", type);
-    }
-}
-
-async function convertBase64Images() {
-    try {
-        const res = await fetch(`${API_BASE}/api/convert-imageData-to-url`, { method: 'POST' });
-        const data = await res.json();
-        showMessageModal(data.message || translate('conversion_complete') || 'Conversion complete');
-    } catch (err) {
-        showMessageModal(translate('failed_to_convert_old_images') || 'Failed to convert old images: ' + err.message);
-    }
 }
 
 

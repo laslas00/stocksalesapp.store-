@@ -1,5 +1,4 @@
 let qrCodeReader;
-
 let currentCameraIndex = 0;
 let videoDevices = [];
 
@@ -41,11 +40,56 @@ async function startScanning(deviceId) {
     // Reset reader if already running
     if (qrCodeReader) await qrCodeReader.reset();
 
-    await qrCodeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
-        if (result) {
-            handleScanSuccess(result.getText());
+    // Configure for both QR codes and barcodes
+    const hints = new Map();
+    // This enables scanning of multiple formats including:
+    // QR_CODE, AZTEC, CODABAR, CODE_39, CODE_93, CODE_128, 
+    // DATA_MATRIX, EAN_8, EAN_13, ITF, MAXICODE, PDF_417, 
+    // RSS_14, RSS_EXPANDED, UPC_A, UPC_E, UPC_EAN_EXTENSION
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.QR_CODE,
+        ZXing.BarcodeFormat.AZTEC,
+        ZXing.BarcodeFormat.CODABAR,
+        ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.CODE_93,
+        ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.DATA_MATRIX,
+        ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.EAN_13,
+        ZXing.BarcodeFormat.ITF,
+        ZXing.BarcodeFormat.MAXICODE,
+        ZXing.BarcodeFormat.PDF_417,
+        ZXing.BarcodeFormat.RSS_14,
+        ZXing.BarcodeFormat.RSS_EXPANDED,
+        ZXing.BarcodeFormat.UPC_A,
+        ZXing.BarcodeFormat.UPC_E
+    ]);
+    
+    // Try to apply hints (if the version supports it)
+    if (qrCodeReader.decodeFromVideoDevice && hints) {
+        try {
+            await qrCodeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+                if (result) {
+                    handleScanSuccess(result.getText());
+                }
+            }, hints);
+        } catch (hintError) {
+            // Fallback without hints if not supported
+            console.warn("Hints not supported, using default scanner", hintError);
+            await qrCodeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+                if (result) {
+                    handleScanSuccess(result.getText());
+                }
+            });
         }
-    });
+    } else {
+        // Default scanning without hints
+        await qrCodeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+            if (result) {
+                handleScanSuccess(result.getText());
+            }
+        });
+    }
 }
 
 function switchCamera() {
@@ -55,14 +99,15 @@ function switchCamera() {
         startScanning(videoDevices[currentCameraIndex].deviceId);
     } else {
         console.log("Only one camera detected.");
-          document.getElementById('switchCameraButton').classList.add('hidden');
+        document.getElementById('switchCameraButton').classList.add('hidden');
     }
 }
-switchCamera(); 
+
 function closeQRScanner() {
     if (qrCodeReader) qrCodeReader.reset();
     document.getElementById("qrScannerModal").classList.add("hidden");
 }
+
 // Helper to keep code clean
 function handleScanSuccess(text) {
     const audio = document.getElementById('barcodeScanSound');
@@ -76,7 +121,7 @@ function handleScanSuccess(text) {
 
 function handleScannerError(err) {
     playScanErrorSound();
-    console.error("QR Scanner error:", err);
+    console.error("QR/Barcode Scanner error:", err);
     showMessageModal(translate('qrScanner.cameraAccessDenied'));
     closeQRScanner();
 }
@@ -145,7 +190,7 @@ async function findBestCamera() {
     return null;
 }
 
-// Modified openQRScanner function with improved camera selection
+// Modified openQRScanner function with improved camera selection and barcode support
 async function openQRScanner() {
     document.getElementById("qrScannerModal").classList.remove("hidden");
     const video = document.getElementById("qrVideo");
@@ -172,7 +217,6 @@ async function openQRScanner() {
                 
                 // On tablets/phones, prefer the camera with higher resolution (usually the back camera)
                 if (!backCamera && devices.length > 1) {
-                    // We could get camera capabilities, but a simpler heuristic:
                     // Back camera is usually not labeled as "front" or "user"
                     const nonFrontCamera = devices.find(device => {
                         const label = device.label.toLowerCase();
@@ -189,19 +233,51 @@ async function openQRScanner() {
             }
         }
         
-        await qrCodeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
-            if (result) {
-                const audio = document.getElementById('barcodeScanSound');
-                if (audio) {
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.warn(translate('qrScanner.audioFailed'), e));
+        // Configure hints for both QR codes and barcodes
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+            ZXing.BarcodeFormat.QR_CODE,
+            ZXing.BarcodeFormat.CODE_39,
+            ZXing.BarcodeFormat.CODE_93,
+            ZXing.BarcodeFormat.CODE_128,
+            ZXing.BarcodeFormat.EAN_8,
+            ZXing.BarcodeFormat.EAN_13,
+            ZXing.BarcodeFormat.UPC_A,
+            ZXing.BarcodeFormat.UPC_E,
+            ZXing.BarcodeFormat.ITF,
+            ZXing.BarcodeFormat.CODABAR
+        ]);
+        
+        // Start scanning with hints if supported
+        try {
+            await qrCodeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+                if (result) {
+                    const audio = document.getElementById('barcodeScanSound');
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.warn(translate('qrScanner.audioFailed'), e));
+                    }
+                    
+                    lookupProductByQRCode(result.getText());
+                    closeQRScanner();
                 }
-
-
-                lookupProductByQRCode(result.getText());
-                closeQRScanner();
-            }
-        });
+            }, hints);
+        } catch (hintError) {
+            // Fallback without hints
+            console.warn("Hints not supported, using default scanner", hintError);
+            await qrCodeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+                if (result) {
+                    const audio = document.getElementById('barcodeScanSound');
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.warn(translate('qrScanner.audioFailed'), e));
+                    }
+                    
+                    lookupProductByQRCode(result.getText());
+                    closeQRScanner();
+                }
+            });
+        }
         
         // Optional: Show which camera is being used (for debugging)
         const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId);
@@ -211,7 +287,7 @@ async function openQRScanner() {
         
     } catch (err) {
         playScanErrorSound();
-        console.error("QR Scanner error:", err);
+        console.error("QR/Barcode Scanner error:", err);
         showMessageModal(translate('qrScanner.cameraAccessDenied'));
         closeQRScanner();
     }

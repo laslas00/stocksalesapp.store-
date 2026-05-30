@@ -8,7 +8,7 @@ profitLossOptionBtn.addEventListener('click', () => {
 
 document.getElementById('reloadProfitLossBtn')?.addEventListener('click', async () => {
     await loadSalesForYear(selectedYear);
-    await loadStock();
+    await loadStockTOSAVE() ;
     await calculateProfitLoss();
 });
 
@@ -23,7 +23,7 @@ async function showProfitLossSection() {
     await cleanupMemory();
     const yearToLoad = typeof selectedYear !== 'undefined' ? selectedYear : new Date().getFullYear();
     await loadSalesForYear(yearToLoad);
-    await loadStock();
+    await loadStockTOSAVE();
     await updateYearDisplayAndData();
     await calculateProfitLoss();
     
@@ -71,7 +71,7 @@ document.getElementById('prevYearBtn')?.addEventListener('click', async () => {
     selectedYear--;
     await updateYearDisplayAndData();
     await loadSalesForYear(selectedYear);
-    await loadStock();
+    await loadStockTOSAVE();
     await calculateProfitLoss();
 });
 
@@ -79,7 +79,7 @@ document.getElementById('nextYearBtn')?.addEventListener('click', async () => {
     selectedYear++;
     await updateYearDisplayAndData();
     await loadSalesForYear(selectedYear);
-    await loadStock();
+    await loadStockTOSAVE();
     await calculateProfitLoss();
 });
 

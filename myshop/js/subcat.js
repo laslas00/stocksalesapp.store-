@@ -14,7 +14,7 @@ async function showGroupedBySubcategorySection() {
     section.classList.remove('hidden');
     
     try {
-        await loadStock(); // Ensure stock is loaded
+        await loadStockTOSAVE(); // Ensure stock is loaded
         renderGroupedBySubcategory();
     } catch (error) {
         console.error('Error showing grouped subcategory section:', error);
@@ -30,7 +30,7 @@ document.getElementById('groupBySubcategoryBtn').addEventListener('click', async
         btn.textContent = translate('common.loading') || "Loading...";
 
         
-        await loadStock(); // remove if already loaded elsewhere
+        await loadStockTOSAVE(); // remove if already loaded elsewhere
        showGroupedBySubcategorySection();
 
     } catch (error) {
@@ -294,7 +294,7 @@ async function loadYearData() {
         // Load data for the selected year
         await Promise.all([
             loadSalesForYear(currentYear),
-            loadStock(),
+             loadStockTOSAVE(),
             loadStockHistory()
         ]);
 
@@ -699,7 +699,7 @@ document.addEventListener('keydown', (e) => {
 async function showSubcategoryHistoryModal(subcategoryName, year) {
     try {
         await loadSalesForYear(year);
-        await loadStock();
+        await loadStockTOSAVE();
         await loadStockHistory();
 
         const itemsInSub = stock.filter(i => i.subcategory === subcategoryName);
